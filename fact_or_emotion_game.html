@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>事実と感情の仕分け</title>
+<style>
+  :root{
+    --bg1:#12151c;
+    --bg2:#1b2029;
+    --fact-color:#2fbfa3;      /* 事実:青緑 */
+    --fact-color-dim:#1d6f60;
+    --emotion-color:#e2566b;  /* 感情:赤 */
+    --emotion-color-dim:#8a2e3a;
+    --card-bg:#242a35;
+    --text-main:#eef1f5;
+    --text-sub:#9aa3b2;
+    --accent:#f4c95d;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    font-family:"Hiragino Sans","Yu Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--text-main);
+    overflow:hidden;
+    touch-action:none;
+    -webkit-user-select:none;user-select:none;
+  }
+  #app{
+    position:relative;
+    width:100%;
+    height:100%;
+    max-width:480px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 16px 22px;
+  }
+
+  /* ヘッダー */
+  header{
+    width:100%;
+    text-align:center;
+    padding-top:6px;
+  }
+  header h1{
+    font-size:16px;
+    letter-spacing:2px;
+    color:var(--text-sub);
+    font-weight:500;
+    margin:0 0 10px;
+  }
+  #progressWrap{
+    width:100%;
+    height:8px;
+    background:#0007;
+    border-radius:6px;
+    overflow:hidden;
+  }
+  #progressBar{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--fact-color),var(--accent));
+    transition:width .35s ease;
+  }
+  #counter{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--text-sub);
+  }
+
+  /* ゾーン表示（左右仕分け先） */
+  .zoneLabels{
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--text-sub);
+    padding:0 6px;
+    margin-top:2px;
+  }
+  .zoneLabels span{ opacity:.8; }
+  .zoneLabels .left{ color:var(--emotion-color); }
+  .zoneLabels .right{ color:var(--fact-color); }
+
+  /* カードエリア */
+  #cardStage{
+    position:relative;
+    width:100%;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:260px;
+  }
+
+  .card{
+    position:absolute;
+    width:88%;
+    max-width:340px;
+    min-height:200px;
+    background:var(--card-bg);
+    border-radius:22px;
+    box-shadow:0 12px 30px rgba(0,0,0,.45);
+    border:2px solid #3a4150;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 22px;
+    text-align:center;
+    font-size:22px;
+    line-height:1.6;
+    font-weight:600;
+    cursor:grab;
+    will-change:transform;
+    transition:transform .25s ease, opacity .25s ease, box-shadow .2s ease, border-color .2s ease;
+    touch-action:none;
+  }
+  .card.grabbing{ cursor:grabbing; transition:none; }
+  .card .hint{
+    position:absolute;
+    top:14px;
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:20px;
+    font-weight:700;
+    letter-spacing:2px;
+    opacity:0;
+    transition:opacity .15s ease;
+  }
+  .hint.factHint{ right:14px; color:var(--fact-color); border:1px solid var(--fact-color); }
+  .hint.emoHint{ left:14px; color:var(--emotion-color); border:1px solid var(--emotion-color); }
+
+  /* 正誤フラッシュ */
+  .card.correct-fact{
+    border-color:var(--fact-color);
+    box-shadow:0 0 0 6px var(--fact-color-dim), 0 12px 30px rgba(0,0,0,.45);
+  }
+  .card.correct-emotion{
+    border-color:var(--emotion-color);
+    box-shadow:0 0 0 6px var(--emotion-color-dim), 0 12px 30px rgba(0,0,0,.45);
+  }
+  .card.wrong{
+    animation: shake .4s ease;
+    border-color:#ff3b3b;
+  }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0) rotate(0); }
+    20%{ transform:translateX(-10px) rotate(-2deg); }
+    40%{ transform:translateX(10px) rotate(2deg); }
+    60%{ transform:translateX(-8px) rotate(-1.5deg); }
+    80%{ transform:translateX(8px) rotate(1.5deg); }
+  }
+
+  /* 仕分け先アイコン（背景に薄く表示） */
+  #bgIcons{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    pointer-events:none;
+    padding:0 8px;
+    z-index:0;
+  }
+  #bgIcons .icon{
+    font-size:44px;
+    opacity:.15;
+  }
+
+  /* フローティングテキスト（受け止めた／捨てた） */
+  .floatText{
+    position:absolute;
+    top:40%;
+    font-size:15px;
+    font-weight:700;
+    padding:8px 16px;
+    border-radius:20px;
+    pointer-events:none;
+    opacity:0;
+    z-index:5;
+  }
+
+  /* ボタン */
+  #controls{
+    width:100%;
+    display:flex;
+    gap:14px;
+    margin-top:10px;
+  }
+  .actionBtn{
+    flex:1;
+    padding:18px 8px;
+    border:none;
+    border-radius:18px;
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:1px;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    -webkit-tap-highlight-color:transparent;
+    box-shadow:0 6px 14px rgba(0,0,0,.35);
+    transition:transform .08s ease, filter .1s ease;
+  }
+  .actionBtn:active{ transform:scale(.94); filter:brightness(1.15); }
+  .actionBtn .sub{ font-size:11px; font-weight:400; opacity:.85; }
+  #trashBtn{ background:linear-gradient(135deg,var(--emotion-color),#a83349); }
+  #factBtn{ background:linear-gradient(135deg,var(--fact-color),#1c8f79); }
+
+  /* クリア画面 */
+  #clearScreen{
+    position:fixed;
+    inset:0;
+    background:rgba(10,12,18,.94);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:50;
+    text-align:center;
+    padding:24px;
+  }
+  #clearScreen.show{ display:flex; }
+  #clearScreen h2{
+    font-size:26px;
+    margin-bottom:8px;
+    background:linear-gradient(90deg,var(--fact-color),var(--accent));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  #clearScreen p{
+    color:var(--text-sub);
+    font-size:14px;
+    line-height:1.8;
+    max-width:320px;
+    margin:6px 0 20px;
+  }
+  #resultStats{
+    display:flex;
+    gap:24px;
+    margin-bottom:20px;
+  }
+  .statBox{
+    background:var(--card-bg);
+    border-radius:14px;
+    padding:12px 20px;
+    min-width:90px;
+  }
+  .statBox .num{ font-size:22px; font-weight:700; }
+  .statBox .label{ font-size:11px; color:var(--text-sub); margin-top:2px; }
+  #retryBtn{
+    padding:14px 34px;
+    border:none;
+    border-radius:30px;
+    background:linear-gradient(135deg,var(--accent),#e0a93a);
+    color:#1a1a1a;
+    font-weight:700;
+    font-size:15px;
+    box-shadow:0 6px 16px rgba(0,0,0,.4);
+  }
+  #retryBtn:active{ transform:scale(.96); }
+
+  /* 初回説明トースト */
+  #tutorial{
+    position:absolute;
+    bottom:130px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#000a;
+    padding:10px 18px;
+    border-radius:20px;
+    font-size:12px;
+    color:var(--text-sub);
+    white-space:nowrap;
+    animation:fadeInOut 4s ease forwards;
+    z-index:6;
+  }
+  @keyframes fadeInOut{
+    0%{opacity:0;} 10%{opacity:1;} 80%{opacity:1;} 100%{opacity:0;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>今日の振り返り</h1>
+    <div id="progressWrap"><div id="progressBar"></div></div>
+    <div id="counter">0 / 0</div>
+    <div class="zoneLabels">
+      <span class="left">← 感情：手放す</span>
+      <span class="right">事実：受け止める →</span>
+    </div>
+  </header>
+
+  <div id="cardStage">
+    <div id="bgIcons">
+      <div class="icon">🗑️</div>
+      <div class="icon">📥</div>
+    </div>
+    <!-- カードはJSで生成 -->
+  </div>
+
+  <div id="controls">
+    <button class="actionBtn" id="trashBtn">
+      <span>感情</span>
+      <span class="sub">ゴミ箱に捨てる</span>
+    </button>
+    <button class="actionBtn" id="factBtn">
+      <span>事実</span>
+      <span class="sub">受け止める</span>
+    </button>
+  </div>
+</div>
+
+<div id="clearScreen">
+  <h2>振り返り、完了。</h2>
+  <p>感情を否定する必要はありません。<br>ただ、それが「事実」ではないと知っておくだけでいい。</p>
+  <div id="resultStats">
+    <div class="statBox">
+      <div class="num" id="correctNum">0</div>
+      <div class="label">正解</div>
+    </div>
+    <div class="statBox">
+      <div class="num" id="missNum">0</div>
+      <div class="label">仕分けミス</div>
+    </div>
+  </div>
+  <button id="retryBtn">もう一度</button>
+</div>
+
+<script>
+(function(){
+  // ==== データ：事実(fact) と 感情(emotion) を混在させた配列 ====
+  const cardData = [
+    { text: "今日は客数がいつもより多かった", type: "fact" },
+    { text: "シフト中、レジ対応に入った", type: "fact" },
+    { text: "新人スタッフが2人同時に入っていた", type: "fact" },
+    { text: "電話が閉店間際に3件鳴った", type: "fact" },
+    { text: "在庫のドリンクが1種類切れていた", type: "fact" },
+    { text: "閉店作業が予定より15分遅れた", type: "fact" },
+    { text: "先輩なのにこんなこともできないなんて情けない", type: "emotion" },
+    { text: "あの時ああ言えばよかった", type: "emotion" },
+    { text: "自分はダメな人間だ", type: "emotion" },
+    { text: "みんなに迷惑をかけてしまった、最悪だ", type: "emotion" },
+    { text: "なんで自分だけこんなに要領が悪いんだろう", type: "emotion" },
+    { text: "恥ずかしくてもう顔を合わせられない", type: "emotion" }
+  ];
+
+  // シャッフル
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  let deck = [];
+  let index = 0;
+  let correctCount = 0;
+  let missCount = 0;
+  let currentCardEl = null;
+  let dragging = false;
+  let startX = 0, startY = 0, curX = 0, curY = 0;
+  let locked = false; // アニメ中の多重操作防止
+
+  const stage = document.getElementById('cardStage');
+  const progressBar = document.getElementById('progressBar');
+  const counterEl = document.getElementById('counter');
+  const trashBtn = document.getElementById('trashBtn');
+  const factBtn = document.getElementById('factBtn');
+  const clearScreen = document.getElementById('clearScreen');
+  const correctNumEl = document.getElementById('correctNum');
+  const missNumEl = document.getElementById('missNum');
+  const retryBtn = document.getElementById('retryBtn');
+
+  function vibrate(pattern){
+    if(navigator.vibrate){ navigator.vibrate(pattern); }
+  }
+
+  function initGame(){
+    deck = shuffle(cardData);
+    index = 0;
+    correctCount = 0;
+    missCount = 0;
+    clearScreen.classList.remove('show');
+    updateProgress();
+    renderCard();
+    showTutorialOnce();
+  }
+
+  function updateProgress(){
+    const total = deck.length;
+    const done = index;
+    progressBar.style.width = (done/total*100)+'%';
+    counterEl.textContent = `${done} / ${total}`;
+  }
+
+  function renderCard(){
+    if(index >= deck.length){
+      finishGame();
+      return;
+    }
+    // 既存カード除去
+    if(currentCardEl){ currentCardEl.remove(); }
+
+    const data = deck[index];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.type = data.type;
+    card.innerHTML = `
+      <div class="hint emoHint">感情</div>
+      <div class="hint factHint">事実</div>
+      <div class="cardText">${data.text}</div>
+    `;
+    stage.appendChild(card);
+    currentCardEl = card;
+
+    attachDrag(card);
+    locked = false;
+  }
+
+  function attachDrag(card){
+    card.addEventListener('pointerdown', onDown);
+
+    function onDown(e){
+      if(locked) return;
+      dragging = true;
+      card.classList.add('grabbing');
+      startX = e.clientX;
+      startY = e.clientY;
+      card.setPointerCapture(e.pointerId);
+      card.addEventListener('pointermove', onMove);
+      card.addEventListener('pointerup', onUp);
+      card.addEventListener('pointercancel', onUp);
+    }
+
+    function onMove(e){
+      if(!dragging) return;
+      curX = e.clientX - startX;
+      curY = e.clientY - startY;
+      const rot = curX * 0.05;
+      card.style.transform = `translate(${curX}px, ${curY}px) rotate(${rot}deg)`;
+
+      const factHint = card.querySelector('.factHint');
+      const emoHint = card.querySelector('.emoHint');
+      const threshold = 40;
+      if(curX > threshold){
+        factHint.style.opacity = Math.min(1, (curX-threshold)/60);
+        emoHint.style.opacity = 0;
+      } else if(curX < -threshold){
+        emoHint.style.opacity = Math.min(1, (-curX-threshold)/60);
+        factHint.style.opacity = 0;
+      } else {
+        factHint.style.opacity = 0;
+        emoHint.style.opacity = 0;
+      }
+    }
+
+    function onUp(e){
+      if(!dragging) return;
+      dragging = false;
+      card.classList.remove('grabbing');
+      card.removeEventListener('pointermove', onMove);
+      card.removeEventListener('pointerup', onUp);
+      card.removeEventListener('pointercancel', onUp);
+
+      const SWIPE_THRESHOLD = 110;
+      if(curX > SWIPE_THRESHOLD){
+        judge('fact', card);
+      } else if(curX < -SWIPE_THRESHOLD){
+        judge('emotion', card);
+      } else {
+        // 戻す
+        card.style.transform = 'translate(0,0) rotate(0)';
+        card.querySelector('.factHint').style.opacity = 0;
+        card.querySelector('.emoHint').style.opacity = 0;
+      }
+      curX = 0; curY = 0;
+    }
+  }
+
+  // ボタン操作
+  trashBtn.addEventListener('click', () => { if(currentCardEl && !locked) judge('emotion', currentCardEl); });
+  factBtn.addEventListener('click', () => { if(currentCardEl && !locked) judge('fact', currentCardEl); });
+
+  function judge(choice, card){
+    if(locked) return;
+    locked = true;
+    const correctType = card.dataset.type; // 'fact' or 'emotion'
+    const isCorrect = (choice === correctType);
+
+    if(isCorrect){
+      correctCount++;
+      vibrate(15);
+      if(choice === 'fact'){
+        card.classList.add('correct-fact');
+        flyOut(card, 1, showFloatText('受け止めた', 'var(--fact-color)', true));
+      } else {
+        card.classList.add('correct-emotion');
+        flyOut(card, -1, showFloatText('手放した', 'var(--emotion-color)', false));
+      }
+    } else {
+      missCount++;
+      vibrate([30,40,30]);
+      card.classList.add('wrong');
+      setTimeout(() => {
+        card.classList.remove('wrong');
+        card.style.transform = 'translate(0,0) rotate(0)';
+        card.querySelector('.factHint').style.opacity = 0;
+        card.querySelector('.emoHint').style.opacity = 0;
+        locked = false;
+      }, 420);
+      return; // 不正解時はカードを残して再挑戦させる
+    }
+
+    setTimeout(() => {
+      index++;
+      updateProgress();
+      renderCard();
+    }, 380);
+  }
+
+  function flyOut(card, dir, floatEl){
+    const distance = dir * 700;
+    card.style.transition = 'transform .38s ease, opacity .38s ease';
+    card.style.transform = `translate(${distance}px, -40px) rotate(${dir*30}deg)`;
+    card.style.opacity = '0';
+  }
+
+  function showFloatText(text, color, isFact){
+    const el = document.createElement('div');
+    el.className = 'floatText';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.background = isFact ? 'rgba(47,191,163,0.15)' : 'rgba(226,86,107,0.15)';
+    el.style.border = `1px solid ${color}`;
+    el.style.left = isFact ? '60%' : '10%';
+    stage.appendChild(el);
+    requestAnimationFrame(() => {
+      el.style.transition = 'opacity .5s ease, transform .5s ease';
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(-20px)';
+    });
+    setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 400);
+    }, 500);
+    return el;
+  }
+
+  function finishGame(){
+    correctNumEl.textContent = correctCount;
+    missNumEl.textContent = missCount;
+    clearScreen.classList.add('show');
+    sendResultToPortal();
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
+  function sendResultToPortal(){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'fact-emotion',
+        summary: `全${deck.length}枚を仕分け完了！（ミス${missCount}回）`,
+        detail: { total: deck.length, correct: correctCount, miss: missCount }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  retryBtn.addEventListener('click', initGame);
+
+  function showTutorialOnce(){
+    if(sessionStorage.getItem('tutShown')) return;
+    const tip = document.createElement('div');
+    tip.id = 'tutorial';
+    tip.textContent = 'カードをスワイプ、または下のボタンで仕分けよう';
+    document.getElementById('app').appendChild(tip);
+    setTimeout(() => tip.remove(), 4000);
+    sessionStorage.setItem('tutShown', '1');
+  }
+
+  initGame();
+})();
+</script>
+</body>
+</html>

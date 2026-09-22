@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>自己嫌悪ディフェンス</title>
+<style>
+  :root{
+    --night1:#0d0b1e;
+    --night2:#1b1638;
+    --night3:#26204a;
+    --star:#ffffffaa;
+    --monster-bg:#2a2340dd;
+    --monster-border:#6b5a8e;
+    --monster-text:#c9b8e0;
+    --mantra-color:#ffe9a8;
+    --button-night1:#4a3f7a;
+    --button-night2:#241d47;
+    --gauge-start:#7ec9e8;
+    --gauge-end:#a78bfa;
+    --morning-bg1:#eaf6ff;
+    --morning-bg2:#d3ecff;
+    --morning-accent:#ffd76a;
+    --text-main:#e8e2f5;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    font-family:"Hiragino Sans","Yu Gothic","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+
+  #app{
+    position:relative;
+    width:100%; height:100%;
+    background:
+      radial-gradient(circle at 15% 12%, #ffffff14 0%, transparent 3%),
+      radial-gradient(circle at 70% 20%, #ffffff10 0%, transparent 2%),
+      radial-gradient(circle at 40% 65%, #ffffff10 0%, transparent 2%),
+      radial-gradient(circle at 85% 75%, #ffffff10 0%, transparent 2%),
+      linear-gradient(160deg, var(--night1), var(--night2) 55%, var(--night3));
+    transition: background 1.1s ease;
+    color:var(--text-main);
+  }
+  #app.morning{
+    background: linear-gradient(160deg, var(--morning-bg1), var(--morning-bg2));
+    color:#4a3f2a;
+  }
+
+  /* 星（夜のみ） */
+  #stars{ position:absolute; inset:0; z-index:0; transition:opacity .8s ease; }
+  #app.morning #stars{ opacity:0; }
+  .star{
+    position:absolute;
+    width:2px; height:2px;
+    background:var(--star);
+    border-radius:50%;
+    opacity:.7;
+    animation:twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:.25;} 50%{opacity:.9;} }
+
+  /* ヘッダー：ゲージ */
+  #hud{
+    position:absolute; top:0; left:0; right:0;
+    z-index:20;
+    padding:16px 18px 0;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  #hud h1{
+    font-size:13px; letter-spacing:3px; font-weight:700;
+    color:#b7a9e0; margin:0 0 8px; opacity:.85;
+    transition:color .8s ease;
+  }
+  #app.morning #hud h1{ color:#7a8fa8; }
+  #gaugeOuter{
+    width:100%; max-width:420px; height:20px;
+    background:#00000030;
+    border:2px solid #4d3f7a;
+    border-radius:14px;
+    overflow:hidden;
+    position:relative;
+    transition:border-color .8s ease;
+  }
+  #app.morning #gaugeOuter{ border-color:#bcd8ea; background:#ffffff70; }
+  #gaugeInner{
+    height:100%; width:0%;
+    background:linear-gradient(90deg,var(--gauge-start),var(--gauge-end));
+    transition:width .25s ease;
+    position:relative;
+  }
+  #gaugeInner::after{
+    content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(45deg, rgba(255,255,255,.25) 0 8px, transparent 8px 16px);
+  }
+  #gaugePercent{
+    position:absolute; right:10px; top:0; bottom:0;
+    display:flex; align-items:center;
+    font-size:12px; font-weight:700; color:#fff; z-index:2;
+  }
+
+  /* モンスター（自己嫌悪テキスト） */
+  #monsterLayer{ position:absolute; inset:0; z-index:5; overflow:hidden; }
+  .monster{
+    position:absolute;
+    max-width:150px;
+    padding:8px 12px;
+    background:var(--monster-bg);
+    border:1px solid var(--monster-border);
+    border-radius:14px;
+    color:var(--monster-text);
+    font-size:12.5px;
+    font-weight:600;
+    line-height:1.4;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.35);
+    pointer-events:none;
+    will-change:transform;
+    white-space:normal;
+  }
+  .monster.blasted{
+    transition:transform .5s cubic-bezier(.2,.7,.3,1), opacity .5s ease;
+    opacity:0;
+  }
+
+  /* 中央ボタン */
+  #buttonWrap{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    z-index:15;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  #centerButton{
+    width:168px; height:168px;
+    border-radius:50%;
+    border:none;
+    background:radial-gradient(circle at 35% 30%, var(--button-night1), var(--button-night2));
+    box-shadow:
+      0 0 0 8px rgba(255,255,255,.05),
+      0 10px 30px rgba(0,0,0,.5),
+      inset 0 0 20px rgba(255,255,255,.08);
+    color:#f2eeff;
+    font-size:34px;
+    font-weight:900;
+    letter-spacing:2px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .08s ease, background 1s ease, box-shadow 1s ease;
+  }
+  #centerButton:active{ transform:scale(.93); }
+  #centerButton .sub{ font-size:13px; font-weight:700; letter-spacing:3px; opacity:.85; }
+  #app.morning #centerButton{
+    background:radial-gradient(circle at 35% 30%, #fff2c2, var(--morning-accent));
+    color:#6a4f16;
+    box-shadow:
+      0 0 0 8px rgba(255,215,106,.25),
+      0 10px 30px rgba(0,0,0,.15),
+      inset 0 0 20px rgba(255,255,255,.4);
+  }
+
+  /* ショックウェーブ（連打の吹き飛ばし演出） */
+  .shockwave{
+    position:absolute;
+    left:50%; top:50%;
+    width:20px; height:20px;
+    margin:-10px 0 0 -10px;
+    border-radius:50%;
+    border:3px solid #a9c9ffcc;
+    pointer-events:none;
+    z-index:12;
+    animation:shockExpand .55s ease-out forwards;
+  }
+  @keyframes shockExpand{
+    0%{ opacity:.9; transform:scale(0.2); }
+    100%{ opacity:0; transform:scale(16); }
+  }
+
+  /* マントラ（ポジティブ言葉）ポップ */
+  .mantra{
+    position:absolute;
+    font-size:15px;
+    font-weight:800;
+    color:var(--mantra-color);
+    text-shadow:0 2px 6px rgba(0,0,0,.4);
+    pointer-events:none;
+    z-index:18;
+    animation:mantraPop 1s ease forwards;
+    white-space:nowrap;
+  }
+  #app.morning .mantra{ color:#c9891a; text-shadow:none; }
+  @keyframes mantraPop{
+    0%{ opacity:0; transform:translate(-50%,0) scale(.6); }
+    18%{ opacity:1; transform:translate(-50%,-10px) scale(1.08); }
+    100%{ opacity:0; transform:translate(-50%,-90px) scale(1); }
+  }
+
+  /* 朝の光フラッシュ */
+  #flash{
+    position:fixed; inset:0;
+    background:#fff;
+    opacity:0;
+    z-index:40;
+    pointer-events:none;
+  }
+  #flash.on{ animation:flashFire .9s ease-out forwards; }
+  @keyframes flashFire{
+    0%{ opacity:0; }
+    12%{ opacity:1; }
+    100%{ opacity:0; }
+  }
+
+  /* リザルト画面 */
+  #resultScreen{
+    position:fixed; inset:0;
+    background:rgba(255,255,255,.85);
+    backdrop-filter: blur(2px);
+    display:none;
+    align-items:center; justify-content:center; flex-direction:column;
+    z-index:50; text-align:center; padding:26px;
+  }
+  #resultScreen.show{ display:flex; }
+  #resultIcon{
+    font-size:60px;
+    margin-bottom:6px;
+    animation:iconPop .5s cubic-bezier(.3,1.6,.4,1);
+  }
+  @keyframes iconPop{
+    0%{ transform:scale(0) rotate(-10deg); opacity:0; }
+    70%{ transform:scale(1.15) rotate(3deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0); }
+  }
+  #resultScreen h2{
+    font-size:24px; color:#6a5a3a; margin:2px 0 10px; font-weight:800;
+  }
+  #resultScreen p{
+    font-size:14px; line-height:1.9; color:#8a7a5a; max-width:320px; margin:0 0 22px;
+  }
+  #statsRow{ display:flex; gap:16px; margin-bottom:22px; }
+  .statBox{
+    background:#ffffffb0;
+    border:1px solid #e8d8b0;
+    border-radius:14px;
+    padding:11px 18px;
+    min-width:96px;
+  }
+  .statBox .num{ font-size:20px; font-weight:800; color:#c9891a; }
+  .statBox .label{ font-size:10.5px; color:#a8916a; margin-top:2px; }
+  #retryBtn{
+    padding:14px 36px;
+    border:none; border-radius:30px;
+    background:linear-gradient(160deg,#ffd76a,#e0a93a);
+    color:#4a2f10; font-weight:700; font-size:15px;
+    box-shadow:0 6px 0 #a97c1e, 0 10px 16px rgba(0,0,0,.2);
+  }
+  #retryBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #a97c1e; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="stars"></div>
+
+  <div id="hud">
+    <h1>自己嫌悪ディフェンス</h1>
+    <div id="gaugeOuter">
+      <div id="gaugeInner"></div>
+      <div id="gaugePercent">0%</div>
+    </div>
+  </div>
+
+  <div id="monsterLayer"></div>
+
+  <div id="buttonWrap">
+    <button id="centerButton">
+      Zzz
+      <span class="sub">寝る</span>
+    </button>
+  </div>
+</div>
+
+<div id="flash"></div>
+
+<div id="resultScreen">
+  <div id="resultIcon">☀️</div>
+  <h2>リセット完了！どうでもよくなった！</h2>
+  <p>
+    ぐるぐる考えていたことも、寝てしまえばこっちのもの。<br>
+    朝になれば、たいていのことはどうでもよくなる。
+  </p>
+  <div id="statsRow">
+    <div class="statBox">
+      <div class="num" id="clickNum">0</div>
+      <div class="label">連打回数</div>
+    </div>
+    <div class="statBox">
+      <div class="num" id="blastNum">0</div>
+      <div class="label">吹き飛ばした数</div>
+    </div>
+  </div>
+  <button id="retryBtn">また眠る</button>
+</div>
+
+<script>
+(function(){
+  const app = document.getElementById('app');
+  const starsLayer = document.getElementById('stars');
+  const gaugeInner = document.getElementById('gaugeInner');
+  const gaugePercent = document.getElementById('gaugePercent');
+  const monsterLayer = document.getElementById('monsterLayer');
+  const centerButton = document.getElementById('centerButton');
+  const buttonWrap = document.getElementById('buttonWrap');
+  const flash = document.getElementById('flash');
+  const resultScreen = document.getElementById('resultScreen');
+  const clickNumEl = document.getElementById('clickNum');
+  const blastNumEl = document.getElementById('blastNum');
+  const retryBtn = document.getElementById('retryBtn');
+
+  const negativeTexts = [
+    "なんであんな言い方しか…",
+    "また空気読めなかった",
+    "嫌な顔してなかったかな",
+    "言い過ぎたかも",
+    "もっと優しくできたのに",
+    "素直になれなかった",
+    "変に思われたかな",
+    "誤解させたかも",
+    "あの間、気まずかったな",
+    "失礼だったかな",
+    "もっと違う言い方があった",
+    "ちゃんと伝えられなかった",
+    "また余計なこと言った",
+    "なんで黙っちゃったんだろう",
+    "ずっと引きずってる"
+  ];
+
+  const mantraTexts = [
+    "まあいっか！",
+    "寝たら忘れる！",
+    "気にしない気にしない！",
+    "なるようになる！",
+    "明日の自分に任せた！",
+    "考えすぎ考えすぎ！",
+    "もう寝る！",
+    "それはそれ！",
+    "誰も気にしてない！",
+    "おやすみなさい！",
+    "今日はもう終わり！",
+    "大丈夫、大丈夫！"
+  ];
+
+  function rand(min, max){ return min + Math.random() * (max - min); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // ===== 星の生成 =====
+  function createStars(){
+    const count = 46;
+    for(let i=0;i<count;i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = rand(0,100) + '%';
+      s.style.top = rand(0,90) + '%';
+      const size = rand(1,2.6);
+      s.style.width = size+'px';
+      s.style.height = size+'px';
+      s.style.animationDelay = rand(0,3)+'s';
+      starsLayer.appendChild(s);
+    }
+  }
+  createStars();
+
+  // ===== ゲーム状態 =====
+  let gauge = 0;
+  let clickCount = 0;
+  let blastCount = 0;
+  let cleared = false;
+  let monsters = [];
+  let spawnTimer = null;
+  let rafId = null;
+  let lastTs = null;
+  let monsterIdSeq = 0;
+
+  const GAUGE_MAX = 100;
+
+  function updateGaugeUI(){
+    gaugeInner.style.width = gauge + '%';
+    gaugePercent.textContent = Math.floor(gauge) + '%';
+  }
+
+  function getCenter(){
+    return { cx: window.innerWidth/2, cy: window.innerHeight/2 };
+  }
+
+  function spawnMonster(){
+    if(cleared) return;
+    const w = window.innerWidth, h = window.innerHeight;
+    const edge = pick(['top','bottom','left','right']);
+    let x, y;
+    const margin = 90;
+    if(edge === 'top'){ x = rand(20, w-20); y = -margin; }
+    else if(edge === 'bottom'){ x = rand(20, w-20); y = h + margin; }
+    else if(edge === 'left'){ x = -margin; y = rand(40, h-40); }
+    else { x = w + margin; y = rand(40, h-40); }
+
+    const { cx, cy } = getCenter();
+    let dx = cx - x, dy = cy - y;
+    const dist = Math.max(1, Math.hypot(dx, dy));
+    dx /= dist; dy /= dist;
+    const speed = rand(14, 24); // px/秒（ゆっくり迫る）
+
+    const el = document.createElement('div');
+    el.className = 'monster';
+    el.textContent = pick(negativeTexts);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.transform = `translate(-50%,-50%) rotate(${rand(-6,6)}deg)`;
+    monsterLayer.appendChild(el);
+
+    const monster = {
+      id: ++monsterIdSeq,
+      el, x, y,
+      vx: dx*speed, vy: dy*speed,
+      blasted:false
+    };
+    monsters.push(monster);
+  }
+
+  function scheduleSpawn(){
+    if(cleared) return;
+    spawnMonster();
+    const nextDelay = rand(750, 1400);
+    spawnTimer = setTimeout(scheduleSpawn, nextDelay);
+  }
+
+  function gameLoop(ts){
+    if(lastTs === null) lastTs = ts;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    const { cx, cy } = getCenter();
+
+    monsters.forEach(m => {
+      if(m.blasted) return;
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      m.el.style.left = m.x + 'px';
+      m.el.style.top = m.y + 'px';
+
+      const dist = Math.hypot(cx - m.x, cy - m.y);
+      if(dist < 60){
+        // 中心に到達 → 静かに消える（ペナルティなし）
+        m.blasted = true;
+        m.el.classList.add('blasted');
+        m.el.style.opacity = '0';
+        setTimeout(() => { if(m.el.parentNode) m.el.parentNode.removeChild(m.el); }, 500);
+      }
+    });
+
+    monsters = monsters.filter(m => !(m.blasted && !m.el.parentNode));
+
+    if(!cleared){
+      rafId = requestAnimationFrame(gameLoop);
+    }
+  }
+
+  function spawnShockwave(){
+    const sw = document.createElement('div');
+    sw.className = 'shockwave';
+    document.getElementById('app').appendChild(sw);
+    setTimeout(() => sw.remove(), 600);
+  }
+
+  function spawnMantra(){
+    const rect = centerButton.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'mantra';
+    el.textContent = pick(mantraTexts);
+    const angle = rand(0, Math.PI*2);
+    const radius = rand(10, 40);
+    const px = rect.left + rect.width/2 + Math.cos(angle)*radius;
+    const py = rect.top + rect.height/2 + Math.sin(angle)*radius - 20;
+    el.style.left = px + 'px';
+    el.style.top = py + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+
+  function blastAllMonsters(){
+    const { cx, cy } = getCenter();
+    monsters.forEach(m => {
+      if(m.blasted) return;
+      m.blasted = true;
+      blastCount++;
+      let dx = m.x - cx, dy = m.y - cy;
+      const dist = Math.max(1, Math.hypot(dx,dy));
+      dx /= dist; dy /= dist;
+      const flingDist = 500;
+      m.el.classList.add('blasted');
+      m.el.style.transform = `translate(-50%,-50%) translate(${dx*flingDist}px, ${dy*flingDist}px) rotate(${rand(-90,90)}deg) scale(.6)`;
+      const elRef = m.el;
+      setTimeout(() => { if(elRef.parentNode) elRef.parentNode.removeChild(elRef); }, 550);
+    });
+    monsters = [];
+  }
+
+  function onButtonClick(){
+    if(cleared) return;
+    clickCount++;
+
+    const step = rand(4, 9);
+    gauge = Math.min(GAUGE_MAX, gauge + step);
+    updateGaugeUI();
+
+    blastAllMonsters();
+    spawnShockwave();
+    spawnMantra();
+
+    centerButton.style.transform = 'scale(.9)';
+    setTimeout(() => { centerButton.style.transform = ''; }, 100);
+
+    if(gauge >= GAUGE_MAX){
+      triggerMorning();
+    }
+  }
+
+  function triggerMorning(){
+    cleared = true;
+    clearTimeout(spawnTimer);
+    if(rafId) cancelAnimationFrame(rafId);
+
+    blastAllMonsters();
+
+    app.classList.add('morning');
+    flash.classList.add('on');
+
+    setTimeout(() => {
+      clickNumEl.textContent = clickCount;
+      blastNumEl.textContent = blastCount;
+      resultScreen.classList.add('show');
+      sendResultToPortal();
+    }, 900);
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
+  function sendResultToPortal(){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'jikoken-defense',
+        summary: `連打${clickCount}回で朝を迎えた！（吹き飛ばした数${blastCount}）`,
+        detail: { clicks: clickCount, blasts: blastCount }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function resetGame(){
+    cleared = false;
+    gauge = 0;
+    clickCount = 0;
+    blastCount = 0;
+    monsters.forEach(m => { if(m.el.parentNode) m.el.parentNode.removeChild(m.el); });
+    monsters = [];
+    updateGaugeUI();
+
+    app.classList.remove('morning');
+    flash.classList.remove('on');
+    resultScreen.classList.remove('show');
+
+    lastTs = null;
+    clearTimeout(spawnTimer);
+    scheduleSpawn();
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  centerButton.addEventListener('click', onButtonClick);
+  retryBtn.addEventListener('click', resetGame);
+
+  // ===== 初期化 =====
+  updateGaugeUI();
+  scheduleSpawn();
+  rafId = requestAnimationFrame(gameLoop);
+})();
+</script>
+</body>
+</html>

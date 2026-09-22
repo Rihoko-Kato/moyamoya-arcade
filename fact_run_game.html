@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FACT ラン</title>
+<style>
+  :root{
+    --sky1:#8ed1f0;
+    --sky2:#cdeeff;
+    --sun:#ffe066;
+    --ground1:#7ec850;
+    --ground2:#5fae3b;
+    --dirt1:#c99a5b;
+    --dirt2:#b6813f;
+    --player:#ff9b54;
+    --player-dark:#e07a30;
+    --wall1:#ffb3c6;
+    --wall2:#b3e5ff;
+    --wall3:#ffe08a;
+    --wall4:#c6f0c2;
+    --ink:#3a3a3a;
+    --accent:#ff6b6b;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    font-family:"Hiragino Sans","Yu Gothic","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    color:var(--ink);
+  }
+
+  #stage{
+    position:relative;
+    width:100%; height:100%;
+    background:linear-gradient(180deg, var(--sky1), var(--sky2) 70%);
+    overflow:hidden;
+  }
+  #stage.shake{ animation:shake .35s ease; }
+  @keyframes shake{
+    0%,100%{ transform:translate(0,0); }
+    20%{ transform:translate(-8px,3px); }
+    40%{ transform:translate(8px,-3px); }
+    60%{ transform:translate(-6px,3px); }
+    80%{ transform:translate(6px,-2px); }
+  }
+
+  /* 太陽 */
+  #sun{
+    position:absolute; top:8%; right:12%;
+    width:70px; height:70px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff6c9, var(--sun));
+    box-shadow:0 0 0 10px rgba(255,224,102,.35), 0 0 40px rgba(255,224,102,.5);
+    z-index:1;
+  }
+
+  /* 雲（CSSアニメでゆったり流れる） */
+  .cloud{
+    position:absolute;
+    background:#fff;
+    border-radius:50px;
+    opacity:.9;
+    z-index:1;
+  }
+  .cloud::before, .cloud::after{
+    content:"";
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+  }
+  #cloud1{ width:90px; height:32px; top:14%; left:-120px; animation:cloudMove 16s linear infinite; }
+  #cloud1::before{ width:46px; height:46px; top:-22px; left:10px; }
+  #cloud1::after{ width:34px; height:34px; top:-14px; left:44px; }
+  #cloud2{ width:70px; height:26px; top:26%; left:-160px; animation:cloudMove 22s linear infinite; animation-delay:-6s; }
+  #cloud2::before{ width:36px; height:36px; top:-18px; left:8px; }
+  #cloud2::after{ width:26px; height:26px; top:-10px; left:36px; }
+  #cloud3{ width:60px; height:22px; top:8%; left:-100px; animation:cloudMove 19s linear infinite; animation-delay:-12s; }
+  #cloud3::before{ width:30px; height:30px; top:-14px; left:6px; }
+  #cloud3::after{ width:22px; height:22px; top:-8px; left:30px; }
+  @keyframes cloudMove{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(calc(100vw + 260px)); }
+  }
+  #stage.crashed .cloud{ animation-play-state:paused; }
+
+  /* 地面 */
+  #ground{
+    position:absolute; left:0; right:0; bottom:0;
+    height:92px;
+    background:
+      linear-gradient(180deg, var(--ground1) 0 14px, var(--dirt1) 14px 100%);
+    z-index:2;
+    border-top:4px solid var(--ground2);
+  }
+  #groundStripes{
+    position:absolute; inset:14px 0 0 0;
+    background-image:repeating-linear-gradient(90deg, var(--dirt2) 0 26px, transparent 26px 52px);
+    background-size:52px 100%;
+  }
+
+  /* プレイヤー */
+  #player{
+    position:absolute;
+    left:70px;
+    bottom:92px;
+    width:44px; height:44px;
+    background:linear-gradient(160deg, #ffcf94, var(--player));
+    border:3px solid var(--player-dark);
+    border-radius:12px;
+    z-index:5;
+    will-change:transform;
+  }
+  #player .face{
+    position:absolute; inset:0;
+  }
+  #player .eye{
+    position:absolute; top:13px; width:6px; height:7px; background:var(--ink); border-radius:50%;
+  }
+  #player .eye.l{ left:10px; }
+  #player .eye.r{ left:24px; }
+  #player .mouth{
+    position:absolute; left:12px; top:24px; width:16px; height:8px;
+    border-bottom:3px solid var(--ink); border-radius:0 0 10px 10px;
+  }
+  #player.running{ animation:runBob .3s ease-in-out infinite; }
+  @keyframes runBob{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-3px) rotate(-2deg); }
+  }
+  #player.crashed{
+    animation:none;
+    transform:rotate(90deg) translateY(4px);
+    transition:transform .3s ease;
+  }
+
+  /* プレイヤーの影（高さに応じて縮小・薄くなる＝浮遊感） */
+  #playerShadow{
+    position:absolute;
+    left:70px;
+    bottom:90px;
+    width:40px; height:12px;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,.35), transparent 75%);
+    border-radius:50%;
+    z-index:4;
+    transform-origin:center;
+    pointer-events:none;
+  }
+
+  /* 砂ぼこり（ジャンプ・着地の反動演出） */
+  .dust{
+    position:absolute;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:rgba(255,255,255,.85);
+    z-index:6;
+    pointer-events:none;
+    animation:dustPuff .5s ease-out forwards;
+  }
+  @keyframes dustPuff{
+    0%{ opacity:.9; transform:translate(0,0) scale(1); }
+    100%{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(1.8); }
+  }
+
+  /* 空中のモーション線（飛んでる感を強調） */
+  .jumpTrail{
+    position:absolute;
+    width:26px; height:10px;
+    border-radius:6px;
+    background:rgba(255,255,255,.55);
+    z-index:4;
+    pointer-events:none;
+    animation:trailFade .4s ease-out forwards;
+  }
+  @keyframes trailFade{
+    0%{ opacity:.7; transform:scaleX(1); }
+    100%{ opacity:0; transform:scaleX(.3) translateX(-14px); }
+  }
+
+  /* ジャンプ中の表情（目を見開く） */
+  #player.airborne .eye{ height:9px; top:11px; }
+  #player.airborne .mouth{ width:12px; height:10px; border-radius:50%; border:3px solid var(--ink); border-bottom:none; top:23px; }
+
+  #wall{
+    position:absolute;
+    bottom:92px;
+    width:76px;
+    height:100vh;
+    z-index:4;
+    background:repeating-linear-gradient(
+      180deg,
+      var(--wall1) 0 34px,
+      var(--wall2) 34px 68px,
+      var(--wall3) 68px 102px,
+      var(--wall4) 102px 136px
+    );
+    border-left:4px solid #fff8;
+    border-right:4px solid #0002;
+    border-radius:6px;
+    box-shadow:0 0 0 3px #ffffffaa inset;
+  }
+
+  /* FACTテキスト */
+  #factText{
+    position:absolute;
+    left:50%; top:38%;
+    transform:translate(-50%,-50%) scale(0);
+    z-index:20;
+    font-size:0;
+    font-weight:900;
+    letter-spacing:6px;
+    pointer-events:none;
+  }
+  #factText span{
+    display:inline-block;
+    font-size:min(20vw, 110px);
+    background:linear-gradient(135deg,#ff8ba7,#ffd36e,#8fe3a3,#7ec8f0);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 6px 0 rgba(0,0,0,.08);
+  }
+  #factText.pop{
+    animation:factPop .6s cubic-bezier(.3,1.7,.4,1) forwards;
+  }
+  @keyframes factPop{
+    0%{ transform:translate(-50%,-50%) scale(0) rotate(-8deg); }
+    60%{ transform:translate(-50%,-50%) scale(1.15) rotate(3deg); }
+    100%{ transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+  }
+  #factSub{
+    position:absolute;
+    left:50%; top:54%;
+    transform:translate(-50%,0);
+    z-index:20;
+    font-size:14px;
+    font-weight:700;
+    color:#5a5a5a;
+    background:#ffffffcc;
+    padding:6px 16px;
+    border-radius:20px;
+    opacity:0;
+    white-space:nowrap;
+  }
+  #factSub.show{ animation:factSubIn .4s ease forwards .4s; }
+  @keyframes factSubIn{ from{opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);} }
+
+  /* 紙吹雪 */
+  .confetti{
+    position:absolute;
+    width:9px; height:14px;
+    z-index:15;
+    border-radius:2px;
+    animation:confettiFall 1.4s ease-out forwards;
+  }
+  @keyframes confettiFall{
+    0%{ opacity:1; transform:translate(0,0) rotate(0deg); }
+    100%{ opacity:0; transform:translate(var(--cx), var(--cy)) rotate(var(--cr)); }
+  }
+
+  /* HUD */
+  #hud{
+    position:absolute; top:14px; left:14px; z-index:10;
+    background:#ffffffaa; padding:8px 14px; border-radius:16px;
+    font-size:13px; font-weight:700; color:#4a4a4a;
+  }
+
+  /* タップ案内 */
+  #tapHint{
+    position:absolute; bottom:110px; left:50%; transform:translateX(-50%);
+    z-index:10; font-size:12px; font-weight:700; color:#4a4a4a;
+    background:#ffffffb0; padding:6px 14px; border-radius:14px;
+    animation:hintFade 2.2s ease forwards;
+    pointer-events:none;
+  }
+  @keyframes hintFade{ 0%{opacity:1;} 80%{opacity:1;} 100%{opacity:0;} }
+
+  /* リザルト画面 */
+  #resultScreen{
+    position:fixed; inset:0;
+    background:rgba(255,255,255,.6);
+    backdrop-filter:blur(2px);
+    display:none;
+    align-items:center; justify-content:center; flex-direction:column;
+    z-index:50; text-align:center; padding:26px;
+  }
+  #resultScreen.show{ display:flex; }
+  #resultCard{
+    background:#fffdf6;
+    border:3px solid #ffe08a;
+    border-radius:26px;
+    padding:30px 28px 26px;
+    max-width:340px;
+    box-shadow:0 20px 40px rgba(0,0,0,.15);
+    animation:cardPop .5s cubic-bezier(.3,1.6,.4,1);
+  }
+  @keyframes cardPop{
+    0%{ transform:scale(.7) translateY(20px); opacity:0; }
+    100%{ transform:scale(1) translateY(0); opacity:1; }
+  }
+  #resultCard .flatReport{
+    font-size:13px; color:#8a8a8a; font-weight:700;
+    background:#f0f0f0; border-radius:12px; padding:8px 14px;
+    display:inline-block; margin-bottom:16px;
+  }
+  #resultCard h2{
+    font-size:19px; margin:0 0 16px; color:#4a4a4a;
+  }
+  .factRow{
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(135deg,#fff3d6,#e8f7ff);
+    border-radius:14px;
+    padding:12px 16px;
+    margin-bottom:10px;
+    text-align:left;
+  }
+  .factRow .icon{ font-size:22px; }
+  .factRow .txt{ font-size:14px; font-weight:700; color:#4a4a4a; }
+  .factRow .txt b{ color:var(--accent); font-size:16px; }
+  #retryBtn{
+    margin-top:14px;
+    padding:14px 34px; border:none; border-radius:28px;
+    background:linear-gradient(160deg,#ffb3c6,#ff8ba7);
+    color:#fff; font-weight:800; font-size:15px; letter-spacing:1px;
+    box-shadow:0 6px 0 #e0728f, 0 10px 16px rgba(0,0,0,.15);
+  }
+  #retryBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #e0728f; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="sun"></div>
+  <div class="cloud" id="cloud1"></div>
+  <div class="cloud" id="cloud2"></div>
+  <div class="cloud" id="cloud3"></div>
+
+  <div id="hud">🏃 走行中…</div>
+  <div id="tapHint">画面をタップしてジャンプ！</div>
+
+  <div id="wall"></div>
+
+  <div id="playerShadow"></div>
+  <div id="player" class="running">
+    <div class="face">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+  </div>
+
+  <div id="ground"><div id="groundStripes"></div></div>
+
+  <div id="factText" class="mincho"><span>FACT</span></div>
+  <div id="factSub">巨大な壁にぶつかりました（事実）</div>
+</div>
+
+<div id="resultScreen">
+  <div id="resultCard">
+    <div class="flatReport">巨大な壁にぶつかりました（事実）</div>
+    <h2>行動の記録</h2>
+    <div class="factRow">
+      <div class="icon">⏱️</div>
+      <div class="txt">でも <b id="statTime">0.0</b> 秒間走ったね！</div>
+    </div>
+    <div class="factRow">
+      <div class="icon">🦘</div>
+      <div class="txt">ジャンプボタンを <b id="statJump">0</b> 回押したね！</div>
+    </div>
+    <button id="retryBtn">もう一度走る</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const player = document.getElementById('player');
+  const playerShadow = document.getElementById('playerShadow');
+  const wall = document.getElementById('wall');
+  const groundStripes = document.getElementById('groundStripes');
+  const factText = document.getElementById('factText');
+  const factSub = document.getElementById('factSub');
+  const resultScreen = document.getElementById('resultScreen');
+  const statTime = document.getElementById('statTime');
+  const statJump = document.getElementById('statJump');
+  const retryBtn = document.getElementById('retryBtn');
+  const tapHint = document.getElementById('tapHint');
+  const hud = document.getElementById('hud');
+
+  const SPEED = 230;          // px/秒（ワールドのスクロール速度）
+  const GRAVITY = 1900;       // px/秒^2（少し低くして滞空時間を伸ばす）
+  const JUMP_VELOCITY = -840; // px/秒（高く跳ぶ）
+  const MAX_HEIGHT_REF = 240; // 影の縮小・伸縮演出の基準高さ
+  const PLAYER_X = 70;
+  const PLAYER_W = 44;
+
+  let cameraX = 0;
+  let wallWorldX = 0;
+  let playerOffsetY = 0; // 地面からの高さ（正の値＝上）
+  let vy = 0;
+  let grounded = true;
+  let jumpCount = 0;
+  let crashed = false;
+  let lastTs = null;
+  let rafId = null;
+  let trailTimer = 0;
+  let wasGrounded = true;
+
+  function rand(min,max){ return min + Math.random()*(max-min); }
+
+  function initRun(){
+    cameraX = 0;
+    wallWorldX = SPEED * rand(4.0, 5.0); // 開始数秒後、必ず出現する壁
+    playerOffsetY = 0;
+    vy = 0;
+    grounded = true;
+    jumpCount = 0;
+    crashed = false;
+    lastTs = null;
+
+    stage.classList.remove('crashed');
+    player.classList.remove('crashed');
+    player.classList.remove('airborne');
+    player.classList.add('running');
+    player.style.transition = '';
+    playerShadow.style.transform = 'scale(1,1)';
+    playerShadow.style.opacity = '0.35';
+    trailTimer = 0;
+    wasGrounded = true;
+    player.style.transform = '';
+    factText.classList.remove('pop');
+    factText.style.transform = 'translate(-50%,-50%) scale(0)';
+    factSub.classList.remove('show');
+    factSub.style.opacity = '0';
+    resultScreen.classList.remove('show');
+    hud.textContent = '🏃 走行中…';
+    tapHint.style.animation = 'none';
+    void tapHint.offsetWidth;
+    tapHint.style.animation = '';
+
+    document.querySelectorAll('.confetti').forEach(c => c.remove());
+
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function spawnDust(count){
+    const rect = player.getBoundingClientRect();
+    const fx = rect.left + rect.width/2;
+    const fy = rect.bottom - 4;
+    for(let i=0;i<count;i++){
+      const d = document.createElement('div');
+      d.className = 'dust';
+      d.style.left = fx + 'px';
+      d.style.top = fy + 'px';
+      const angle = rand(Math.PI*0.15, Math.PI*0.85);
+      const dist = rand(16, 40);
+      d.style.setProperty('--dx', (Math.cos(angle)*dist*-1) + 'px');
+      d.style.setProperty('--dy', (-Math.sin(angle)*dist*0.4) + 'px');
+      stage.appendChild(d);
+      setTimeout(() => d.remove(), 520);
+    }
+  }
+
+  function spawnTrail(){
+    const rect = player.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const t = document.createElement('div');
+    t.className = 'jumpTrail';
+    t.style.left = (rect.left - stageRect.left - 4) + 'px';
+    t.style.top = (rect.top - stageRect.top + rect.height/2 - 5) + 'px';
+    stage.appendChild(t);
+    setTimeout(() => t.remove(), 420);
+  }
+
+  function doJump(){
+    if(crashed) return;
+    if(grounded){
+      vy = JUMP_VELOCITY;
+      grounded = false;
+      jumpCount++;
+      spawnDust(9);
+      player.classList.remove('running');
+    }
+  }
+
+  function loop(ts){
+    if(lastTs === null) lastTs = ts;
+    const dt = Math.min(0.032, (ts - lastTs)/1000);
+    lastTs = ts;
+
+    if(!crashed){
+      cameraX += SPEED * dt;
+
+      // プレイヤーの上下運動
+      vy += GRAVITY * dt;
+      playerOffsetY -= vy * dt;
+      wasGrounded = grounded;
+      if(playerOffsetY <= 0){
+        playerOffsetY = 0;
+        vy = 0;
+        if(!grounded){
+          grounded = true;
+          spawnDust(10);
+          player.classList.remove('airborne');
+          player.style.transform = 'translateY(0) scale(1.28, 0.72)';
+          requestAnimationFrame(() => {
+            player.style.transition = 'transform .16s cubic-bezier(.3,1.6,.4,1)';
+            player.style.transform = 'translateY(0) scale(1,1)';
+            setTimeout(() => {
+              player.style.transition = '';
+              player.style.transform = '';
+              player.classList.add('running');
+            }, 170);
+          });
+        }
+      } else {
+        player.classList.add('airborne');
+
+        // 伸縮（上昇中は縦に伸び、落下中は少し潰れる）でジャンプの勢いを強調
+        const vyNorm = Math.max(-1, Math.min(1, -vy / 900));
+        const scaleY = 1 + vyNorm * 0.30;
+        const scaleX = 1 - vyNorm * 0.20;
+        const tilt = vyNorm * 10; // 上昇中は少し反り、落下中は前のめりに
+
+        player.style.transform =
+          `translateY(${-playerOffsetY}px) rotate(${-tilt}deg) scale(${scaleX}, ${scaleY})`;
+
+        // 影：高さが増すほど小さく・薄くなる＝浮いている感を強調
+        const heightRatio = Math.min(1, playerOffsetY / MAX_HEIGHT_REF);
+        playerShadow.style.transform = `scale(${1 - heightRatio*0.65}, ${1 - heightRatio*0.65})`;
+        playerShadow.style.opacity = (0.35 - heightRatio*0.28).toFixed(2);
+
+        // モーション線を一定間隔で放出
+        trailTimer += dt;
+        if(trailTimer > 0.07){
+          trailTimer = 0;
+          spawnTrail();
+        }
+      }
+
+      if(grounded){
+        playerShadow.style.transform = 'scale(1,1)';
+        playerShadow.style.opacity = '0.35';
+      }
+
+      // 壁の位置更新
+      const wallScreenX = wallWorldX - cameraX;
+      wall.style.left = wallScreenX + 'px';
+
+      // 地面の縞模様スクロール
+      groundStripes.style.backgroundPositionX = (-cameraX) + 'px';
+
+      // 衝突判定（縦位置に関わらず、横に重なったら必ずヒット＝絶対回避不能）
+      if(wallScreenX <= PLAYER_X + PLAYER_W){
+        triggerCrash();
+      }
+    }
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function spawnConfetti(){
+    const colors = ['#ff8ba7','#ffd36e','#8fe3a3','#7ec8f0','#c9a8f0'];
+    const originX = window.innerWidth/2;
+    const originY = window.innerHeight * 0.38;
+    for(let i=0;i<28;i++){
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.left = originX + 'px';
+      c.style.top = originY + 'px';
+      const angle = rand(0, Math.PI*2);
+      const dist = rand(80, 260);
+      c.style.setProperty('--cx', Math.cos(angle)*dist + 'px');
+      c.style.setProperty('--cy', (Math.sin(angle)*dist - rand(20,80)) + 'px');
+      c.style.setProperty('--cr', rand(-360,360) + 'deg');
+      stage.appendChild(c);
+      setTimeout(() => c.remove(), 1450);
+    }
+  }
+
+  function triggerCrash(){
+    if(crashed) return;
+    crashed = true;
+    const elapsed = cameraX / SPEED;
+
+    player.classList.remove('running');
+    player.classList.add('crashed');
+    stage.classList.add('crashed');
+
+    stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake');
+    hud.textContent = '💥 到達！';
+
+    spawnConfetti();
+
+    factText.classList.add('pop');
+    factSub.classList.add('show');
+
+    setTimeout(() => {
+      statTime.textContent = elapsed.toFixed(1);
+      statJump.textContent = jumpCount;
+      resultScreen.classList.add('show');
+      sendResultToPortal(elapsed);
+    }, 1300);
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
+  function sendResultToPortal(elapsed){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'fact-run',
+        summary: `${elapsed.toFixed(1)}秒間走った！（ジャンプ${jumpCount}回）`,
+        detail: { time: Number(elapsed.toFixed(1)), jumps: jumpCount }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function onTap(e){
+    if(e.target.closest('#resultScreen')) return;
+    doJump();
+  }
+
+  stage.addEventListener('pointerdown', onTap);
+  retryBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    initRun();
+  });
+
+  initRun();
+})();
+</script>
+</body>
+</html>

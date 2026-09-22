@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>モヤモヤ納品</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo-deep:#1f3350;
+    --indigo-mid:#2e4a70;
+    --indigo-line:#4a6a94;
+    --washi-cream:#f6efe0;
+    --washi-cream-dark:#e8dcc0;
+    --gold:#c9a227;
+    --gold-light:#e6c869;
+    --vermillion:#b23a2f;
+    --vermillion-dark:#8a2a22;
+    --charcoal:#3a332a;
+    --bg-paper:#efe6d8;
+    --bg-paper2:#e6dbc4;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    font-family:"Zen Kaku Gothic New",-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--charcoal);
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    background:
+      radial-gradient(circle at 20% 10%, #ffffff40 0%, transparent 40%),
+      linear-gradient(160deg, var(--bg-paper), var(--bg-paper2));
+  }
+  .mincho{ font-family:"Shippori Mincho", serif; }
+
+  #app{ position:relative; width:100%; height:100%; }
+
+  /* 和紙の織り目テクスチャ（背景全体にうっすら） */
+  #paperTexture{
+    position:absolute; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.25) 0 2px, transparent 2px 6px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,.03) 0 2px, transparent 2px 6px);
+    opacity:.5;
+  }
+
+  header{
+    position:relative; z-index:2;
+    text-align:center;
+    padding:16px 0 4px;
+  }
+  header h1{
+    font-size:15px; letter-spacing:6px; font-weight:700;
+    color:var(--indigo-deep); margin:0;
+    opacity:.8;
+  }
+  header .kanji-sub{
+    display:block; font-size:11px; letter-spacing:3px; color:#8a7a5a; margin-top:4px; font-weight:400;
+  }
+
+  /* ===== 箱ステージ ===== */
+  #boxStage{
+    position:absolute;
+    left:50%; top:46%;
+    transform:translate(-50%,-50%);
+    width:300px; height:260px;
+    perspective:1200px;
+    z-index:3;
+  }
+  #boxShip{
+    position:absolute; inset:0;
+    transition:transform .9s cubic-bezier(.5,0,.85,.25), opacity .9s ease;
+  }
+  #boxShip.launch{
+    transform:translateY(-1100px) rotate(-8deg) scale(.85);
+    opacity:0;
+  }
+
+  /* 蓋（開いた状態で奥に立っている） */
+  #lid{
+    position:absolute;
+    left:50%; bottom:112px;
+    width:248px; height:150px;
+    margin-left:-124px;
+    transform-origin:bottom center;
+    transform:rotateX(-108deg);
+    transition:transform .75s cubic-bezier(.4,1.4,.4,1);
+    transform-style:preserve-3d;
+    z-index:2;
+  }
+  #lid.closed{ transform:rotateX(0deg); }
+  #lidFace{
+    position:absolute; inset:0;
+    border-radius:10px 10px 4px 4px;
+    background:
+      linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep)),
+      repeating-linear-gradient(60deg, rgba(255,255,255,.05) 0 3px, transparent 3px 9px);
+    background-blend-mode:normal;
+    box-shadow:
+      0 6px 18px rgba(0,0,0,.35),
+      inset 0 0 0 2px rgba(230,200,105,.55),
+      inset 0 0 22px rgba(0,0,0,.25);
+  }
+  #lidFace::before{
+    content:"";
+    position:absolute; inset:10px;
+    border:1px solid rgba(230,200,105,.35);
+    border-radius:6px;
+  }
+  #lidFace::after{
+    content:"結";
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    font-family:"Shippori Mincho", serif;
+    font-size:30px;
+    color:rgba(230,200,105,.5);
+  }
+
+  /* 箱本体（前面パネル＋内部の受け皿） */
+  #boxBody{
+    position:absolute;
+    left:50%; bottom:0;
+    width:264px; height:126px;
+    margin-left:-132px;
+    border-radius:8px 8px 14px 14px;
+    background:linear-gradient(180deg, var(--indigo-mid), var(--indigo-deep));
+    box-shadow:
+      0 16px 30px rgba(30,20,10,.35),
+      inset 0 0 0 2px rgba(230,200,105,.5);
+    z-index:3;
+  }
+  #boxBody::before{
+    /* 手前の帯（金の縁取り） */
+    content:"";
+    position:absolute; left:10px; right:10px; top:8px; bottom:8px;
+    border:1px solid rgba(230,200,105,.3);
+    border-radius:5px;
+  }
+
+  #innerWell{
+    position:absolute;
+    left:50%; top:-46px;
+    width:216px; height:96px;
+    margin-left:-108px;
+    border-radius:8px;
+    background:
+      linear-gradient(180deg, var(--washi-cream), var(--washi-cream-dark));
+    box-shadow:
+      inset 0 10px 22px rgba(60,40,20,.35),
+      inset 0 -2px 0 rgba(255,255,255,.4),
+      0 4px 10px rgba(0,0,0,.25);
+    z-index:4;
+    display:flex;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    gap:6px;
+    padding:10px;
+    overflow:hidden;
+  }
+  #innerWell.drop-hover{
+    box-shadow:
+      inset 0 10px 22px rgba(60,40,20,.35),
+      inset 0 0 0 3px var(--gold),
+      0 4px 10px rgba(0,0,0,.25);
+  }
+
+  .settledBlock{
+    position:relative;
+    background:linear-gradient(160deg,#fff, #f0e6d2);
+    border:1px solid #d8c69a;
+    border-radius:6px;
+    padding:5px 8px;
+    font-size:11px;
+    color:var(--charcoal);
+    box-shadow:0 2px 4px rgba(0,0,0,.2);
+    max-width:90px;
+    line-height:1.3;
+    pointer-events:none;
+  }
+
+  /* ===== 浮遊するモヤモヤブロック（ドラッグ対象） ===== */
+  .moyaBlock{
+    position:fixed;
+    z-index:30;
+    max-width:170px;
+    min-width:64px;
+    padding:12px 16px;
+    background:linear-gradient(160deg,#fffdf8, #f2e6cc);
+    border:1px solid #d8c69a;
+    border-radius:10px;
+    box-shadow:0 8px 16px rgba(60,40,10,.25), 0 2px 4px rgba(0,0,0,.1);
+    font-size:13.5px;
+    line-height:1.5;
+    color:var(--charcoal);
+    cursor:grab;
+    touch-action:none;
+    will-change:transform;
+  }
+  .moyaBlock.dragging{
+    cursor:grabbing;
+    box-shadow:0 18px 30px rgba(30,20,10,.35);
+    z-index:60;
+  }
+  .moyaBlock.popIn{
+    animation:popIn .4s cubic-bezier(.3,1.6,.4,1);
+  }
+  @keyframes popIn{
+    0%{ transform:scale(.3) translateY(10px); opacity:0; }
+    70%{ transform:scale(1.08); opacity:1; }
+    100%{ transform:scale(1); }
+  }
+  .moyaBlock.settling{
+    transition:transform .38s cubic-bezier(.5,-0.3,.3,1.35), opacity .3s ease;
+  }
+  .moyaBlock.rejected{
+    transition:transform .4s cubic-bezier(.3,1.5,.4,1);
+  }
+
+  /* ===== 下部入力エリア ===== */
+  #inputBar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    z-index:10;
+    display:flex;
+    gap:10px;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg, rgba(239,230,216,.98), rgba(239,230,216,.85) 70%, transparent);
+  }
+  #moyaInput{
+    flex:1;
+    min-width:0;
+    padding:13px 16px;
+    border-radius:14px;
+    border:1.5px solid #cbb98f;
+    background:#fffdf7;
+    font-size:14px;
+    color:var(--charcoal);
+    font-family:inherit;
+    outline:none;
+  }
+  #moyaInput:focus{ border-color:var(--gold); }
+  #spitBtn{
+    flex-shrink:0;
+    padding:0 22px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep));
+    color:#f6efe0;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:1px;
+    box-shadow:0 5px 0 #16273e, 0 8px 14px rgba(0,0,0,.25);
+    transition:transform .07s ease, box-shadow .07s ease;
+  }
+  #spitBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #16273e; }
+
+  /* ===== フタを閉めるボタン ===== */
+  #closeLidBtn{
+    position:absolute;
+    left:50%; top:calc(46% + 150px);
+    transform:translate(-50%, 0) scale(0);
+    z-index:15;
+    padding:12px 26px;
+    border:none; border-radius:24px;
+    background:linear-gradient(160deg, var(--gold-light), var(--gold));
+    color:#4a3a10;
+    font-weight:700; font-size:14px; letter-spacing:1px;
+    box-shadow:0 6px 0 #9c7d1c, 0 10px 16px rgba(0,0,0,.25);
+    transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s ease;
+    opacity:0;
+    pointer-events:none;
+  }
+  #closeLidBtn.show{
+    transform:translate(-50%, 0) scale(1);
+    opacity:1;
+    pointer-events:auto;
+  }
+  #closeLidBtn:active{ transform:translate(-50%,4px) scale(.98); }
+
+  /* ===== リボン演出 ===== */
+  .ribbonWrap{
+    position:absolute; inset:0; z-index:6; pointer-events:none;
+  }
+  .ribbonV, .ribbonH{
+    position:absolute;
+    background:linear-gradient(90deg, var(--vermillion-dark), var(--vermillion) 50%, var(--vermillion-dark));
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    transform:scale(0);
+    opacity:0;
+    animation:ribbonGrow .45s cubic-bezier(.3,1.6,.4,1) forwards;
+  }
+  .ribbonV{ left:50%; top:-20px; width:26px; height:400px; margin-left:-13px; transform-origin:top center; }
+  .ribbonH{ left:-20px; top:50%; width:400px; height:26px; margin-top:-13px; transform-origin:left center; animation-delay:.1s; }
+  @keyframes ribbonGrow{
+    0%{ transform:scale(0); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .bow{
+    position:absolute; left:50%; top:50%;
+    width:70px; height:46px;
+    margin:-23px 0 0 -35px;
+    z-index:7;
+    transform:scale(0) rotate(0deg);
+    animation:bowPop .5s cubic-bezier(.3,1.7,.4,1) forwards;
+    animation-delay:.35s;
+  }
+  @keyframes bowPop{
+    0%{ transform:scale(0) rotate(-30deg); opacity:0; }
+    70%{ transform:scale(1.15) rotate(6deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  .bow::before, .bow::after{
+    content:"";
+    position:absolute; top:0; width:34px; height:38px;
+    background:radial-gradient(circle at 35% 30%, var(--vermillion), var(--vermillion-dark));
+    box-shadow:0 3px 8px rgba(0,0,0,.3);
+  }
+  .bow::before{ left:0; border-radius:60% 60% 60% 5%; transform:rotate(-18deg); }
+  .bow::after{ right:0; border-radius:60% 60% 5% 60%; transform:rotate(18deg); }
+  .bowKnot{
+    position:absolute; left:50%; top:50%;
+    width:16px; height:16px;
+    margin:-8px 0 0 -8px;
+    background:var(--gold);
+    border-radius:4px;
+    z-index:8;
+    box-shadow:0 2px 4px rgba(0,0,0,.3);
+  }
+
+  /* ===== 結果画面 ===== */
+  #resultScreen{
+    position:fixed; inset:0;
+    background:rgba(40,30,20,.55);
+    display:none;
+    align-items:center; justify-content:center; flex-direction:column;
+    z-index:80; text-align:center; padding:26px;
+  }
+  #resultScreen.show{ display:flex; }
+  #resultCard{
+    background:linear-gradient(160deg,#fffaf0,#f2e6cc);
+    border:1px solid #d8c69a;
+    border-radius:20px;
+    padding:34px 30px 28px;
+    box-shadow:0 20px 40px rgba(0,0,0,.35);
+    max-width:320px;
+    animation:cardPop .5s cubic-bezier(.3,1.6,.4,1);
+  }
+  @keyframes cardPop{
+    0%{ transform:scale(.7); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  #resultCard .stamp{
+    font-size:13px; letter-spacing:4px; color:var(--vermillion); font-weight:700; margin-bottom:10px;
+  }
+  #resultCard h2{
+    font-size:21px; margin:0 0 10px; color:var(--indigo-deep); font-weight:700;
+  }
+  #resultCard p{
+    font-size:13px; color:#8a7a5a; line-height:1.8; margin:0 0 20px;
+  }
+  #resultCard .count{
+    font-size:12px; color:#a8916a; margin-bottom:20px;
+  }
+  #resultCard .count b{ color:var(--indigo-deep); font-size:16px; }
+  #newBoxBtn{
+    padding:13px 30px; border:none; border-radius:24px;
+    background:linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep));
+    color:#f6efe0; font-weight:700; font-size:13.5px; letter-spacing:1px;
+    box-shadow:0 5px 0 #16273e, 0 8px 14px rgba(0,0,0,.25);
+  }
+  #newBoxBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #16273e; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="paperTexture"></div>
+
+  <header>
+    <h1 class="mincho">モヤモヤ納品</h1>
+    <span class="kanji-sub">— 心の荷物、お預かりします —</span>
+  </header>
+
+  <div id="boxStage">
+    <div id="boxShip">
+      <div id="lid">
+        <div id="lidFace"></div>
+      </div>
+      <div id="boxBody"></div>
+      <div id="innerWell"></div>
+      <div class="ribbonWrap" id="ribbonWrap" style="display:none;">
+        <div class="ribbonV"></div>
+        <div class="ribbonH"></div>
+        <div class="bow"><div class="bowKnot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <button id="closeLidBtn">フタを閉める</button>
+
+  <div id="inputBar">
+    <input id="moyaInput" type="text" maxlength="40" placeholder="今日のモヤモヤを書き出してみる…" />
+    <button id="spitBtn">吐き出す</button>
+  </div>
+</div>
+
+<div id="resultScreen">
+  <div id="resultCard">
+    <div class="stamp mincho">納品完了</div>
+    <h2>お疲れ様でした！</h2>
+    <p>今日のモヤモヤは、ちゃんと箱に収めて送り出しました。<br>あとはもう、気にしなくて大丈夫です。</p>
+    <div class="count">納品したモヤモヤ：<b id="deliverCount">0</b> 個</div>
+    <button id="newBoxBtn">また箱を用意する</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const app = document.getElementById('app');
+  const boxStage = document.getElementById('boxStage');
+  const boxShip = document.getElementById('boxShip');
+  const lid = document.getElementById('lid');
+  const innerWell = document.getElementById('innerWell');
+  const ribbonWrap = document.getElementById('ribbonWrap');
+  const closeLidBtn = document.getElementById('closeLidBtn');
+  const moyaInput = document.getElementById('moyaInput');
+  const spitBtn = document.getElementById('spitBtn');
+  const resultScreen = document.getElementById('resultScreen');
+  const deliverCountEl = document.getElementById('deliverCount');
+  const newBoxBtn = document.getElementById('newBoxBtn');
+
+  let deliveredCount = 0;
+  let firstDelivered = false;
+  let sealed = false;
+
+  function rand(min,max){ return min + Math.random()*(max-min); }
+
+  // ===== ブロック生成 =====
+  function spitOutBlock(){
+    const text = moyaInput.value.trim();
+    if(!text || sealed) return;
+    moyaInput.value = '';
+
+    const block = document.createElement('div');
+    block.className = 'moyaBlock popIn';
+    block.textContent = text;
+    document.body.appendChild(block);
+
+    // 入力欄の少し上にランダムな位置で出現
+    const barRect = spitBtn.getBoundingClientRect();
+    const bw = block.offsetWidth || 120;
+    const startX = Math.min(window.innerWidth - bw - 20,
+                    Math.max(20, barRect.left + rand(-60,60)));
+    const startY = barRect.top - 90 + rand(-20,10);
+    block.style.left = startX + 'px';
+    block.style.top = startY + 'px';
+
+    attachDrag(block);
+  }
+
+  // ===== ドラッグ処理（重みのある手触り） =====
+  function attachDrag(block){
+    let dragging = false;
+    let px, py;           // ポインタ座標
+    let curX, curY;       // 表示座標（追従は遅れる＝重み）
+    let offX, offY;
+    let rafId = null;
+    let lastCurX = 0;
+
+    function getPos(){
+      const r = block.getBoundingClientRect();
+      return { x:r.left, y:r.top };
+    }
+
+    function onPointerDown(e){
+      if(sealed) return;
+      dragging = true;
+      block.classList.add('dragging');
+      block.classList.remove('settling','rejected');
+      block.setPointerCapture(e.pointerId);
+      const pos = getPos();
+      curX = pos.x; curY = pos.y; lastCurX = curX;
+      offX = e.clientX - pos.x;
+      offY = e.clientY - pos.y;
+      px = e.clientX - offX;
+      py = e.clientY - offY;
+      block.style.transition = 'none';
+      loop();
+      block.addEventListener('pointermove', onPointerMove);
+      block.addEventListener('pointerup', onPointerUp);
+      block.addEventListener('pointercancel', onPointerUp);
+    }
+
+    function onPointerMove(e){
+      if(!dragging) return;
+      px = e.clientX - offX;
+      py = e.clientY - offY;
+      checkHover();
+    }
+
+    function checkHover(){
+      const wellRect = innerWell.getBoundingClientRect();
+      const cx = curX + block.offsetWidth/2;
+      const cy = curY + block.offsetHeight/2;
+      const inside = cx > wellRect.left && cx < wellRect.right && cy > wellRect.top && cy < wellRect.bottom;
+      innerWell.classList.toggle('drop-hover', inside);
+    }
+
+    function loop(){
+      if(!dragging) return;
+      // 重みのある追従（イージングで少し遅れてついてくる）
+      curX += (px - curX) * 0.28;
+      curY += (py - curY) * 0.28;
+      const vx = curX - lastCurX;
+      lastCurX = curX;
+      const rot = Math.max(-14, Math.min(14, vx * 1.4));
+      block.style.left = curX + 'px';
+      block.style.top = curY + 'px';
+      block.style.transform = `rotate(${rot}deg)`;
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function onPointerUp(e){
+      if(!dragging) return;
+      dragging = false;
+      cancelAnimationFrame(rafId);
+      block.classList.remove('dragging');
+      block.removeEventListener('pointermove', onPointerMove);
+      block.removeEventListener('pointerup', onPointerUp);
+      block.removeEventListener('pointercancel', onPointerUp);
+
+      const wellRect = innerWell.getBoundingClientRect();
+      const cx = curX + block.offsetWidth/2;
+      const cy = curY + block.offsetHeight/2;
+      const inside = cx > wellRect.left && cx < wellRect.right && cy > wellRect.top && cy < wellRect.bottom;
+      innerWell.classList.remove('drop-hover');
+
+      if(inside){
+        settleIntoBox(block);
+      } else {
+        // 箱の外なら、ストンとその場に着地するだけ
+        block.classList.add('settling');
+        block.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    block.addEventListener('pointerdown', onPointerDown);
+  }
+
+  function settleIntoBox(block){
+    block.classList.add('settling');
+    const wellRect = innerWell.getBoundingClientRect();
+    const targetX = wellRect.left + rand(14, Math.max(20, wellRect.width - block.offsetWidth - 14));
+    const targetY = wellRect.top + rand(10, Math.max(14, wellRect.height - block.offsetHeight - 10));
+    const rot = rand(-8,8);
+
+    // ストンと落ちる（少し重みのある着地）
+    requestAnimationFrame(() => {
+      block.style.left = targetX + 'px';
+      block.style.top = targetY + 'px';
+      block.style.transform = `rotate(${rot}deg) scale(.94)`;
+    });
+
+    setTimeout(() => {
+      block.style.pointerEvents = 'none';
+    }, 380);
+
+    deliveredCount++;
+    if(!firstDelivered){
+      firstDelivered = true;
+      closeLidBtn.classList.add('show');
+    }
+  }
+
+  // ===== フタを閉める・出荷演出 =====
+  function closeLidAndShip(){
+    if(sealed) return;
+    sealed = true;
+    closeLidBtn.classList.remove('show');
+
+    lid.classList.add('closed');
+
+    setTimeout(() => {
+      ribbonWrap.style.display = 'block';
+    }, 500);
+
+    setTimeout(() => {
+      boxShip.classList.add('launch');
+    }, 1450);
+
+    setTimeout(() => {
+      deliverCountEl.textContent = deliveredCount;
+      resultScreen.classList.add('show');
+      sendResultToPortal();
+    }, 2350);
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
+  function sendResultToPortal(){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'moyamoya-delivery',
+        summary: `モヤモヤを${deliveredCount}個、納品完了！`,
+        detail: { delivered: deliveredCount }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function resetAll(){
+    sealed = false;
+    firstDelivered = false;
+    deliveredCount = 0;
+    document.querySelectorAll('.moyaBlock').forEach(b => b.remove());
+
+    lid.classList.remove('closed');
+    boxShip.classList.remove('launch');
+    ribbonWrap.style.display = 'none';
+    closeLidBtn.classList.remove('show');
+    resultScreen.classList.remove('show');
+  }
+
+  spitBtn.addEventListener('click', spitOutBlock);
+  moyaInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') spitOutBlock();
+  });
+  closeLidBtn.addEventListener('click', closeLidAndShip);
+  newBoxBtn.addEventListener('click', resetAll);
+})();
+</script>
+</body>
+</html>
