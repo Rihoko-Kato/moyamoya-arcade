@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モヤモヤ解消アーケード</title>
+<style>
+  :root{
+    --bg1:#120c2e;
+    --bg2:#1f1450;
+    --bg3:#2a1a5e;
+    --panel:#1a1440;
+    --panel-light:#241d56;
+    --text-main:#f2eeff;
+    --text-sub:#a89bd8;
+    --neon-cyan:#4ff0ff;
+    --neon-pink:#ff4fd8;
+    --neon-yellow:#fff24f;
+    --neon-green:#7dff6b;
+    --danger:#ff5a7a;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; min-height:100%;
+    font-family:"Zen Maru Gothic","Hiragino Sans","Yu Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(255,79,216,.12), transparent 40%),
+      radial-gradient(circle at 85% 18%, rgba(79,240,255,.12), transparent 40%),
+      radial-gradient(circle at 50% 90%, rgba(125,255,107,.08), transparent 45%),
+      linear-gradient(165deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    color:var(--text-main);
+    min-height:100vh;
+  }
+  *{ -webkit-tap-highlight-color:transparent; }
+
+  a, button{ font-family:inherit; }
+
+  /* ===================== ヘッダー ===================== */
+  header{
+    position:sticky; top:0; z-index:30;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    padding:14px 20px;
+    background:rgba(18,12,46,.85);
+    backdrop-filter:blur(8px);
+    border-bottom:2px solid rgba(255,79,216,.25);
+  }
+  #siteTitle{
+    font-size:clamp(16px, 4vw, 22px);
+    font-weight:900;
+    letter-spacing:1px;
+    margin:0;
+    background:linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-yellow));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 0 18px rgba(255,79,216,.35);
+  }
+  #siteTitle .sub{
+    display:block;
+    font-size:10.5px;
+    letter-spacing:3px;
+    color:var(--text-sub);
+    font-weight:700;
+    -webkit-text-fill-color:var(--text-sub);
+  }
+
+  #profileBtn{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel);
+    border:2px solid rgba(255,255,255,.12);
+    border-radius:30px;
+    padding:6px 14px 6px 6px;
+    cursor:default;
+    color:var(--text-main);
+  }
+  #profileAvatar{
+    width:34px; height:34px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffffff30, transparent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px;
+    border:2px solid var(--neon-cyan);
+    box-shadow:0 0 10px rgba(79,240,255,.5);
+  }
+  #profileName{ font-size:13px; font-weight:700; }
+  #profileEdit{ font-size:10px; color:var(--text-sub); }
+
+  /* ===================== ギャラリー ===================== */
+  #galleryView{ padding:22px 18px 60px; max-width:1080px; margin:0 auto; }
+  #galleryIntro{
+    text-align:center; margin-bottom:22px;
+  }
+  #galleryIntro h2{
+    font-size:clamp(18px,4.5vw,26px);
+    margin:0 0 6px;
+    font-weight:900;
+  }
+  #galleryIntro p{
+    font-size:13px; color:var(--text-sub); margin:0;
+  }
+
+  #cardGrid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    gap:18px;
+  }
+
+  .gameCard{
+    background:var(--panel);
+    border-radius:20px;
+    overflow:hidden;
+    border:2px solid rgba(255,255,255,.08);
+    cursor:pointer;
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    display:flex; flex-direction:column;
+  }
+  .gameCard:hover{
+    transform:translateY(-6px);
+  }
+  .gameCard.cyan:hover{ border-color:var(--neon-cyan); box-shadow:0 10px 26px rgba(79,240,255,.25); }
+  .gameCard.pink:hover{ border-color:var(--neon-pink); box-shadow:0 10px 26px rgba(255,79,216,.25); }
+  .gameCard.yellow:hover{ border-color:var(--neon-yellow); box-shadow:0 10px 26px rgba(255,242,79,.25); }
+  .gameCard.green:hover{ border-color:var(--neon-green); box-shadow:0 10px 26px rgba(125,255,107,.25); }
+
+  .thumb{
+    height:120px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:46px;
+    position:relative;
+    overflow:hidden;
+  }
+  .thumb::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px);
+  }
+  .thumb.cyan{ background:linear-gradient(150deg,#123a45,#0d5f6e); }
+  .thumb.pink{ background:linear-gradient(150deg,#3a1235,#6e0d5a); }
+  .thumb.yellow{ background:linear-gradient(150deg,#3a3312,#6e5f0d); }
+  .thumb.green{ background:linear-gradient(150deg,#123a1c,#0d6e2e); }
+
+  .cardBody{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
+  .cardBody h3{ margin:0; font-size:15px; font-weight:800; }
+  .cardBody p{ margin:0; font-size:12px; color:var(--text-sub); line-height:1.6; flex:1; }
+  .playTag{
+    align-self:flex-start;
+    font-size:11px; font-weight:800;
+    padding:5px 12px; border-radius:14px;
+    color:#12122a;
+  }
+  .playTag.cyan{ background:var(--neon-cyan); }
+  .playTag.pink{ background:var(--neon-pink); }
+  .playTag.yellow{ background:var(--neon-yellow); }
+  .playTag.green{ background:var(--neon-green); }
+
+  /* ===================== プレイ画面 ===================== */
+  #playView{ display:none; padding:18px 16px 60px; max-width:820px; margin:0 auto; }
+  #backBtn{
+    background:none; border:2px solid rgba(255,255,255,.2);
+    color:var(--text-main); border-radius:20px;
+    padding:8px 16px; font-size:13px; font-weight:700;
+    margin-bottom:14px; cursor:pointer;
+  }
+  #backBtn:hover{ border-color:var(--neon-cyan); }
+
+  #playTitleRow{ display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap; }
+  #playEmoji{ font-size:26px; }
+  #playTitle{ font-size:19px; font-weight:900; margin:0; }
+  #playDesc{ font-size:12.5px; color:var(--text-sub); margin:0 0 14px; }
+
+  #cabinet{
+    background:#0c0a20;
+    border-radius:22px;
+    padding:14px;
+    border:3px solid #362a70;
+    box-shadow:inset 0 0 30px rgba(0,0,0,.6), 0 0 0 6px rgba(79,240,255,.05);
+  }
+  #screenWrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:16/10;
+    border-radius:12px;
+    overflow:hidden;
+    background:#05040f;
+  }
+  #gameFrame{
+    width:100%; height:100%; border:none; display:block;
+  }
+  #screenOverlay{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px;
+    background:radial-gradient(circle at 50% 40%, rgba(79,240,255,.08), transparent 60%);
+    color:var(--text-sub);
+    text-align:center; padding:20px;
+    pointer-events:none;
+  }
+  #screenOverlay .big{ font-size:15px; font-weight:800; color:var(--text-main); }
+  #screenOverlay .small{ font-size:11px; }
+
+  /* ===================== 記録一覧 ===================== */
+  #resultsSection{ margin-top:24px; }
+  #resultsSection h4{
+    font-size:14px; font-weight:900; margin:0 0 12px;
+    display:flex; align-items:center; gap:6px;
+    color:var(--neon-yellow);
+  }
+  #resultList{ display:flex; flex-direction:column; gap:10px; }
+  .resultEmpty{
+    font-size:12.5px; color:var(--text-sub);
+    background:var(--panel); border-radius:14px; padding:14px; text-align:center;
+  }
+  .resultCard{
+    background:linear-gradient(135deg, rgba(255,242,79,.08), rgba(255,255,255,.02));
+    border:1.5px solid rgba(255,242,79,.25);
+    border-radius:14px;
+    padding:12px 14px;
+    display:flex; gap:10px;
+    align-items:center;
+  }
+  .resultCard .rAvatar{
+    width:34px; height:34px; border-radius:50%;
+    background:var(--panel-light);
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
+  }
+  .resultCard .rBody{ flex:1; min-width:0; }
+  .resultCard .rHead{
+    display:flex; justify-content:space-between; gap:8px;
+    font-size:11.5px; color:var(--text-sub); margin-bottom:4px;
+    flex-wrap:wrap;
+  }
+  .resultCard .rName{ font-weight:800; color:var(--text-main); }
+  .resultCard .rSummary{ font-size:13.5px; font-weight:700; color:var(--neon-yellow); }
+
+  /* ===================== コメント ===================== */
+  #commentsSection{ margin-top:24px; }
+  #commentsSection h4{
+    font-size:14px; font-weight:900; margin:0 0 12px;
+    display:flex; align-items:center; gap:6px;
+  }
+  #commentList{ display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .commentEmpty{
+    font-size:12.5px; color:var(--text-sub);
+    background:var(--panel); border-radius:14px; padding:14px; text-align:center;
+  }
+  .commentCard{
+    background:var(--panel);
+    border:1.5px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    padding:12px 14px;
+    display:flex; gap:10px;
+  }
+  .commentCard .cAvatar{
+    width:34px; height:34px; border-radius:50%;
+    background:var(--panel-light);
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
+  }
+  .commentCard .cBody{ flex:1; min-width:0; }
+  .commentCard .cHead{
+    display:flex; justify-content:space-between; gap:8px;
+    font-size:11.5px; color:var(--text-sub); margin-bottom:4px;
+    flex-wrap:wrap;
+  }
+  .commentCard .cName{ font-weight:800; color:var(--text-main); }
+  .cTag{
+    font-weight:600; color:var(--text-sub); font-size:10.5px;
+    font-family:monospace; letter-spacing:.5px;
+  }
+  .commentCard .cText{ font-size:13px; line-height:1.6; word-break:break-word; white-space:pre-wrap; }
+
+  #commentForm{
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--panel);
+    border-radius:16px;
+    padding:14px;
+    border:1.5px solid rgba(255,255,255,.08);
+  }
+  #commentFormHead{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; color:var(--text-sub);
+  }
+  #commentInput{
+    width:100%; min-height:64px; resize:vertical;
+    padding:10px 12px; border-radius:12px;
+    border:1.5px solid rgba(255,255,255,.15);
+    background:#0e0a2a;
+    color:var(--text-main);
+    font-size:13.5px; font-family:inherit;
+    outline:none;
+  }
+  #commentInput:focus{ border-color:var(--neon-cyan); }
+  #commentSubmit{
+    align-self:flex-end;
+    padding:10px 24px;
+    border:none; border-radius:20px;
+    background:linear-gradient(120deg, var(--neon-cyan), var(--neon-pink));
+    color:#0c0a20; font-weight:900; font-size:13px;
+    cursor:pointer;
+  }
+  #commentSubmit:disabled{ opacity:.5; cursor:default; }
+
+  /* ===================== モーダル（疑似ログイン／プロフィール編集） ===================== */
+  #modalOverlay{
+    position:fixed; inset:0; z-index:100;
+    background:rgba(5,4,15,.75);
+    backdrop-filter:blur(3px);
+    display:none;
+    align-items:center; justify-content:center;
+    padding:20px;
+  }
+  #modalOverlay.show{ display:flex; }
+  #modalBox{
+    width:100%; max-width:400px;
+    background:var(--panel);
+    border-radius:22px;
+    padding:26px 22px 22px;
+    border:2px solid rgba(255,79,216,.3);
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    animation:modalPop .35s cubic-bezier(.3,1.5,.4,1);
+  }
+  @keyframes modalPop{
+    0%{ transform:scale(.85); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  #modalBox h3{
+    margin:0 0 4px; font-size:17px; font-weight:900; text-align:center;
+  }
+  #modalBox .modalSub{
+    text-align:center; font-size:12px; color:var(--text-sub); margin-bottom:18px;
+    white-space:pre-line; line-height:1.6;
+  }
+  #avatarGrid{
+    display:grid; grid-template-columns:repeat(6, 1fr); gap:8px;
+    margin-bottom:16px;
+  }
+  .avatarOption{
+    aspect-ratio:1;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+    background:#0e0a2a;
+    border:2px solid rgba(255,255,255,.12);
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .avatarOption.selected{
+    border-color:var(--neon-cyan);
+    box-shadow:0 0 12px rgba(79,240,255,.5);
+    background:#12203a;
+  }
+  .avatarOption.taken{
+    opacity:.28;
+    cursor:not-allowed;
+    position:relative;
+    filter:grayscale(.6);
+  }
+  .avatarOption.taken::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(45deg, transparent 0 4px, rgba(255,90,122,.5) 4px 5px);
+    border-radius:10px;
+  }
+  #nameInputLabel{ font-size:11.5px; color:var(--text-sub); margin-bottom:6px; display:block; }
+  #nameInput{
+    width:100%; padding:11px 14px; margin-bottom:18px;
+    border-radius:12px; border:1.5px solid rgba(255,255,255,.15);
+    background:#0e0a2a; color:var(--text-main);
+    font-size:14px; font-family:inherit; outline:none;
+  }
+  #nameInput:focus{ border-color:var(--neon-pink); }
+  #modalConfirm{
+    width:100%; padding:13px; border:none; border-radius:20px;
+    background:linear-gradient(120deg, var(--neon-pink), var(--neon-yellow));
+    color:#0c0a20; font-weight:900; font-size:14.5px;
+    cursor:pointer;
+  }
+
+  @media (max-width:480px){
+    #avatarGrid{ grid-template-columns:repeat(5, 1fr); }
+    header{ padding:12px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1 id="siteTitle">モヤモヤ解消アーケード<span class="sub">MOYAMOYA ARCADE</span></h1>
+  </div>
+  <div id="profileBtn">
+    <div id="profileAvatar">🙂</div>
+    <div>
+      <div id="profileName">ゲスト</div>
+      <div id="profileEdit">あなたの分身</div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== ギャラリー画面 ===== -->
+<main id="galleryView">
+  <div id="galleryIntro">
+    <h2>今日のモヤモヤ、遊んで手放そう</h2>
+    <p>好きなゲームを選んで、感想もぜひコメントしてね。</p>
+  </div>
+  <div id="cardGrid"></div>
+</main>
+
+<!-- ===== プレイ画面 ===== -->
+<main id="playView">
+  <button id="backBtn">← ギャラリーに戻る</button>
+
+  <div id="playTitleRow">
+    <span id="playEmoji"></span>
+    <h2 id="playTitle"></h2>
+  </div>
+  <p id="playDesc"></p>
+
+  <div id="cabinet">
+    <div id="screenWrap">
+      <iframe id="gameFrame" src="about:blank" title="game"></iframe>
+      <div id="screenOverlay">
+        <div class="big">🕹️ プレビュー準備中</div>
+        <div class="small">実際のゲームURLを iframe の src に差し替えると、ここに表示されます</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultsSection">
+    <h4>🏆 みんなの記録</h4>
+    <div id="resultList"></div>
+  </div>
+
+  <div id="commentsSection">
+    <h4>💬 コメント一覧</h4>
+    <div id="commentList"></div>
+
+    <div id="commentForm">
+      <div id="commentFormHead">
+        <span id="formAvatar">🙂</span>
+        <span id="formName">ゲスト</span>
+        として投稿
+      </div>
+      <textarea id="commentInput" maxlength="300" placeholder="遊んでみた感想を書いてみる…"></textarea>
+      <button id="commentSubmit">投稿する</button>
+    </div>
+  </div>
+</main>
+
+<!-- ===== モーダル：疑似ログイン／プロフィール編集 ===== -->
+<div id="modalOverlay">
+  <div id="modalBox">
+    <h3 id="modalTitle">ようこそ！</h3>
+    <div class="modalSub" id="modalSub">アバターとニックネームだよ。自動で入ってるからこのままでもOK！</div>
+    <div id="avatarGrid"></div>
+    <label id="nameInputLabel" for="nameInput">ニックネーム</label>
+    <input id="nameInput" type="text" maxlength="16" placeholder="例）のんびりカピバラ" />
+    <button id="modalConfirm">はじめる</button>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  /* =========================================================
+     DBレイヤー（Googleスプレッドシート連携／未設定時はlocalStorageにフォールバック）
+     ここから下の関数だけを書き換えれば、他のバックエンドにも差し替え可能。
+     ========================================================= */
+
+  // ↓↓↓ ここにApps Scriptの「ウェブアプリURL」を貼り付けると、
+  //     コメントがスプレッドシート経由でみんなに共有されるようになります。
+  //     空のままだと、この端末のlocalStorageだけに保存される今まで通りの動作です。
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzS0gcNeQ-zftfFLNCzyPIj3iNsMkloe3EoHS2Nu6acM66fceHWElmw34tNgImlT1Xj4Q/exec'; // 例: 'https://script.google.com/macros/s/xxxxx/exec'
+
+  const DB_KEY_COMMENTS = 'moyamoyaArcade_comments_v1'; // SHEET_API_URL未設定時のフォールバック用キー
+
+  // コメントを1件保存する
+  // data: { gameId, userUuid, userName, userAvatar, text }
+  async function saveComment(data){
+    const comment = {
+      gameId: data.gameId,
+      userUuid: data.userUuid,
+      userName: data.userName,
+      userAvatar: data.userAvatar,
+      text: data.text,
+      createdAt: new Date().toISOString()
+    };
+
+    if(SHEET_API_URL){
+      try{
+        // Content-Type を text/plain にすることで、Apps Script側のCORSプリフライトを回避
+        await fetch(SHEET_API_URL, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({ kind:'comment', ...comment })
+        });
+        return comment;
+      }catch(err){
+        console.error('スプレッドシートへの保存に失敗しました。localStorageに退避します。', err);
+      }
+    }
+
+    // フォールバック（SHEET_API_URL未設定、または通信失敗時）
+    const all = JSON.parse(localStorage.getItem(DB_KEY_COMMENTS) || '[]');
+    all.push(comment);
+    localStorage.setItem(DB_KEY_COMMENTS, JSON.stringify(all));
+    return comment;
+  }
+
+  // 指定ゲームのコメント一覧を取得する（新しい順）
+  async function loadComments(gameId){
+    if(SHEET_API_URL){
+      try{
+        const res = await fetch(`${SHEET_API_URL}?gameId=${encodeURIComponent(gameId)}&kind=comment`);
+        const rows = await res.json();
+        return rows.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }catch(err){
+        console.error('スプレッドシートの読み込みに失敗しました。localStorageを表示します。', err);
+      }
+    }
+
+    // フォールバック（SHEET_API_URL未設定、または通信失敗時）
+    const all = JSON.parse(localStorage.getItem(DB_KEY_COMMENTS) || '[]');
+    return all
+      .filter(c => c.gameId === gameId)
+      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  /* ---- ここから「ゲームの記録（スコア・達成度）」用 ---- */
+  const DB_KEY_RESULTS = 'moyamoyaArcade_results_v1'; // SHEET_API_URL未設定時のフォールバック用キー
+
+  // ゲームの記録を1件保存する
+  // data: { gameId, userUuid, userName, userAvatar, summary, detail }
+  async function saveResult(data){
+    const result = {
+      gameId: data.gameId,
+      userUuid: data.userUuid,
+      userName: data.userName,
+      userAvatar: data.userAvatar,
+      summary: data.summary,   // 例:「85秒生存 / ジャンプ12回」のような短い一言
+      detail: data.detail || {}, // 例:{ time:85, jumps:12 } のような生データ
+      createdAt: new Date().toISOString()
+    };
+
+    if(SHEET_API_URL){
+      try{
+        await fetch(SHEET_API_URL, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({ kind:'result', ...result })
+        });
+        return result;
+      }catch(err){
+        console.error('スプレッドシートへの記録保存に失敗しました。localStorageに退避します。', err);
+      }
+    }
+
+    const all = JSON.parse(localStorage.getItem(DB_KEY_RESULTS) || '[]');
+    all.push(result);
+    localStorage.setItem(DB_KEY_RESULTS, JSON.stringify(all));
+    return result;
+  }
+
+  // 指定ゲームの記録一覧を取得する（新しい順）
+  async function loadResults(gameId){
+    if(SHEET_API_URL){
+      try{
+        const res = await fetch(`${SHEET_API_URL}?gameId=${encodeURIComponent(gameId)}&kind=result`);
+        const rows = await res.json();
+        return rows.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }catch(err){
+        console.error('スプレッドシートの記録読み込みに失敗しました。localStorageを表示します。', err);
+      }
+    }
+
+    const all = JSON.parse(localStorage.getItem(DB_KEY_RESULTS) || '[]');
+    return all
+      .filter(r => r.gameId === gameId)
+      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  /* =========================================================
+     擬似ログイン（ユーザープロフィール）
+     ========================================================= */
+  const AUTH_KEY = 'moyamoyaArcade_user_v1';
+
+  function generateUUID(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random()*16|0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  function getUser(){
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  function saveUser(profile){
+    localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
+  }
+
+  const AVATAR_CHOICES = ['🐶','🐱','🐰','🦊','🐼','🐻','🦁','🐸','🐵','🦄','👽','🤖','🐧','🦉','🐙','🦕','🍩','🌈','⭐','🔥','🐨','🐯','🐮','🐷','🐢','🦋','🐳','🦔','🍉','🎲'];
+
+  // 名前を空にしないためのニックネーム自動生成（個人を特定しない、かわいい名前）
+  const NICK_ADJ = ['のんびり','げんきな','ねむい','ふわふわ','きままな','ちょっぴり','うっかり','まったりした','こっそり','ほがらかな','どんくさい','わちゃわちゃ','ぼんやり','しれっと'];
+  const NICK_NOUN = ['カピバラ','ラッコ','タコ','ペンギン','コアラ','ハムスター','パンダ','フクロウ','ウサギ','リス','クラゲ','イルカ','モグラ','ヤギ'];
+  function generateNickname(){
+    return NICK_ADJ[Math.floor(Math.random()*NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random()*NICK_NOUN.length)];
+  }
+
+  // 個人を特定しないが「同じ人」だとわかるようにするための短い識別タグ（UUID先頭4桁）
+  function shortTag(uuid){
+    return '#' + (uuid || '').replace(/-/g,'').slice(0,4).toUpperCase();
+  }
+
+  // アバターの重複防止レジストリ（誰がどのアバターを使っているか）
+  const AVATAR_REGISTRY_KEY = 'moyamoyaArcade_avatarRegistry_v1';
+  function getAvatarRegistry(){
+    return JSON.parse(localStorage.getItem(AVATAR_REGISTRY_KEY) || '{}');
+  }
+  function setAvatarRegistry(reg){
+    localStorage.setItem(AVATAR_REGISTRY_KEY, JSON.stringify(reg));
+  }
+  // 自分以外の誰かがそのアバターを使用中かどうか
+  function isAvatarTaken(avatar, myUuid){
+    const reg = getAvatarRegistry();
+    return !!reg[avatar] && reg[avatar] !== myUuid;
+  }
+  // アバターを自分のものとして登録（以前使っていたアバターは自動的に解放される）
+  function claimAvatar(avatar, uuid){
+    const reg = getAvatarRegistry();
+    Object.keys(reg).forEach(key => { if(reg[key] === uuid) delete reg[key]; });
+    reg[avatar] = uuid;
+    setAvatarRegistry(reg);
+  }
+  // まだ誰にも使われていないアバターを先頭から探す
+  function firstAvailableAvatar(myUuid){
+    return AVATAR_CHOICES.find(a => !isAvatarTaken(a, myUuid)) || AVATAR_CHOICES[0];
+  }
+
+  let currentUser = getUser();
+  let selectedAvatar = null;
+
+  /* =========================================================
+     ゲーム一覧
+     ========================================================= */
+  /* ↓↓↓ ここ！各ゲームの url: '' の '' の中に、GitHub PagesのURLを貼り付けてください。
+     例）url: 'https://ユーザー名.github.io/moyamoya-arcade/fact_or_emotion_game.html'
+     空のままなら「プレビュー準備中」の画面のままになります。 */
+  const games = [
+    { id:'fact-emotion',     emoji:'🗂️', color:'cyan',   title:'事実と感情の仕分け', url:'https://rihoko-kato.github.io/moyamoya-arcade/fact_or_emotion_game.html',
+      desc:'日々の振り返りを「事実」と「感情」に仕分けて客観視するカードゲーム。' },
+    { id:'clay-rabbit',      emoji:'🐰', color:'yellow', title:'粘土工作クリッカー（うさぎ）', url:'https://rihoko-kato.github.io/moyamoya-arcade/nendo_craft_clicker_rabbit.html',
+      desc:'制限時間内にひたすら連打！完成度より「熱量」だけを評価するクリッカー。' },
+    { id:'jikoken-defense',  emoji:'😴', color:'pink',   title:'自己嫌悪ディフェンス', url:'https://rihoko-kato.github.io/moyamoya-arcade/jikoken_defense_game.html',
+      desc:'夜な夜な襲ってくる自己嫌悪モンスターを、寝るボタン連打で吹き飛ばせ。' },
+    { id:'moyamoya-delivery',emoji:'📦', color:'green',  title:'モヤモヤ納品', url:'https://rihoko-kato.github.io/moyamoya-arcade/moyamoya_delivery_game.html',
+      desc:'モヤモヤを箱に詰めてリボンをかけ、出荷して区切りをつけるドラッグ&ドロップゲーム。' },
+    { id:'fact-run',         emoji:'🏃', color:'cyan',   title:'絶対勝てないラン「FACT」', url:'https://rihoko-kato.github.io/moyamoya-arcade/fact_run_game.html',
+      desc:'絶対に避けられない壁にぶつかって終わる、でも行動の事実だけを称えるランゲーム。' },
+    { id:'nod-bot',          emoji:'🤖', color:'pink',   title:'全肯定うなずきチャット', url:'https://rihoko-kato.github.io/moyamoya-arcade/unazuki.html',
+      desc:'何を言っても評価せず、ただ大げさにうなずいて受け止めてくれるロボット。' },
+    { id:'good-extractor',   emoji:'🎰', color:'yellow', title:'いいこと抽出マシーン', url:'https://rihoko-kato.github.io/moyamoya-arcade/iikotocyusyutsu.html',
+      desc:'やらかしを投入すると、強引にポジティブな一言を抽出してくれるガチャ風マシーン。' },
+    { id:'oracle-bot',       emoji:'🔮', color:'green',  title:'適当お告げボット', url:'https://rihoko-kato.github.io/moyamoya-arcade/tekitootsuge.html',
+      desc:'水晶玉に相談すると、スケールの大きすぎる適当な理由で「大丈夫」と言ってくれる。' },
+    { id:'positive-buddy',   emoji:'😎', color:'cyan',   title:'ぶっとびポジティブ相棒', url:'https://rihoko-kato.github.io/moyamoya-arcade/buttobi.html',
+      desc:'サングラス犬が、宇宙規模のヤバい事実で悩みを笑い飛ばしてくれる相棒ボット。' }
+  ];
+
+
+  /* =========================================================
+     DOM参照
+     ========================================================= */
+  const galleryView = document.getElementById('galleryView');
+  const playView = document.getElementById('playView');
+  const cardGrid = document.getElementById('cardGrid');
+  const backBtn = document.getElementById('backBtn');
+
+  const playEmoji = document.getElementById('playEmoji');
+  const playTitle = document.getElementById('playTitle');
+  const playDesc = document.getElementById('playDesc');
+  const gameFrame = document.getElementById('gameFrame');
+
+  const commentList = document.getElementById('commentList');
+  const resultList = document.getElementById('resultList');
+  const commentInput = document.getElementById('commentInput');
+  const commentSubmit = document.getElementById('commentSubmit');
+  const formAvatar = document.getElementById('formAvatar');
+  const formName = document.getElementById('formName');
+
+  const profileBtn = document.getElementById('profileBtn');
+  const profileAvatar = document.getElementById('profileAvatar');
+  const profileName = document.getElementById('profileName');
+
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const avatarGrid = document.getElementById('avatarGrid');
+  const nameInput = document.getElementById('nameInput');
+  const modalConfirm = document.getElementById('modalConfirm');
+
+  let currentGame = null;
+
+  /* =========================================================
+     ギャラリー描画
+     ========================================================= */
+  function renderGallery(){
+    cardGrid.innerHTML = '';
+    games.forEach(g => {
+      const card = document.createElement('div');
+      card.className = 'gameCard ' + g.color;
+      card.innerHTML = `
+        <div class="thumb ${g.color}">${g.emoji}</div>
+        <div class="cardBody">
+          <h3>${g.title}</h3>
+          <p>${g.desc}</p>
+          <span class="playTag ${g.color}">▶ あそぶ</span>
+        </div>
+      `;
+      card.addEventListener('click', () => openGame(g));
+      cardGrid.appendChild(card);
+    });
+  }
+
+  /* =========================================================
+     画面切り替え
+     ========================================================= */
+  function openGame(game){
+    currentGame = game;
+    galleryView.style.display = 'none';
+    playView.style.display = 'block';
+    window.scrollTo(0,0);
+
+    playEmoji.textContent = game.emoji;
+    playTitle.textContent = game.title;
+    playDesc.textContent = game.desc;
+
+    // games配列でurlを設定したゲームは実際に読み込み、未設定なら「準備中」表示のまま
+    const screenOverlay = document.getElementById('screenOverlay');
+    if(game.url){
+      gameFrame.src = game.url;
+      screenOverlay.style.display = 'none';
+    } else {
+      gameFrame.src = 'about:blank';
+      screenOverlay.style.display = 'flex';
+    }
+
+    renderComments(game.id);
+    renderResults(game.id);
+  }
+
+  function backToGallery(){
+    playView.style.display = 'none';
+    galleryView.style.display = 'block';
+    currentGame = null;
+    window.scrollTo(0,0);
+  }
+  backBtn.addEventListener('click', backToGallery);
+
+  /* =========================================================
+     コメント表示・投稿
+     ========================================================= */
+  function formatDate(iso){
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  async function renderResults(gameId){
+    resultList.innerHTML = '<div class="resultEmpty">読み込み中…</div>';
+    const results = await loadResults(gameId);
+    resultList.innerHTML = '';
+
+    if(results.length === 0){
+      resultList.innerHTML = '<div class="resultEmpty">まだ記録はありません。遊んでみると、ここに結果が並びます。</div>';
+      return;
+    }
+
+    results.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'resultCard';
+      el.innerHTML = `
+        <div class="rAvatar">${r.userAvatar || '🙂'}</div>
+        <div class="rBody">
+          <div class="rHead">
+            <span class="rName">${escapeHtml(r.userName || 'ゲスト')} <span class="cTag">${shortTag(r.userUuid)}</span></span>
+            <span>${formatDate(r.createdAt)}</span>
+          </div>
+          <div class="rSummary">${escapeHtml(r.summary || '')}</div>
+        </div>
+      `;
+      resultList.appendChild(el);
+    });
+  }
+
+  // 埋め込んだゲーム（iframe）からの postMessage を受け取り、記録として保存する
+  // ゲーム側からは以下の形で送ってもらう想定:
+  //   window.parent.postMessage({
+  //     type: 'moyamoyaGameResult',
+  //     gameId: '<このゲームのid>',
+  //     summary: '85秒生存 / ジャンプ12回',   // 一覧に表示される短い一言
+  //     detail: { time: 85, jumps: 12 }        // 生データ（任意）
+  //   }, '*');
+  window.addEventListener('message', async (event) => {
+    const msg = event.data;
+    if(!msg || msg.type !== 'moyamoyaGameResult') return;
+    if(!currentUser || !currentGame) return;
+    if(msg.gameId !== currentGame.id) return; // 表示中のゲーム以外からの結果は無視
+
+    await saveResult({
+      gameId: msg.gameId,
+      userUuid: currentUser.uuid,
+      userName: currentUser.name || 'ゲスト',
+      userAvatar: currentUser.avatar,
+      summary: msg.summary || '',
+      detail: msg.detail || {}
+    });
+    await renderResults(msg.gameId);
+  });
+
+  async function renderComments(gameId){
+    commentList.innerHTML = '<div class="commentEmpty">読み込み中…</div>';
+    const comments = await loadComments(gameId);
+    commentList.innerHTML = '';
+
+    if(comments.length === 0){
+      commentList.innerHTML = '<div class="commentEmpty">まだコメントはありません。最初のひとことをどうぞ！</div>';
+      return;
+    }
+
+    comments.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'commentCard';
+      el.innerHTML = `
+        <div class="cAvatar">${c.userAvatar || '🙂'}</div>
+        <div class="cBody">
+          <div class="cHead">
+            <span class="cName">${escapeHtml(c.userName || 'ゲスト')} <span class="cTag">${shortTag(c.userUuid)}</span></span>
+            <span>${formatDate(c.createdAt)}</span>
+          </div>
+          <div class="cText">${escapeHtml(c.text)}</div>
+        </div>
+      `;
+      commentList.appendChild(el);
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function submitComment(){
+    const text = commentInput.value.trim();
+    if(!text || !currentGame) return;
+    commentSubmit.disabled = true;
+
+    await saveComment({
+      gameId: currentGame.id,
+      userUuid: currentUser.uuid,
+      userName: currentUser.name || 'ゲスト',
+      userAvatar: currentUser.avatar,
+      text: text
+    });
+
+    commentInput.value = '';
+    await renderComments(currentGame.id);
+    commentSubmit.disabled = false;
+  }
+  commentSubmit.addEventListener('click', submitComment);
+
+  /* =========================================================
+     ヘッダー・フォームのプロフィール表示更新
+     ========================================================= */
+  function refreshProfileUI(){
+    if(!currentUser) return;
+    const displayName = (currentUser.name || generateNickname()) + ' ' + shortTag(currentUser.uuid);
+    profileAvatar.textContent = currentUser.avatar;
+    profileName.textContent = displayName;
+    formAvatar.textContent = currentUser.avatar;
+    formName.textContent = displayName;
+  }
+
+  /* =========================================================
+     モーダル（初回ログイン／プロフィール編集）
+     ========================================================= */
+  function renderAvatarGrid(){
+    avatarGrid.innerHTML = '';
+    const myUuid = currentUser ? currentUser.uuid : null;
+    AVATAR_CHOICES.forEach(a => {
+      const taken = isAvatarTaken(a, myUuid);
+      const btn = document.createElement('div');
+      btn.className = 'avatarOption'
+        + (a === selectedAvatar ? ' selected' : '')
+        + (taken ? ' taken' : '');
+      btn.textContent = a;
+      if(taken){
+        btn.title = 'すでに他の人が使っています';
+      } else {
+        btn.addEventListener('click', () => {
+          selectedAvatar = a;
+          renderAvatarGrid();
+        });
+      }
+      avatarGrid.appendChild(btn);
+    });
+  }
+
+  function openModal(){
+    modalTitle.textContent = 'ようこそ！';
+    modalSub.textContent = 'アバターとニックネームだよ。自動で入ってるからこのままでもOK！\n※あとから変更はできないので、決める時だけよく見てね。';
+    selectedAvatar = firstAvailableAvatar(null);
+    nameInput.value = generateNickname();
+    renderAvatarGrid();
+    modalOverlay.classList.add('show');
+  }
+
+  function closeModal(){
+    modalOverlay.classList.remove('show');
+  }
+
+  function confirmModal(){
+    // 空にしても必ずニックネームが入るようにする（個人特定はしない）
+    const name = nameInput.value.trim() || generateNickname();
+    currentUser = {
+      uuid: generateUUID(),
+      avatar: selectedAvatar,
+      name: name
+    };
+    claimAvatar(selectedAvatar, currentUser.uuid);
+    saveUser(currentUser);
+    refreshProfileUI();
+    closeModal();
+  }
+  modalConfirm.addEventListener('click', confirmModal);
+
+  /* =========================================================
+     初期化
+     ========================================================= */
+  function init(){
+    renderGallery();
+
+    if(!currentUser){
+      openModal();
+    } else {
+      // 既存ユーザーのアバターもレジストリに反映しておく（旧バージョンからの移行対応）
+      claimAvatar(currentUser.avatar, currentUser.uuid);
+      refreshProfileUI();
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
