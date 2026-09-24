@@ -377,6 +377,13 @@
     color:#0c0a20; font-weight:900; font-size:14.5px;
     cursor:pointer;
   }
+  #modalConfirm:disabled{ opacity:.6; cursor:default; }
+  #modalWarning{
+    margin-top:10px;
+    font-size:11.5px; color:var(--danger);
+    text-align:center; font-weight:700;
+    min-height:14px;
+  }
 
   @media (max-width:480px){
     #avatarGrid{ grid-template-columns:repeat(5, 1fr); }
@@ -458,6 +465,7 @@
     <label id="nameInputLabel" for="nameInput">ニックネーム</label>
     <input id="nameInput" type="text" maxlength="16" placeholder="例）のんびりカピバラ" />
     <button id="modalConfirm">はじめる</button>
+    <div id="modalWarning"></div>
   </div>
 </div>
 
@@ -618,29 +626,76 @@
     return '#' + (uuid || '').replace(/-/g,'').slice(0,4).toUpperCase();
   }
 
-  // アバターの重複防止レジストリ（誰がどのアバターを使っているか）
+  // ===== アバターの重複防止（SHEET_API_URL設定時はスプレッドシートで全員分を一元管理） =====
+
+  // localStorage版（SHEET_API_URL未設定時のフォールバック、または通信失敗時）
   const AVATAR_REGISTRY_KEY = 'moyamoyaArcade_avatarRegistry_v1';
-  function getAvatarRegistry(){
+  function getLocalAvatarRegistry(){
     return JSON.parse(localStorage.getItem(AVATAR_REGISTRY_KEY) || '{}');
   }
-  function setAvatarRegistry(reg){
+  function setLocalAvatarRegistry(reg){
     localStorage.setItem(AVATAR_REGISTRY_KEY, JSON.stringify(reg));
   }
-  // 自分以外の誰かがそのアバターを使用中かどうか
-  function isAvatarTaken(avatar, myUuid){
-    const reg = getAvatarRegistry();
-    return !!reg[avatar] && reg[avatar] !== myUuid;
-  }
-  // アバターを自分のものとして登録（以前使っていたアバターは自動的に解放される）
-  function claimAvatar(avatar, uuid){
-    const reg = getAvatarRegistry();
+  function claimAvatarLocal(avatar, uuid){
+    const reg = getLocalAvatarRegistry();
     Object.keys(reg).forEach(key => { if(reg[key] === uuid) delete reg[key]; });
     reg[avatar] = uuid;
-    setAvatarRegistry(reg);
+    setLocalAvatarRegistry(reg);
   }
+
+  // 現在このセッションで使う「誰がどのアバターを使っているか」のキャッシュ
+  // { avatarEmoji: userUuid, ... }
+  let avatarRegistryCache = {};
+
+  // モーダルを開くタイミングで、最新のアバター使用状況を取得しておく
+  async function refreshAvatarRegistry(){
+    if(SHEET_API_URL){
+      try{
+        const res = await fetch(`${SHEET_API_URL}?kind=avatar`);
+        const rows = await res.json();
+        const reg = {};
+        rows.forEach(r => { if(r.avatar) reg[r.avatar] = r.userUuid; });
+        avatarRegistryCache = reg;
+        return;
+      }catch(err){
+        console.error('アバター使用状況の取得に失敗しました。localStorageを使用します。', err);
+      }
+    }
+    avatarRegistryCache = getLocalAvatarRegistry();
+  }
+
+  // 自分以外の誰かがそのアバターを使用中かどうか（キャッシュ済みの一覧から判定）
+  function isAvatarTaken(avatar, myUuid){
+    const owner = avatarRegistryCache[avatar];
+    return !!owner && owner !== myUuid;
+  }
+
   // まだ誰にも使われていないアバターを先頭から探す
   function firstAvailableAvatar(myUuid){
     return AVATAR_CHOICES.find(a => !isAvatarTaken(a, myUuid)) || AVATAR_CHOICES[0];
+  }
+
+  // アバターを自分のものとして登録する（早い者勝ち）。
+  // 戻り値: true=登録成功 / false=直前に他の人に取られていた（再選択が必要）
+  async function claimAvatar(avatar, uuid, name){
+    if(SHEET_API_URL){
+      try{
+        const res = await fetch(SHEET_API_URL, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({ kind:'avatar', avatar, userUuid:uuid, userName:name })
+        });
+        const json = await res.json();
+        if(json.status === 'taken') return false;
+        avatarRegistryCache[avatar] = uuid;
+        return true;
+      }catch(err){
+        console.error('アバター登録に失敗しました。localStorageにフォールバックします。', err);
+      }
+    }
+    claimAvatarLocal(avatar, uuid);
+    avatarRegistryCache[avatar] = uuid;
+    return true;
   }
 
   let currentUser = getUser();
@@ -704,6 +759,7 @@
   const avatarGrid = document.getElementById('avatarGrid');
   const nameInput = document.getElementById('nameInput');
   const modalConfirm = document.getElementById('modalConfirm');
+  const modalWarning = document.getElementById('modalWarning');
 
   let currentGame = null;
 
@@ -913,12 +969,20 @@
     });
   }
 
-  function openModal(){
+  async function openModal(){
     modalTitle.textContent = 'ようこそ！';
     modalSub.textContent = 'アバターとニックネームだよ。自動で入ってるからこのままでもOK！\n※あとから変更はできないので、決める時だけよく見てね。';
-    selectedAvatar = firstAvailableAvatar(null);
     nameInput.value = generateNickname();
+    modalConfirm.disabled = true;
+    modalConfirm.textContent = '読み込み中…';
+    modalWarning.textContent = '';
+
+    await refreshAvatarRegistry();
+    selectedAvatar = firstAvailableAvatar(null);
     renderAvatarGrid();
+
+    modalConfirm.disabled = false;
+    modalConfirm.textContent = 'はじめる';
     modalOverlay.classList.add('show');
   }
 
@@ -926,17 +990,33 @@
     modalOverlay.classList.remove('show');
   }
 
-  function confirmModal(){
+  async function confirmModal(){
     // 空にしても必ずニックネームが入るようにする（個人特定はしない）
     const name = nameInput.value.trim() || generateNickname();
-    currentUser = {
-      uuid: generateUUID(),
-      avatar: selectedAvatar,
-      name: name
-    };
-    claimAvatar(selectedAvatar, currentUser.uuid);
+    const uuid = generateUUID();
+
+    modalConfirm.disabled = true;
+    modalConfirm.textContent = '登録中…';
+    modalWarning.textContent = '';
+
+    const ok = await claimAvatar(selectedAvatar, uuid, name);
+
+    if(!ok){
+      // 直前に他の人が同じアバターを取ってしまった場合：最新状況を再取得して選び直してもらう
+      await refreshAvatarRegistry();
+      selectedAvatar = firstAvailableAvatar(null);
+      renderAvatarGrid();
+      modalWarning.textContent = 'そのアバターはたった今、他の人が使い始めました。別のアバターを選んでね！';
+      modalConfirm.disabled = false;
+      modalConfirm.textContent = 'はじめる';
+      return;
+    }
+
+    currentUser = { uuid, avatar: selectedAvatar, name };
     saveUser(currentUser);
     refreshProfileUI();
+    modalConfirm.disabled = false;
+    modalConfirm.textContent = 'はじめる';
     closeModal();
   }
   modalConfirm.addEventListener('click', confirmModal);
@@ -944,14 +1024,14 @@
   /* =========================================================
      初期化
      ========================================================= */
-  function init(){
+  async function init(){
     renderGallery();
 
     if(!currentUser){
       openModal();
     } else {
       // 既存ユーザーのアバターもレジストリに反映しておく（旧バージョンからの移行対応）
-      claimAvatar(currentUser.avatar, currentUser.uuid);
+      await claimAvatar(currentUser.avatar, currentUser.uuid, currentUser.name);
       refreshProfileUI();
     }
   }
