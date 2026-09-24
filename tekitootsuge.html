@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>適当お告げボット</title>
+<style>
+  :root{
+    --night1:#0b0a1f;
+    --night2:#1a1640;
+    --night3:#2a1f52;
+    --star:#ffffff;
+    --nebula1:#7a5cff;
+    --nebula2:#ff7ac1;
+    --nebula3:#5cd8ff;
+    --crystal1:#cdeaff;
+    --crystal2:#9db8ff;
+    --crystal3:#6a7fd0;
+    --gold:#ffd977;
+    --text-main:#eef0ff;
+    --text-sub:#b3aee0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    font-family:"Hiragino Sans","Yu Gothic","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    color:var(--text-main);
+  }
+
+  #app{
+    position:relative;
+    width:100%; height:100%;
+    background:
+      radial-gradient(ellipse at 30% 20%, var(--night3) 0%, transparent 55%),
+      radial-gradient(ellipse at 75% 70%, #241a4a 0%, transparent 55%),
+      linear-gradient(180deg, var(--night1), var(--night2));
+  }
+
+  /* 星 */
+  #stars{ position:absolute; inset:0; z-index:0; }
+  .star{
+    position:absolute;
+    background:var(--star);
+    border-radius:50%;
+    animation:twinkle 3.4s ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:.2;} 50%{opacity:.95;} }
+
+  /* 漂うネビュラの光 */
+  .nebula{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(50px);
+    opacity:.28;
+    animation:driftNebula 22s ease-in-out infinite;
+  }
+  @keyframes driftNebula{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(30px,-20px) scale(1.15); }
+  }
+  #neb1{ width:260px; height:260px; background:var(--nebula1); top:8%; left:-6%; }
+  #neb2{ width:220px; height:220px; background:var(--nebula2); bottom:10%; right:-8%; animation-delay:-8s; }
+  #neb3{ width:180px; height:180px; background:var(--nebula3); top:55%; left:60%; animation-delay:-14s; }
+
+  header{
+    position:relative; z-index:3;
+    text-align:center;
+    padding:18px 16px 0;
+  }
+  header h1{
+    font-size:14px; letter-spacing:5px; font-weight:700;
+    color:var(--text-sub); margin:0; opacity:.85;
+  }
+
+  /* ===== 水晶玉ステージ ===== */
+  #crystalStage{
+    position:absolute;
+    left:50%; top:40%;
+    transform:translate(-50%,-50%);
+    z-index:3;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  #glowRing{
+    position:absolute;
+    width:170px; height:170px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(157,184,255,.45), transparent 70%);
+    filter:blur(6px);
+    animation:idleGlow 3.6s ease-in-out infinite;
+    z-index:1;
+  }
+  @keyframes idleGlow{
+    0%,100%{ transform:scale(.94); opacity:.55; }
+    50%{ transform:scale(1.05); opacity:.85; }
+  }
+  #glowRing.active{
+    animation:activeGlow 1.1s ease-in-out infinite;
+  }
+  @keyframes activeGlow{
+    0%,100%{ transform:scale(1); opacity:.75; }
+    50%{ transform:scale(1.35); opacity:1; }
+  }
+
+  #crystalBall{
+    position:relative;
+    width:132px; height:132px;
+    border-radius:50%;
+    z-index:2;
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255,255,255,.9), transparent 30%),
+      radial-gradient(circle at 60% 70%, var(--crystal3), var(--crystal2) 55%, var(--crystal1) 100%);
+    box-shadow:
+      0 0 30px rgba(157,184,255,.5),
+      inset 0 0 30px rgba(255,255,255,.4),
+      inset -10px -10px 30px rgba(60,60,120,.35);
+    overflow:hidden;
+  }
+  #crystalBall::after{
+    /* 内部のもや */
+    content:"";
+    position:absolute; inset:-20%;
+    background:conic-gradient(from 0deg, transparent, rgba(255,255,255,.18), transparent 40%, rgba(157,184,255,.25), transparent 70%);
+    animation:mistSpin 7s linear infinite;
+    opacity:.6;
+  }
+  #crystalBall.thinking::after{
+    animation:mistSpin 1.4s linear infinite;
+    opacity:1;
+  }
+  @keyframes mistSpin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+
+  /* 台座 */
+  #stand{
+    width:96px; height:26px;
+    margin-top:-8px;
+    z-index:2;
+    background:linear-gradient(160deg, var(--gold), #b8842e);
+    clip-path:polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+    box-shadow:0 6px 12px rgba(0,0,0,.4);
+  }
+  #standBase{
+    width:120px; height:10px;
+    background:linear-gradient(160deg, #b8842e, #8a611f);
+    border-radius:6px;
+    z-index:2;
+    box-shadow:0 4px 8px rgba(0,0,0,.4);
+  }
+
+  /* きらめく粒子 */
+  .sparkle{
+    position:absolute;
+    width:4px; height:4px;
+    background:var(--gold);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:4;
+    animation:sparkleRise 1.6s ease-out forwards;
+  }
+  @keyframes sparkleRise{
+    0%{ opacity:1; transform:translate(0,0) scale(1); }
+    100%{ opacity:0; transform:translate(var(--sx), -80px) scale(.3); }
+  }
+
+  /* ===== メッセージエリア ===== */
+  #messageArea{
+    position:absolute;
+    left:50%; top:63%;
+    transform:translate(-50%,0);
+    z-index:5;
+    width:88%;
+    max-width:380px;
+    text-align:center;
+    min-height:110px;
+  }
+  #thinkingLabel{
+    font-size:13px; color:var(--text-sub); font-weight:700;
+    letter-spacing:2px;
+    opacity:0;
+  }
+  #thinkingLabel.show{
+    animation:fadeInOut 1.4s ease-in-out infinite;
+  }
+  @keyframes fadeInOut{ 0%,100%{ opacity:.3; } 50%{ opacity:.9; } }
+
+  #oracleCard{
+    display:none;
+    background:linear-gradient(160deg, rgba(255,255,255,.09), rgba(157,184,255,.06));
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:18px;
+    padding:20px 22px;
+    backdrop-filter:blur(6px);
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  #oracleCard.show{ display:block; }
+  #oracleText{
+    font-size:16px;
+    font-weight:700;
+    line-height:1.9;
+    color:#fdfaff;
+  }
+  #oracleText .ch{
+    display:inline-block;
+    opacity:0;
+    transform:translateY(10px);
+    animation:charIn .55s cubic-bezier(.2,.8,.3,1) forwards;
+  }
+  @keyframes charIn{
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* ===== 入力エリア ===== */
+  #inputBar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    z-index:10;
+    display:flex;
+    gap:10px;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg, rgba(11,10,31,.95), rgba(11,10,31,.7) 70%, transparent);
+  }
+  #moyaInput{
+    flex:1;
+    min-width:0;
+    padding:13px 16px;
+    border-radius:18px;
+    border:1.5px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08);
+    color:#fdfaff;
+    font-size:14px;
+    font-family:inherit;
+    outline:none;
+  }
+  #moyaInput::placeholder{ color:#a89ee0aa; }
+  #moyaInput:focus{ border-color:var(--gold); }
+  #sendBtn{
+    flex-shrink:0;
+    padding:0 20px;
+    border:none;
+    border-radius:18px;
+    background:linear-gradient(160deg, #cdb0ff, #8a6cf0);
+    color:#20143a;
+    font-weight:800;
+    font-size:13.5px;
+    letter-spacing:1px;
+    box-shadow:0 5px 0 #5a3fb0, 0 8px 14px rgba(0,0,0,.3);
+    transition:transform .07s ease, box-shadow .07s ease;
+  }
+  #sendBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #5a3fb0; }
+  #sendBtn:disabled{ opacity:.5; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="stars"></div>
+  <div class="nebula" id="neb1"></div>
+  <div class="nebula" id="neb2"></div>
+  <div class="nebula" id="neb3"></div>
+
+  <header><h1>適当お告げボット</h1></header>
+
+  <div id="crystalStage">
+    <div id="glowRing"></div>
+    <div id="crystalBall"></div>
+    <div id="stand"></div>
+    <div id="standBase"></div>
+  </div>
+
+  <div id="messageArea">
+    <div id="thinkingLabel">水晶が覗いています…</div>
+    <div id="oracleCard">
+      <div id="oracleText"></div>
+    </div>
+  </div>
+
+  <div id="inputBar">
+    <input id="moyaInput" type="text" maxlength="80" placeholder="今モヤモヤしていることを書いてみる…" />
+    <button id="sendBtn">相談する</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const app = document.getElementById('app');
+  const starsLayer = document.getElementById('stars');
+  const crystalBall = document.getElementById('crystalBall');
+  const glowRing = document.getElementById('glowRing');
+  const crystalStage = document.getElementById('crystalStage');
+  const thinkingLabel = document.getElementById('thinkingLabel');
+  const oracleCard = document.getElementById('oracleCard');
+  const oracleText = document.getElementById('oracleText');
+  const moyaInput = document.getElementById('moyaInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  const oracles = [
+    "まあ、宇宙の膨張速度に比べたら些細なことだよ。大丈夫。",
+    "地球の裏側では今、アルパカがくしゃみをした。だから気にしなくていいよ。",
+    "80年後にはみんな土に還るから、今は美味しいものを食べれば大丈夫。",
+    "人類の歴史から見れば誤差の範囲。とりあえず温かいお茶飲もう。",
+    "金星の自転とは逆方向の出来事だから仕方ない。あなたは悪くない。"
+  ];
+
+  function rand(min,max){ return min + Math.random()*(max-min); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // ===== 星の生成 =====
+  function createStars(){
+    const count = 60;
+    for(let i=0;i<count;i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = rand(0,100) + '%';
+      s.style.top = rand(0,95) + '%';
+      const size = rand(1,2.6);
+      s.style.width = size+'px';
+      s.style.height = size+'px';
+      s.style.animationDelay = rand(0,3.4)+'s';
+      starsLayer.appendChild(s);
+    }
+  }
+  createStars();
+
+  function spawnSparkles(){
+    const rect = crystalBall.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    for(let i=0;i<14;i++){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      const angle = rand(0, Math.PI*2);
+      const dist = rand(20, 60);
+      s.style.left = (cx + Math.cos(angle)*dist) + 'px';
+      s.style.top = (cy + Math.sin(angle)*dist) + 'px';
+      s.style.setProperty('--sx', rand(-30,30)+'px');
+      s.style.animationDelay = rand(0,0.3)+'s';
+      app.appendChild(s);
+      setTimeout(() => s.remove(), 2000);
+    }
+  }
+
+  function renderOracleText(text){
+    oracleText.innerHTML = '';
+    const chars = Array.from(text);
+    chars.forEach((ch, i) => {
+      const span = document.createElement('span');
+      span.className = 'ch';
+      span.textContent = ch === ' ' ? '\u00A0' : ch;
+      span.style.animationDelay = (i * 0.035) + 's';
+      oracleText.appendChild(span);
+    });
+  }
+
+  let busy = false;
+
+  function consult(){
+    const text = moyaInput.value.trim();
+    if(!text || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    moyaInput.value = '';
+
+    oracleCard.classList.remove('show');
+    thinkingLabel.classList.add('show');
+    thinkingLabel.textContent = '水晶が覗いています…';
+
+    glowRing.classList.add('active');
+    crystalBall.classList.add('thinking');
+    spawnSparkles();
+
+    const thinkDuration = rand(1800, 2600);
+
+    setTimeout(() => {
+      spawnSparkles();
+    }, thinkDuration * 0.5);
+
+    setTimeout(() => {
+      glowRing.classList.remove('active');
+      crystalBall.classList.remove('thinking');
+      thinkingLabel.classList.remove('show');
+
+      const oracle = pick(oracles);
+      renderOracleText(oracle);
+      oracleCard.classList.add('show');
+
+      busy = false;
+      sendBtn.disabled = false;
+    }, thinkDuration);
+  }
+
+  sendBtn.addEventListener('click', consult);
+  moyaInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') consult();
+  });
+})();
+</script>
+</body>
+</html>

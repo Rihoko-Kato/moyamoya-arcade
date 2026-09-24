@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ぶっとびポジティブ相棒</title>
+<style>
+  :root{
+    --yellow:#ffd23f;
+    --orange:#ff8c2e;
+    --orange-dark:#e0651a;
+    --pink:#ff4f93;
+    --blue:#3fc1ff;
+    --ink:#221a0f;
+    --cream:#fff6e0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    font-family:"Hiragino Sans","Yu Gothic","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    color:var(--ink);
+  }
+
+  #app{
+    position:relative;
+    width:100%; height:100%;
+    background:
+      radial-gradient(circle 5px at 20px 20px, rgba(255,255,255,.35) 0, transparent 5px),
+      linear-gradient(160deg, var(--yellow), var(--orange));
+    background-size: 40px 40px, 100% 100%;
+  }
+
+  /* コミック風バーストの装飾 */
+  .burst{
+    position:absolute;
+    z-index:0;
+    opacity:.9;
+  }
+  .starBurst{
+    clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  #b1{ width:70px; height:70px; top:6%; left:6%; background:var(--pink); transform:rotate(-10deg); }
+  #b2{ width:56px; height:56px; top:10%; right:8%; background:var(--blue); transform:rotate(18deg); }
+  #b3{ width:44px; height:44px; bottom:32%; left:5%; background:#fff; transform:rotate(8deg); opacity:.8; }
+  #b4{ width:50px; height:50px; bottom:30%; right:6%; background:var(--pink); transform:rotate(-16deg); }
+
+  header{
+    position:relative; z-index:3;
+    text-align:center;
+    padding:14px 16px 0;
+  }
+  header h1{
+    display:inline-block;
+    font-size:17px; font-weight:900; letter-spacing:1px;
+    color:var(--ink);
+    background:var(--cream);
+    padding:6px 18px;
+    border:4px solid var(--ink);
+    border-radius:14px;
+    box-shadow:5px 5px 0 var(--ink);
+    transform:rotate(-2deg);
+  }
+
+  /* ===== キャラクターステージ ===== */
+  #charStage{
+    position:absolute;
+    left:50%; top:34%;
+    transform:translate(-50%,-50%);
+    z-index:3;
+  }
+
+  #dog{
+    position:relative;
+    width:190px; height:190px;
+    animation:idleBounce 1.8s ease-in-out infinite;
+  }
+  @keyframes idleBounce{
+    0%,100%{ transform:translateY(0) rotate(-2deg); }
+    50%{ transform:translateY(-8px) rotate(2deg); }
+  }
+  #dog.react{
+    animation:hyperShake .9s cubic-bezier(.36,.07,.19,.97);
+  }
+  @keyframes hyperShake{
+    0%{ transform:translate(0,0) rotate(0deg) scale(1); }
+    8%{ transform:translate(-14px,-10px) rotate(-14deg) scale(1.08); }
+    16%{ transform:translate(14px,4px) rotate(12deg) scale(.96); }
+    24%{ transform:translate(-12px,-14px) rotate(-10deg) scale(1.1); }
+    34%{ transform:translate(12px,6px) rotate(9deg) scale(.95); }
+    46%{ transform:translate(-8px,-10px) rotate(-7deg) scale(1.05); }
+    58%{ transform:translate(8px,4px) rotate(6deg) scale(1); }
+    70%{ transform:translate(-5px,-6px) rotate(-4deg) scale(1.03); }
+    82%{ transform:translate(4px,2px) rotate(2deg) scale(1); }
+    100%{ transform:translate(0,0) rotate(0deg) scale(1); }
+  }
+
+  .ear{
+    position:absolute;
+    width:56px; height:76px;
+    background:linear-gradient(160deg,#8a5a2e,#6b4420);
+    border:5px solid var(--ink);
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    top:-18px;
+    z-index:1;
+  }
+  .earL{ left:6px; transform:rotate(-25deg); }
+  .earR{ right:6px; transform:rotate(25deg); }
+
+  #face{
+    position:absolute;
+    left:50%; top:14px;
+    transform:translateX(-50%);
+    width:168px; height:150px;
+    background:radial-gradient(circle at 35% 28%, #ffe3b0, var(--orange) 70%);
+    border:6px solid var(--ink);
+    border-radius:50%;
+    z-index:2;
+    box-shadow:6px 8px 0 rgba(0,0,0,.25);
+  }
+
+  .sunglasses{
+    position:absolute;
+    left:50%; top:44px;
+    transform:translateX(-50%);
+    width:120px; height:34px;
+    z-index:5;
+  }
+  .lens{
+    position:absolute; top:0;
+    width:50px; height:34px;
+    background:linear-gradient(160deg,#3a3a3a,#0a0a0a);
+    border:4px solid var(--ink);
+    border-radius:14px;
+  }
+  .lens::after{
+    content:"";
+    position:absolute; top:5px; left:8px;
+    width:16px; height:8px;
+    background:rgba(255,255,255,.55);
+    border-radius:50%;
+    transform:rotate(-20deg);
+  }
+  .lensL{ left:0; }
+  .lensR{ right:0; }
+  .bridge{
+    position:absolute; top:13px; left:50%;
+    width:22px; height:6px;
+    margin-left:-11px;
+    background:var(--ink);
+    border-radius:3px;
+  }
+
+  .nose{
+    position:absolute; left:50%; top:86px;
+    transform:translateX(-50%);
+    width:26px; height:20px;
+    background:var(--ink);
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    z-index:4;
+  }
+  .tongue{
+    position:absolute; left:50%; top:104px;
+    transform:translateX(-50%);
+    width:26px; height:34px;
+    background:linear-gradient(180deg,#ff7a94,#e0526f);
+    border:3px solid var(--ink);
+    border-radius:0 0 16px 16px;
+    z-index:3;
+  }
+  .tongue::after{
+    content:"";
+    position:absolute; left:50%; top:0;
+    width:3px; height:100%;
+    background:var(--ink);
+    transform:translateX(-50%);
+  }
+
+  .cheek{
+    position:absolute; top:64px;
+    width:20px; height:14px;
+    background:#ff9db0;
+    border-radius:50%;
+    opacity:.75;
+    z-index:3;
+  }
+  .cheekL{ left:14px; }
+  .cheekR{ right:14px; }
+
+  #bandana{
+    position:absolute; left:50%; bottom:-6px;
+    transform:translateX(-50%);
+    width:150px; height:38px;
+    background:
+      radial-gradient(circle 4px at 14px 10px, #fff 0 4px, transparent 4px) repeat,
+      linear-gradient(180deg, #e2453f, #b8302a);
+    background-size:22px 22px, 100% 100%;
+    clip-path:polygon(0% 0%, 100% 0%, 50% 100%);
+    border:4px solid var(--ink);
+    z-index:1;
+  }
+
+  /* しっぽ（右下でパタパタ） */
+  #tail{
+    position:absolute; right:-14px; bottom:6px;
+    width:44px; height:20px;
+    background:linear-gradient(160deg,#8a5a2e,#6b4420);
+    border:4px solid var(--ink);
+    border-radius:20px;
+    transform-origin:left center;
+    animation:tailWag .35s ease-in-out infinite;
+    z-index:0;
+  }
+  @keyframes tailWag{
+    0%,100%{ transform:rotate(-18deg); }
+    50%{ transform:rotate(14deg); }
+  }
+  #dog.react #tail{ animation:tailWag .1s ease-in-out infinite; }
+
+  /* ===== 吹き出し ===== */
+  #speechWrap{
+    position:absolute;
+    left:50%; top:2%;
+    transform:translateX(-50%);
+    z-index:10;
+    width:92%;
+    max-width:400px;
+  }
+  #speechBubble{
+    position:relative;
+    background:var(--cream);
+    border:5px solid var(--ink);
+    border-radius:22px;
+    padding:16px 20px;
+    box-shadow:7px 7px 0 var(--ink);
+    display:none;
+    text-align:center;
+  }
+  #speechBubble.show{
+    display:block;
+    animation:bubblePop .4s cubic-bezier(.3,1.7,.4,1);
+  }
+  #speechBubble.swap{
+    animation:bubbleSwap .35s cubic-bezier(.3,1.7,.4,1);
+  }
+  @keyframes bubblePop{
+    0%{ transform:scale(.4) rotate(-6deg); opacity:0; }
+    70%{ transform:scale(1.08) rotate(2deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  @keyframes bubbleSwap{
+    0%{ transform:scale(.85) rotate(-3deg); }
+    60%{ transform:scale(1.06) rotate(2deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  #speechBubble::after{
+    content:"";
+    position:absolute;
+    left:50%; bottom:-26px;
+    transform:translateX(-50%);
+    width:0; height:0;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-top:22px solid var(--ink);
+  }
+  #speechBubble::before{
+    content:"";
+    position:absolute;
+    left:50%; bottom:-18px;
+    transform:translateX(-50%);
+    width:0; height:0;
+    z-index:1;
+    border-left:12px solid transparent;
+    border-right:12px solid transparent;
+    border-top:17px solid var(--cream);
+  }
+  #speechText{
+    font-size:14.5px;
+    font-weight:700;
+    line-height:1.7;
+    color:var(--ink);
+  }
+  #speechText .highlight{
+    display:inline-block;
+    color:#fff;
+    background:var(--pink);
+    padding:2px 8px;
+    border-radius:8px;
+    border:2px solid var(--ink);
+    transform:rotate(-2deg);
+    margin-top:4px;
+  }
+
+  /* ===== 入力エリア ===== */
+  #inputBar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    z-index:12;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg, rgba(255,140,46,.95), rgba(255,140,46,.6) 70%, transparent);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  #worryInput{
+    width:100%;
+    min-height:56px;
+    max-height:90px;
+    resize:none;
+    padding:12px 14px;
+    border-radius:16px;
+    border:3px solid var(--ink);
+    background:#fffdf6;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    outline:none;
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  #worryInput:focus{ border-color:var(--pink); }
+  #consultBtn{
+    align-self:center;
+    padding:14px 40px;
+    border:4px solid var(--ink);
+    border-radius:26px;
+    background:linear-gradient(160deg, var(--pink), #d43a76);
+    color:#fff;
+    font-weight:900;
+    font-size:16px;
+    letter-spacing:1px;
+    box-shadow:5px 5px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  #consultBtn:active{
+    transform:translate(4px,4px);
+    box-shadow:1px 1px 0 var(--ink);
+  }
+  #consultBtn:disabled{ opacity:.6; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="burst starBurst" id="b1"></div>
+  <div class="burst starBurst" id="b2"></div>
+  <div class="burst starBurst" id="b3"></div>
+  <div class="burst starBurst" id="b4"></div>
+
+  <header><h1>ぶっとびポジティブ相棒</h1></header>
+
+  <div id="speechWrap">
+    <div id="speechBubble">
+      <div id="speechText"></div>
+    </div>
+  </div>
+
+  <div id="charStage">
+    <div id="dog">
+      <div class="ear earL"></div>
+      <div class="ear earR"></div>
+      <div id="face">
+        <div class="sunglasses">
+          <div class="lens lensL"></div>
+          <div class="bridge"></div>
+          <div class="lens lensR"></div>
+        </div>
+        <div class="cheek cheekL"></div>
+        <div class="cheek cheekR"></div>
+        <div class="nose"></div>
+        <div class="tongue"></div>
+      </div>
+      <div id="bandana"></div>
+      <div id="tail"></div>
+    </div>
+  </div>
+
+  <div id="inputBar">
+    <textarea id="worryInput" maxlength="200" placeholder="今悩んでること・やらかしたことを書いてみて！"></textarea>
+    <button id="consultBtn">相談する！</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const dog = document.getElementById('dog');
+  const speechBubble = document.getElementById('speechBubble');
+  const speechText = document.getElementById('speechText');
+  const worryInput = document.getElementById('worryInput');
+  const consultBtn = document.getElementById('consultBtn');
+
+  const reactionLine = "うわー！それは大変だったな！でも聞いてくれ！";
+
+  const bigFacts = [
+    "今この瞬間も、宇宙空間では毎秒ドデカい星が爆発して木っ端微塵になってるんだぜ！それに比べたら、君のやらかしなんてチリほどの誤差！",
+    "地球上のアリを全部集めると、人間の総重量と同じになるらしいぜ！足元にそんな数のアリがいるヤバい世界線に比べたら、君の悩みなんて可愛いもんさ！",
+    "深海には頭が透明で目が緑色に光るデメニギスって魚がいるんだぜ！そんなヤバい造形のヤツが泳いでるんだから、君の失敗なんて普通普通！",
+    "今南米では、カピバラが温泉に入って完全に『無』の表情をしてるよ！あのシュールさに比べたら、君の悩みなんてドラマチックで最高！",
+    "人間のDNAの50%はバナナと同じらしいぜ！半分バナナの生き物が少しくらい失敗したって、そりゃそうだろ！"
+  ];
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function setSpeech(mainText, withHighlight){
+    speechText.innerHTML = '';
+    const p = document.createElement('div');
+    p.textContent = mainText;
+    speechText.appendChild(p);
+    if(withHighlight){
+      const h = document.createElement('div');
+      h.className = 'highlight';
+      h.textContent = 'それに比べたら、君の悩みなんて全然大丈夫！';
+      speechText.appendChild(h);
+    }
+  }
+
+  let busy = false;
+
+  function consult(){
+    if(busy) return;
+    const text = worryInput.value.trim();
+    if(!text){
+      worryInput.focus();
+      return;
+    }
+    busy = true;
+    consultBtn.disabled = true;
+    worryInput.value = '';
+
+    // 1. まずは大げさなリアクション
+    dog.classList.remove('react');
+    void dog.offsetWidth;
+    dog.classList.add('react');
+
+    setSpeech(reactionLine, false);
+    speechBubble.classList.remove('show','swap');
+    void speechBubble.offsetWidth;
+    speechBubble.classList.add('show');
+
+    // 2. 少し間を置いて、文脈無視のヤバい事実＋全肯定オチ
+    setTimeout(() => {
+      setSpeech(pick(bigFacts), true);
+      speechBubble.classList.remove('show');
+      void speechBubble.offsetWidth;
+      speechBubble.classList.add('show','swap');
+    }, 1500);
+
+    setTimeout(() => {
+      dog.classList.remove('react');
+      consultBtn.disabled = false;
+      busy = false;
+    }, 1000);
+  }
+
+  consultBtn.addEventListener('click', consult);
+  worryInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      consult();
+    }
+  });
+})();
+</script>
+</body>
+</html>
