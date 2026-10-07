@@ -10,12 +10,13 @@
     --night2:#1b1638;
     --night3:#26204a;
     --star:#ffffffaa;
-    --monster-bg:#2a2340dd;
-    --monster-border:#6b5a8e;
-    --monster-text:#c9b8e0;
+    --monster-bg:#3a2560ee;
+    --monster-border:#b07ae0;
+    --monster-text:#e2d4f5;
+    --fact-bg:#3a3a44ee;
+    --fact-border:#8a8a96;
+    --fact-text:#d8d8de;
     --mantra-color:#ffe9a8;
-    --button-night1:#4a3f7a;
-    --button-night2:#241d47;
     --gauge-start:#7ec9e8;
     --gauge-end:#a78bfa;
     --morning-bg1:#eaf6ff;
@@ -34,14 +35,10 @@
   #app{
     position:relative;
     width:100%; height:100%;
-    background:
-      radial-gradient(circle at 15% 12%, #ffffff14 0%, transparent 3%),
-      radial-gradient(circle at 70% 20%, #ffffff10 0%, transparent 2%),
-      radial-gradient(circle at 40% 65%, #ffffff10 0%, transparent 2%),
-      radial-gradient(circle at 85% 75%, #ffffff10 0%, transparent 2%),
-      linear-gradient(160deg, var(--night1), var(--night2) 55%, var(--night3));
+    background:linear-gradient(160deg, var(--night1), var(--night2) 55%, var(--night3));
     transition: background 1.1s ease;
     color:var(--text-main);
+    overflow:hidden;
   }
   #app.morning{
     background: linear-gradient(160deg, var(--morning-bg1), var(--morning-bg2));
@@ -53,7 +50,6 @@
   #app.morning #stars{ opacity:0; }
   .star{
     position:absolute;
-    width:2px; height:2px;
     background:var(--star);
     border-radius:50%;
     opacity:.7;
@@ -61,144 +57,172 @@
   }
   @keyframes twinkle{ 0%,100%{opacity:.25;} 50%{opacity:.9;} }
 
-  /* ヘッダー：ゲージ */
+  /* ヘッダー：眠りゲージ */
   #hud{
     position:absolute; top:0; left:0; right:0;
     z-index:20;
-    padding:16px 18px 0;
+    padding:12px 16px 0;
     display:flex; flex-direction:column; align-items:center;
+    pointer-events:none;
   }
   #hud h1{
-    font-size:13px; letter-spacing:3px; font-weight:700;
-    color:#b7a9e0; margin:0 0 8px; opacity:.85;
-    transition:color .8s ease;
+    font-size:12px; letter-spacing:2px; font-weight:700;
+    color:#b7a9e0; margin:0 0 6px; opacity:.9;
   }
-  #app.morning #hud h1{ color:#7a8fa8; }
   #gaugeOuter{
-    width:100%; max-width:420px; height:20px;
+    width:100%; max-width:420px; height:18px;
     background:#00000030;
     border:2px solid #4d3f7a;
     border-radius:14px;
     overflow:hidden;
     position:relative;
-    transition:border-color .8s ease;
   }
-  #app.morning #gaugeOuter{ border-color:#bcd8ea; background:#ffffff70; }
   #gaugeInner{
     height:100%; width:0%;
     background:linear-gradient(90deg,var(--gauge-start),var(--gauge-end));
-    transition:width .25s ease;
+    transition:width .2s linear;
     position:relative;
   }
   #gaugeInner::after{
     content:""; position:absolute; inset:0;
     background:repeating-linear-gradient(45deg, rgba(255,255,255,.25) 0 8px, transparent 8px 16px);
   }
-  #gaugePercent{
-    position:absolute; right:10px; top:0; bottom:0;
+  #gaugeLabel{
+    position:absolute; left:10px; top:0; bottom:0;
     display:flex; align-items:center;
-    font-size:12px; font-weight:700; color:#fff; z-index:2;
+    font-size:11px; font-weight:700; color:#fff; z-index:2;
   }
+  #hint{
+    margin-top:8px;
+    font-size:11.5px; font-weight:700; color:#cfc4ee;
+    background:#ffffff14; padding:4px 12px; border-radius:12px;
+    min-height:22px;
+    transition:opacity .4s ease;
+  }
+  #hint:empty{ opacity:0; }
 
-  /* モンスター（自己嫌悪テキスト） */
-  #monsterLayer{ position:absolute; inset:0; z-index:5; overflow:hidden; }
-  .monster{
+  /* 明日のメモ（左下） */
+  #memoBadge{
+    position:absolute; left:12px; bottom:12px; z-index:20;
+    font-size:12px; font-weight:700; color:#d8d8de;
+    background:#ffffff14; border:1px solid #ffffff22;
+    padding:6px 12px; border-radius:14px;
+    pointer-events:none;
+  }
+  #memoBadge.bump{ animation:bump .35s ease; }
+  @keyframes bump{ 50%{ transform:scale(1.15); } }
+
+  /* 考えごと（モンスター） */
+  #monsterLayer{ position:absolute; inset:0; z-index:5; }
+  .thought{
     position:absolute;
     max-width:150px;
     padding:8px 12px;
-    background:var(--monster-bg);
-    border:1px solid var(--monster-border);
     border-radius:14px;
-    color:var(--monster-text);
     font-size:12.5px;
-    font-weight:600;
+    font-weight:700;
     line-height:1.4;
     text-align:center;
     box-shadow:0 4px 10px rgba(0,0,0,.35);
-    pointer-events:none;
-    will-change:transform;
-    white-space:normal;
-  }
-  .monster.blasted{
-    transition:transform .5s cubic-bezier(.2,.7,.3,1), opacity .5s ease;
-    opacity:0;
-  }
-
-  /* 中央ボタン */
-  #buttonWrap{
-    position:absolute;
-    left:50%; top:50%;
-    transform:translate(-50%,-50%);
-    z-index:15;
-    display:flex; flex-direction:column; align-items:center;
-  }
-  #centerButton{
-    width:168px; height:168px;
-    border-radius:50%;
-    border:none;
-    background:radial-gradient(circle at 35% 30%, var(--button-night1), var(--button-night2));
-    box-shadow:
-      0 0 0 8px rgba(255,255,255,.05),
-      0 10px 30px rgba(0,0,0,.5),
-      inset 0 0 20px rgba(255,255,255,.08);
-    color:#f2eeff;
-    font-size:34px;
-    font-weight:900;
-    letter-spacing:2px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2px;
     cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    transition:transform .08s ease, background 1s ease, box-shadow 1s ease;
+    transform:translate(-50%,-50%);
+    will-change:left, top;
+    touch-action:manipulation;
   }
-  #centerButton:active{ transform:scale(.93); }
-  #centerButton .sub{ font-size:13px; font-weight:700; letter-spacing:3px; opacity:.85; }
-  #app.morning #centerButton{
-    background:radial-gradient(circle at 35% 30%, #fff2c2, var(--morning-accent));
-    color:#6a4f16;
-    box-shadow:
-      0 0 0 8px rgba(255,215,106,.25),
-      0 10px 30px rgba(0,0,0,.15),
-      inset 0 0 20px rgba(255,255,255,.4);
+  .thought.emo{ background:var(--monster-bg); border:1.5px solid var(--monster-border); color:var(--monster-text); }
+  .thought.fact{
+    background:var(--fact-bg); border:1.5px solid var(--fact-border); color:var(--fact-text);
+    font-weight:500; border-radius:6px;
   }
+  .thought.fact::before{ content:"事実 "; font-size:10px; opacity:.7; }
+  .thought.mine{
+    background:#1e2a44ee; border:1.5px dashed #a9c9ff; color:#dce9ff;
+  }
+  .thought.boss{
+    max-width:200px;
+    font-size:16px; padding:12px 16px;
+    background:#3a1f4aee; border:2px solid #d07ad8; color:#ffd8f4;
+    box-shadow:0 0 18px rgba(208,122,216,.5);
+  }
+  .thought.boss .hp{ display:block; font-size:10px; letter-spacing:3px; opacity:.8; }
+  .thought.hit{ animation:hitShake .25s ease; }
+  @keyframes hitShake{
+    0%,100%{ margin-left:0; } 25%{ margin-left:-6px; } 75%{ margin-left:6px; }
+  }
+  .thought.sheep{
+    background:none; box-shadow:none; padding:0;
+    font-size:34px; line-height:1;
+  }
+  .thought.blasted{
+    transition:transform .5s cubic-bezier(.2,.7,.3,1), opacity .5s ease;
+    opacity:0; pointer-events:none;
+  }
+  .thought.filed{
+    transition:left .6s ease-in, top .6s ease-in, transform .6s ease-in, opacity .6s ease-in;
+    opacity:0; pointer-events:none;
+  }
+  .thought.faded{ transition:opacity .4s ease; opacity:0; pointer-events:none; }
 
-  /* ショックウェーブ（連打の吹き飛ばし演出） */
+  /* 眠る人（中央） */
+  #sleeper{
+    position:absolute;
+    left:50%; top:56%;
+    transform:translate(-50%,-50%);
+    z-index:4;
+    width:120px; height:120px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #4a3f7a, #241d47);
+    box-shadow:0 0 0 8px rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.5), inset 0 0 20px rgba(255,255,255,.08);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:50px;
+    pointer-events:none;
+    transition:background 1s ease;
+  }
+  #sleeper .zzz{ font-size:12px; font-weight:800; color:#cfc4ee; letter-spacing:2px; margin-top:-4px; }
+  #sleeper.toss{ animation:toss .6s ease; }
+  @keyframes toss{
+    0%,100%{ transform:translate(-50%,-50%) rotate(0); }
+    30%{ transform:translate(-50%,-50%) rotate(-18deg); }
+    65%{ transform:translate(-50%,-50%) rotate(12deg); }
+  }
+  #app.morning #sleeper{ background:radial-gradient(circle at 35% 30%, #fff2c2, var(--morning-accent)); }
+  #app.morning #sleeper .zzz{ color:#a8916a; }
+
   .shockwave{
     position:absolute;
-    left:50%; top:50%;
     width:20px; height:20px;
     margin:-10px 0 0 -10px;
     border-radius:50%;
     border:3px solid #a9c9ffcc;
     pointer-events:none;
     z-index:12;
-    animation:shockExpand .55s ease-out forwards;
+    animation:shockExpand .5s ease-out forwards;
   }
   @keyframes shockExpand{
     0%{ opacity:.9; transform:scale(0.2); }
-    100%{ opacity:0; transform:scale(16); }
+    100%{ opacity:0; transform:scale(6); }
   }
 
-  /* マントラ（ポジティブ言葉）ポップ */
+  /* おまじない・小さなメッセージ */
   .mantra{
     position:absolute;
     font-size:15px;
     font-weight:800;
     color:var(--mantra-color);
-    text-shadow:0 2px 6px rgba(0,0,0,.4);
+    text-shadow:0 2px 6px rgba(0,0,0,.5);
     pointer-events:none;
     z-index:18;
-    animation:mantraPop 1s ease forwards;
+    animation:mantraPop 1.1s ease forwards;
     white-space:nowrap;
   }
-  #app.morning .mantra{ color:#c9891a; text-shadow:none; }
+  .mantra.small{ font-size:12px; color:#d8d8de; }
+  .mantra.big{ font-size:20px; color:#ffd8f4; }
   @keyframes mantraPop{
     0%{ opacity:0; transform:translate(-50%,0) scale(.6); }
     18%{ opacity:1; transform:translate(-50%,-10px) scale(1.08); }
-    100%{ opacity:0; transform:translate(-50%,-90px) scale(1); }
+    100%{ opacity:0; transform:translate(-50%,-70px) scale(1); }
   }
 
-  /* 朝の光フラッシュ */
   #flash{
     position:fixed; inset:0;
     background:#fff;
@@ -213,48 +237,88 @@
     100%{ opacity:0; }
   }
 
-  /* リザルト画面 */
-  #resultScreen{
+  /* はじまり（夜）画面・朝の結果画面 共通 */
+  .overlay{
     position:fixed; inset:0;
-    background:rgba(255,255,255,.85);
-    backdrop-filter: blur(2px);
-    display:none;
-    align-items:center; justify-content:center; flex-direction:column;
-    z-index:50; text-align:center; padding:26px;
+    display:none; flex-direction:column; align-items:center;
+    z-index:50; text-align:center; padding:16px;
+    overflow-y:auto;
   }
-  #resultScreen.show{ display:flex; }
-  #resultIcon{
-    font-size:60px;
-    margin-bottom:6px;
-    animation:iconPop .5s cubic-bezier(.3,1.6,.4,1);
+  .overlay.show{ display:flex; }
+  .overlayInner{ margin:auto 0; width:100%; max-width:360px; }
+
+  #startScreen{ background:rgba(13,11,30,.88); color:var(--text-main); }
+  #startScreen .moon{ font-size:44px; margin-bottom:4px; }
+  #startScreen h2{ font-size:19px; margin:0 0 4px; }
+  #themeLine{ font-size:13px; color:#cfc4ee; margin-bottom:14px; }
+  #themeLine b{ color:#ffe9a8; }
+  #changeTheme{
+    margin-left:6px; border:1px solid #ffffff33; background:none; color:#cfc4ee;
+    border-radius:10px; padding:2px 8px; font-size:11px; cursor:pointer; font-family:inherit;
   }
+  #mineLabel{ display:block; font-size:11.5px; color:#b7a9e0; margin-bottom:6px; text-align:left; }
+  #mineInput{
+    width:100%; padding:10px 12px; border-radius:12px;
+    border:1.5px solid #4d3f7a; background:#0e0a2a; color:var(--text-main);
+    font-size:13.5px; font-family:inherit; outline:none;
+  }
+  #mineInput:focus{ border-color:#a78bfa; }
+  #mineNote{ font-size:10.5px; color:#8a7fb0; margin:5px 0 14px; text-align:left; }
+  #howTo{
+    font-size:11.5px; color:#cfc4ee; text-align:left; line-height:1.8;
+    background:#ffffff0c; border-radius:12px; padding:8px 12px; margin-bottom:14px;
+  }
+  .nightBtn{
+    padding:13px 34px; border:none; border-radius:30px;
+    background:linear-gradient(160deg,#4a3f7a,#2c2457);
+    color:#f2eeff; font-weight:800; font-size:15px; font-family:inherit;
+    box-shadow:0 0 0 2px #8a6fc0 inset, 0 8px 16px rgba(0,0,0,.4);
+    cursor:pointer;
+  }
+
+  #resultScreen{ background:rgba(255,255,255,.88); backdrop-filter:blur(2px); color:#4a3f2a; }
+  #resultIcon{ font-size:52px; margin-bottom:2px; animation:iconPop .5s cubic-bezier(.3,1.6,.4,1); }
   @keyframes iconPop{
     0%{ transform:scale(0) rotate(-10deg); opacity:0; }
     70%{ transform:scale(1.15) rotate(3deg); opacity:1; }
     100%{ transform:scale(1) rotate(0); }
   }
-  #resultScreen h2{
-    font-size:24px; color:#6a5a3a; margin:2px 0 10px; font-weight:800;
+  .flatReport{
+    display:inline-block;
+    font-size:12.5px; color:#8a8a8a; font-weight:700;
+    background:#f0f0f0; border-radius:12px; padding:6px 14px;
+    margin-bottom:10px;
   }
-  #resultScreen p{
-    font-size:14px; line-height:1.9; color:#8a7a5a; max-width:320px; margin:0 0 22px;
+  #introLine{ font-size:12.5px; color:#a8762a; font-weight:700; margin:0 0 10px; line-height:1.6; }
+  .factRow{
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(135deg,#fff6dc,#eaf4ff);
+    border-radius:12px;
+    padding:8px 12px;
+    margin-bottom:6px;
+    text-align:left;
   }
-  #statsRow{ display:flex; gap:16px; margin-bottom:22px; }
-  .statBox{
-    background:#ffffffb0;
-    border:1px solid #e8d8b0;
-    border-radius:14px;
-    padding:11px 18px;
-    min-width:96px;
+  .factRow.event{ background:#f3f0ff; }
+  .factRow .icon{ font-size:18px; }
+  .factRow .txt{ font-size:13px; font-weight:700; color:#5a4a2a; line-height:1.5; }
+  .factRow .txt b{ color:#c9891a; font-size:14.5px; }
+  #memoBox{
+    margin-top:10px;
+    background:#ffffff; border:1.5px solid #e2e2e8; border-radius:10px;
+    padding:8px 12px; text-align:left;
   }
-  .statBox .num{ font-size:20px; font-weight:800; color:#c9891a; }
-  .statBox .label{ font-size:10.5px; color:#a8916a; margin-top:2px; }
+  #memoBox h3{ font-size:12px; margin:0 0 4px; color:#6a6a74; }
+  #memoList{ margin:0; padding-left:18px; font-size:12.5px; color:#4a4a54; line-height:1.7; }
+  #memoEmpty{ font-size:12px; color:#9a9aa4; }
+  #totalLine{ font-size:11.5px; color:#a8916a; margin:10px 0 0; font-weight:700; line-height:1.6; }
   #retryBtn{
-    padding:14px 36px;
+    margin-top:12px;
+    padding:12px 32px;
     border:none; border-radius:30px;
     background:linear-gradient(160deg,#ffd76a,#e0a93a);
-    color:#4a2f10; font-weight:700; font-size:15px;
+    color:#4a2f10; font-weight:800; font-size:15px; font-family:inherit;
     box-shadow:0 6px 0 #a97c1e, 0 10px 16px rgba(0,0,0,.2);
+    cursor:pointer;
   }
   #retryBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #a97c1e; }
 </style>
@@ -268,40 +332,49 @@
     <h1>自己嫌悪ディフェンス</h1>
     <div id="gaugeOuter">
       <div id="gaugeInner"></div>
-      <div id="gaugePercent">0%</div>
+      <div id="gaugeLabel">眠りの深さ</div>
     </div>
+    <div id="hint"></div>
   </div>
 
+  <div id="sleeper"><span id="sleeperFace">😪</span><span class="zzz" id="sleeperZzz"></span></div>
   <div id="monsterLayer"></div>
-
-  <div id="buttonWrap">
-    <button id="centerButton">
-      Zzz
-      <span class="sub">寝る</span>
-    </button>
-  </div>
+  <div id="memoBadge">📝 明日のメモ <span id="memoCount">0</span></div>
 </div>
 
 <div id="flash"></div>
 
-<div id="resultScreen">
-  <div id="resultIcon">☀️</div>
-  <h2>リセット完了！どうでもよくなった！</h2>
-  <p>
-    ぐるぐる考えていたことも、寝てしまえばこっちのもの。<br>
-    朝になれば、たいていのことはどうでもよくなる。
-  </p>
-  <div id="statsRow">
-    <div class="statBox">
-      <div class="num" id="clickNum">0</div>
-      <div class="label">連打回数</div>
+<div id="startScreen" class="overlay show">
+  <div class="overlayInner">
+    <div class="moon">🌙</div>
+    <h2 id="nightTitle">夜になった</h2>
+    <div id="themeLine">今夜のモヤモヤ：<b id="themeName"></b><button id="changeTheme">かえる</button></div>
+    <label id="mineLabel" for="mineInput">いま気になってること（なくてもOK）</label>
+    <input id="mineInput" type="text" maxlength="30" placeholder="例）明日の発表のこと" />
+    <div id="mineNote">入力した言葉はこの画面の中だけで使われ、どこにも送られません。</div>
+    <div id="howTo">
+      💭 むらさきの考えごと → タップで吹き飛ばす<br>
+      🗒️ グレーの「事実」 → タップで明日のメモへ<br>
+      🐑 ひつじ → タップすると眠りが深くなる
     </div>
-    <div class="statBox">
-      <div class="num" id="blastNum">0</div>
-      <div class="label">吹き飛ばした数</div>
-    </div>
+    <button class="nightBtn" id="startBtn">電気を消す</button>
   </div>
-  <button id="retryBtn">また眠る</button>
+</div>
+
+<div id="resultScreen" class="overlay">
+  <div class="overlayInner">
+    <div id="resultIcon">☀️</div>
+    <div class="flatReport">朝が来た（事実）</div>
+    <div id="introLine"></div>
+    <div id="factRows"></div>
+    <div id="memoBox">
+      <h3>📝 明日のメモ</h3>
+      <ul id="memoList"></ul>
+      <div id="memoEmpty">（なし）</div>
+    </div>
+    <div id="totalLine"></div>
+    <button id="retryBtn">また夜になる</button>
+  </div>
 </div>
 
 <script>
@@ -309,56 +382,84 @@
   const app = document.getElementById('app');
   const starsLayer = document.getElementById('stars');
   const gaugeInner = document.getElementById('gaugeInner');
-  const gaugePercent = document.getElementById('gaugePercent');
+  const hint = document.getElementById('hint');
   const monsterLayer = document.getElementById('monsterLayer');
-  const centerButton = document.getElementById('centerButton');
-  const buttonWrap = document.getElementById('buttonWrap');
+  const sleeper = document.getElementById('sleeper');
+  const sleeperFace = document.getElementById('sleeperFace');
+  const sleeperZzz = document.getElementById('sleeperZzz');
+  const memoBadge = document.getElementById('memoBadge');
+  const memoCount = document.getElementById('memoCount');
   const flash = document.getElementById('flash');
+  const startScreen = document.getElementById('startScreen');
+  const nightTitle = document.getElementById('nightTitle');
+  const themeName = document.getElementById('themeName');
+  const mineInput = document.getElementById('mineInput');
   const resultScreen = document.getElementById('resultScreen');
-  const clickNumEl = document.getElementById('clickNum');
-  const blastNumEl = document.getElementById('blastNum');
-  const retryBtn = document.getElementById('retryBtn');
+  const introLine = document.getElementById('introLine');
+  const factRows = document.getElementById('factRows');
+  const memoList = document.getElementById('memoList');
+  const memoEmpty = document.getElementById('memoEmpty');
+  const totalLine = document.getElementById('totalLine');
 
-  const negativeTexts = [
-    "なんであんな言い方しか…",
-    "また空気読めなかった",
-    "嫌な顔してなかったかな",
-    "言い過ぎたかも",
-    "もっと優しくできたのに",
-    "素直になれなかった",
-    "変に思われたかな",
-    "誤解させたかも",
-    "あの間、気まずかったな",
-    "失礼だったかな",
-    "もっと違う言い方があった",
-    "ちゃんと伝えられなかった",
-    "また余計なこと言った",
-    "なんで黙っちゃったんだろう",
-    "ずっと引きずってる"
+  /* =========================================================
+     今夜のテーマ（研究の「しんどいシーン」から）
+     emo：自分を責める解釈（吹き飛ばす） / fact：ただの事実（明日のメモへ）
+     ========================================================= */
+  const THEMES = [
+    { name:'バイトのこと',
+      emo:['先輩なのに情けない','あの時フォローに入れなかった','店長どう思ったかな','また同じミスした','要領悪すぎる','頼りないって思われたかも','もっと早く動けたのに','迷惑かけてばっかり','向いてないのかも','あの子に任せきりだった'],
+      fact:['明日もシフトがある','閉店作業が15分遅れた','新人が2人入っていた','ドリンクの在庫が切れていた','電話が3件鳴った','次のシフトは土曜'] },
+    { name:'制作のこと',
+      emo:['この程度しかできなかった','いつも無計画だ','センスがない気がする','時間かけたのに意味なかった','人に見せられない','みんなもっと上手い','理想に全然届かない','また中途半端','才能ないのかな','やり直したい'],
+      fact:['締め切りは金曜','色の調整が残っている','今日は3時間作業した','参考資料を5つ集めた','試作を2回作った','明日は材料を買いに行く'] },
+    { name:'面接・発表のこと',
+      emo:['みんな賢そうだった','私だけ何も言えなかった','胸を張れる経験がない','もっと頑張れたはず','あきれられたかも','自分には何もない','話がまとまってなかった','声が震えてた','比べたら全然だめ','準備不足だった'],
+      fact:['面接は20分だった','質問に3つ答えた','結果は来週わかる','次の面接は火曜','発表は8分で終わった','質疑で1つ質問が来た'] },
+    { name:'家族・親しい人のこと',
+      emo:['なんであんな言い方しか…','素直になれなかった','また強がっちゃった','嫌な顔してなかったかな','ありがとうって言えなかった','前もこんなことあった','可愛げがないな','言い過ぎたかも','気を遣わせたかも','自分ばっかり'],
+      fact:['まだ謝れていない','週末に会う予定がある','LINEの返信が来ていた','明日の朝ごはんは一緒','お土産を渡しそびれた','電話は10分だった'] }
+  ];
+  const BOSS_TEXT = '自分はダメな人間だ';
+  const BOSS_HP = 3;
+
+  const MANTRAS = [
+    'まあいっか！','寝たら忘れる！','気にしない気にしない！','なるようになる！','明日の自分に任せた！',
+    '考えすぎ考えすぎ！','もう寝る！','それはそれ！','誰もそこまで見てない！','おやすみなさい！',
+    '今日はもう終わり！','大丈夫、大丈夫！','明日考えよう','それは今じゃなくていい','布団はあったかい',
+    '今日はもう閉店！','続きはまた明日','考えるのは朝の自分','深呼吸〜','おふとんの勝ち',
+    '今夜は休業','とりあえず目を閉じる','まぶたが重い','今日はここまで','枕がふかふか',
+    '電気は消した','続きは夢で','そういう日もある','ひと晩おいとこう','いったん保留！'
   ];
 
-  const mantraTexts = [
-    "まあいっか！",
-    "寝たら忘れる！",
-    "気にしない気にしない！",
-    "なるようになる！",
-    "明日の自分に任せた！",
-    "考えすぎ考えすぎ！",
-    "もう寝る！",
-    "それはそれ！",
-    "誰も気にしてない！",
-    "おやすみなさい！",
-    "今日はもう終わり！",
-    "大丈夫、大丈夫！"
-  ];
+  /* =========================================================
+     累計記録（この端末に保存。入力した言葉は保存しない）
+     ========================================================= */
+  const SAVE_KEY = 'jikokenDefense_v1';
+  function defaultSave(){ return { nights:0, letGo:0, filed:0, sheep:0, mantras:{} }; }
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      return raw ? Object.assign(defaultSave(), JSON.parse(raw)) : defaultSave();
+    }catch(e){ return defaultSave(); }
+  }
+  function writeSave(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){ /* 保存できない環境では今回分だけ */ }
+  }
+  let save = loadSave();
 
   function rand(min, max){ return min + Math.random() * (max - min); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
 
-  // ===== 星の生成 =====
   function createStars(){
-    const count = 46;
-    for(let i=0;i<count;i++){
+    for(let i=0;i<46;i++){
       const s = document.createElement('div');
       s.className = 'star';
       s.style.left = rand(0,100) + '%';
@@ -372,216 +473,434 @@
   }
   createStars();
 
-  // ===== ゲーム状態 =====
+  /* =========================================================
+     夜の状態
+     ========================================================= */
+  let theme = null;
+  let emoDeck = [], factDeck = [];
+  let running = false;
   let gauge = 0;
-  let clickCount = 0;
-  let blastCount = 0;
-  let cleared = false;
-  let monsters = [];
-  let spawnTimer = null;
-  let rafId = null;
-  let lastTs = null;
-  let monsterIdSeq = 0;
+  let elapsed = 0;
+  let thoughts = [];
+  let memo = [];
+  let letGo = 0, tosses = 0, sheepCount = 0, bossDone = false, bossSpawned = false;
+  let mineTexts = [];
+  let newMantras = [];
+  let nextEmo = 0, nextFact = 0, nextSheep = 0, nextMine = 0;
+  let rafId = null, lastTs = null;
+  let factHintShown = false;
 
-  const GAUGE_MAX = 100;
-
-  function updateGaugeUI(){
-    gaugeInner.style.width = gauge + '%';
-    gaugePercent.textContent = Math.floor(gauge) + '%';
+  function chooseTheme(exclude){
+    const list = THEMES.filter(t => t !== exclude);
+    theme = pick(list);
+    themeName.textContent = theme.name;
   }
 
-  function getCenter(){
-    return { cx: window.innerWidth/2, cy: window.innerHeight/2 };
+  function showStart(){
+    nightTitle.textContent = save.nights > 0 ? `${save.nights + 1} 回目の夜` : '夜になった';
+    chooseTheme(theme);
+    mineInput.value = '';
+    startScreen.classList.add('show');
   }
 
-  function spawnMonster(){
-    if(cleared) return;
-    const w = window.innerWidth, h = window.innerHeight;
-    const edge = pick(['top','bottom','left','right']);
-    let x, y;
-    const margin = 90;
-    if(edge === 'top'){ x = rand(20, w-20); y = -margin; }
-    else if(edge === 'bottom'){ x = rand(20, w-20); y = h + margin; }
-    else if(edge === 'left'){ x = -margin; y = rand(40, h-40); }
-    else { x = w + margin; y = rand(40, h-40); }
+  function startNight(){
+    startScreen.classList.remove('show');
+    resultScreen.classList.remove('show');
+    app.classList.remove('morning');
+    flash.classList.remove('on');
+    thoughts.forEach(t => t.el.remove());
+    thoughts = [];
+    memo = [];
+    gauge = 0; elapsed = 0;
+    letGo = 0; tosses = 0; sheepCount = 0;
+    bossDone = false; bossSpawned = false;
+    newMantras = [];
+    emoDeck = shuffle(theme.emo);
+    factDeck = shuffle(theme.fact);
+    const mine = mineInput.value.trim();
+    mineTexts = mine ? [mine] : [];
+    nextEmo = 0.6; nextFact = rand(3, 4.5); nextSheep = rand(7, 11); nextMine = rand(3, 6);
+    factHintShown = false;
+    memoCount.textContent = '0';
+    updateGauge();
+    setSleeper();
+    setHint('むらさきの考えごとをタップして吹き飛ばそう', 3500);
+    running = true;
+    lastTs = null;
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
 
-    const { cx, cy } = getCenter();
-    let dx = cx - x, dy = cy - y;
-    const dist = Math.max(1, Math.hypot(dx, dy));
-    dx /= dist; dy /= dist;
-    const speed = rand(14, 24); // px/秒（ゆっくり迫る）
+  let hintTimer = null;
+  function setHint(text, ms){
+    hint.textContent = text;
+    clearTimeout(hintTimer);
+    if(ms) hintTimer = setTimeout(() => { hint.textContent = ''; }, ms);
+  }
 
+  function updateGauge(){
+    gaugeInner.style.width = Math.max(0, Math.min(100, gauge)) + '%';
+  }
+
+  function setSleeper(){
+    if(app.classList.contains('morning')){ sleeperFace.textContent = '😌'; sleeperZzz.textContent = ''; return; }
+    sleeperFace.textContent = gauge < 35 ? '😪' : '😴';
+    sleeperZzz.textContent = gauge < 35 ? '' : gauge < 70 ? 'zz' : 'zzZ';
+  }
+
+  /* =========================================================
+     考えごとの出現
+     ========================================================= */
+  function center(){
+    const r = sleeper.getBoundingClientRect();
+    const a = app.getBoundingClientRect();
+    return { cx: r.left - a.left + r.width/2, cy: r.top - a.top + r.height/2 };
+  }
+
+  function spawnThought(kind, text){
+    const w = app.clientWidth, h = app.clientHeight;
     const el = document.createElement('div');
-    el.className = 'monster';
-    el.textContent = pick(negativeTexts);
+    el.className = 'thought ' + kind;
+    let x, y, vx, vy;
+    const { cx, cy } = center();
+
+    if(kind === 'sheep'){
+      el.textContent = '🐑';
+      x = -40; y = rand(h*0.22, h*0.45);
+      vx = rand(60, 90); vy = 0;
+    } else {
+      if(kind === 'boss'){
+        el.innerHTML = `${BOSS_TEXT}<span class="hp">${'●'.repeat(BOSS_HP)}</span>`;
+      } else {
+        el.textContent = text;
+      }
+      const edge = pick(['top','left','right','bottom']);
+      const m = 70;
+      if(edge === 'top'){ x = rand(30, w-30); y = -m; }
+      else if(edge === 'bottom'){ x = rand(30, w-30); y = h + m; }
+      else if(edge === 'left'){ x = -m; y = rand(80, h-40); }
+      else { x = w + m; y = rand(80, h-40); }
+      const dist = Math.max(1, Math.hypot(cx - x, cy - y));
+      // 画面の大きさに関係なく、8〜12秒くらいで中央に届く速さ（事実はゆっくり）
+      let secs = kind === 'fact' || kind === 'mine' ? rand(13, 16) : kind === 'boss' ? 14 : rand(8, 12) - gauge/100*2;
+      const speed = dist / secs;
+      vx = (cx - x) / dist * speed;
+      vy = (cy - y) / dist * speed;
+    }
+
     el.style.left = x + 'px';
     el.style.top = y + 'px';
-    el.style.transform = `translate(-50%,-50%) rotate(${rand(-6,6)}deg)`;
     monsterLayer.appendChild(el);
-
-    const monster = {
-      id: ++monsterIdSeq,
-      el, x, y,
-      vx: dx*speed, vy: dy*speed,
-      blasted:false
-    };
-    monsters.push(monster);
+    const t = { kind, text, el, x, y, vx, vy, hp: kind === 'boss' ? BOSS_HP : 1, done:false };
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); onTap(t); });
+    thoughts.push(t);
+    return t;
   }
 
-  function scheduleSpawn(){
-    if(cleared) return;
-    spawnMonster();
-    const nextDelay = rand(750, 1400);
-    spawnTimer = setTimeout(scheduleSpawn, nextDelay);
+  function nextFromDeck(deck, source){
+    if(deck.length === 0) deck.push(...shuffle(source));
+    return deck.pop();
   }
 
-  function gameLoop(ts){
+  /* =========================================================
+     タップ
+     ========================================================= */
+  function onTap(t){
+    if(!running || t.done) return;
+    if(t.kind === 'emo'){
+      blast(t);
+      letGo++;
+      gauge += 1.5;
+      spawnMantra(t.x, t.y, pickMantra(), '');
+    } else if(t.kind === 'boss'){
+      t.hp--;
+      t.el.classList.remove('hit'); void t.el.offsetWidth; t.el.classList.add('hit');
+      t.el.querySelector('.hp').textContent = '●'.repeat(t.hp) + '○'.repeat(BOSS_HP - t.hp);
+      spawnShock(t.x, t.y);
+      if(t.hp <= 0){
+        blast(t);
+        letGo++;
+        bossDone = true;
+        gauge += 6;
+        spawnMantra(t.x, t.y, 'それは事実じゃない', 'big');
+      }
+    } else if(t.kind === 'fact' || t.kind === 'mine'){
+      fileToMemo(t, true);
+    } else if(t.kind === 'sheep'){
+      t.done = true;
+      sheepCount++;
+      gauge += 8;
+      spawnMantra(t.x, t.y, `ひつじが${sheepCount}ひき`, 'small');
+      t.el.classList.add('faded');
+      setTimeout(() => t.el.remove(), 400);
+    }
+    updateGauge();
+  }
+
+  function blast(t){
+    t.done = true;
+    const { cx, cy } = center();
+    let dx = t.x - cx, dy = t.y - cy;
+    const d = Math.max(1, Math.hypot(dx, dy));
+    dx /= d; dy /= d;
+    t.el.classList.add('blasted');
+    t.el.style.transform = `translate(-50%,-50%) translate(${dx*400}px, ${dy*400}px) rotate(${rand(-90,90)}deg) scale(.6)`;
+    spawnShock(t.x, t.y);
+    setTimeout(() => t.el.remove(), 550);
+  }
+
+  // 事実と、自分で入れた考えごとは、吹き飛ばさずに明日のメモへ
+  function fileToMemo(t, byTap){
+    t.done = true;
+    if(!memo.includes(t.text)) memo.push(t.text); // 同じ事実は1回だけメモする
+    memoCount.textContent = memo.length;
+    memoBadge.classList.remove('bump'); void memoBadge.offsetWidth; memoBadge.classList.add('bump');
+    spawnMantra(t.x, t.y, byTap ? '明日のメモへ' : 'メモに入った', 'small');
+    const r = memoBadge.getBoundingClientRect(), a = app.getBoundingClientRect();
+    t.el.classList.add('filed');
+    t.el.style.left = (r.left - a.left + r.width/2) + 'px';
+    t.el.style.top = (r.top - a.top) + 'px';
+    t.el.style.transform = 'translate(-50%,-50%) scale(.3)';
+    setTimeout(() => t.el.remove(), 650);
+  }
+
+  function pickMantra(){
+    const m = pick(MANTRAS);
+    if(!save.mantras[m] && !newMantras.includes(m)) newMantras.push(m);
+    return m;
+  }
+
+  function spawnShock(x, y){
+    const sw = document.createElement('div');
+    sw.className = 'shockwave';
+    sw.style.left = x + 'px';
+    sw.style.top = y + 'px';
+    app.appendChild(sw);
+    setTimeout(() => sw.remove(), 520);
+  }
+
+  function spawnMantra(x, y, text, cls){
+    const el = document.createElement('div');
+    el.className = 'mantra' + (cls ? ' ' + cls : '');
+    el.textContent = text;
+    el.style.left = Math.max(60, Math.min(app.clientWidth - 60, x)) + 'px';
+    el.style.top = (y - 10) + 'px';
+    app.appendChild(el);
+    setTimeout(() => el.remove(), 1100);
+  }
+
+  function toss(t){
+    t.done = true;
+    tosses++;
+    gauge -= t.kind === 'boss' ? 15 : 7;
+    t.el.classList.add('faded');
+    setTimeout(() => t.el.remove(), 400);
+    sleeper.classList.remove('toss'); void sleeper.offsetWidth; sleeper.classList.add('toss');
+    sleeperFace.textContent = '😣';
+    setTimeout(() => { if(running) setSleeper(); }, 600);
+    if(t.kind === 'boss'){
+      bossDone = false;
+      bossSpawned = false; // 届いてしまったら、また後で来る
+    }
+  }
+
+  /* =========================================================
+     ループ
+     ========================================================= */
+  function loop(ts){
+    if(!running) return;
     if(lastTs === null) lastTs = ts;
     const dt = Math.min(0.05, (ts - lastTs) / 1000);
     lastTs = ts;
+    elapsed += dt;
 
-    const { cx, cy } = getCenter();
+    const w = app.clientWidth;
+    const { cx, cy } = center();
 
-    monsters.forEach(m => {
-      if(m.blasted) return;
-      m.x += m.vx * dt;
-      m.y += m.vy * dt;
-      m.el.style.left = m.x + 'px';
-      m.el.style.top = m.y + 'px';
+    // 出現
+    nextEmo -= dt;
+    if(nextEmo <= 0){
+      spawnThought('emo', nextFromDeck(emoDeck, theme.emo));
+      nextEmo = rand(1.1, 1.8) - gauge/100 * 0.6;
+    }
+    nextFact -= dt;
+    if(nextFact <= 0){
+      spawnThought('fact', nextFromDeck(factDeck, theme.fact));
+      nextFact = rand(3.5, 5);
+      if(!factHintShown){
+        factHintShown = true;
+        setHint('グレーは「事実」。吹き飛ばさずに、タップで明日のメモへ', 4500);
+      }
+    }
+    nextSheep -= dt;
+    if(nextSheep <= 0){
+      spawnThought('sheep');
+      nextSheep = rand(8, 13);
+    }
+    if(mineTexts.length > 0){
+      nextMine -= dt;
+      if(nextMine <= 0){
+        spawnThought('mine', mineTexts.shift());
+      }
+    }
+    if(!bossSpawned && gauge >= 45){
+      bossSpawned = true;
+      spawnThought('boss');
+    }
 
-      const dist = Math.hypot(cx - m.x, cy - m.y);
-      if(dist < 60){
-        // 中心に到達 → 静かに消える（ペナルティなし）
-        m.blasted = true;
-        m.el.classList.add('blasted');
-        m.el.style.opacity = '0';
-        setTimeout(() => { if(m.el.parentNode) m.el.parentNode.removeChild(m.el); }, 500);
+    // 移動と到達
+    let pressure = 0;
+    thoughts.forEach(t => {
+      if(t.done) return;
+      t.x += t.vx * dt;
+      t.y += t.vy * dt;
+      t.el.style.left = t.x + 'px';
+      t.el.style.top = t.y + 'px';
+      if(t.kind === 'sheep'){
+        if(t.x > w + 50){ t.done = true; t.el.remove(); }
+        return;
+      }
+      if(t.kind === 'emo' || t.kind === 'boss') pressure += t.kind === 'boss' ? 2 : 1;
+      if(Math.hypot(cx - t.x, cy - t.y) < 62){
+        if(t.kind === 'fact' || t.kind === 'mine') fileToMemo(t, false);
+        else toss(t);
       }
     });
+    thoughts = thoughts.filter(t => !t.done || t.el.isConnected);
 
-    monsters = monsters.filter(m => !(m.blasted && !m.el.parentNode));
+    // 眠りは少しずつ深くなる。責める考えごとが多いほど、ゆっくりになる
+    gauge += Math.max(0.6, 4.5 - pressure * 0.7) * dt;
+    gauge = Math.max(0, gauge);
+    updateGauge();
+    if(Math.random() < 0.05) setSleeper();
 
-    if(!cleared){
-      rafId = requestAnimationFrame(gameLoop);
+    if(gauge >= 100){
+      morning();
+      return;
     }
+    rafId = requestAnimationFrame(loop);
   }
 
-  function spawnShockwave(){
-    const sw = document.createElement('div');
-    sw.className = 'shockwave';
-    document.getElementById('app').appendChild(sw);
-    setTimeout(() => sw.remove(), 600);
-  }
-
-  function spawnMantra(){
-    const rect = centerButton.getBoundingClientRect();
-    const el = document.createElement('div');
-    el.className = 'mantra';
-    el.textContent = pick(mantraTexts);
-    const angle = rand(0, Math.PI*2);
-    const radius = rand(10, 40);
-    const px = rect.left + rect.width/2 + Math.cos(angle)*radius;
-    const py = rect.top + rect.height/2 + Math.sin(angle)*radius - 20;
-    el.style.left = px + 'px';
-    el.style.top = py + 'px';
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1000);
-  }
-
-  function blastAllMonsters(){
-    const { cx, cy } = getCenter();
-    monsters.forEach(m => {
-      if(m.blasted) return;
-      m.blasted = true;
-      blastCount++;
-      let dx = m.x - cx, dy = m.y - cy;
-      const dist = Math.max(1, Math.hypot(dx,dy));
-      dx /= dist; dy /= dist;
-      const flingDist = 500;
-      m.el.classList.add('blasted');
-      m.el.style.transform = `translate(-50%,-50%) translate(${dx*flingDist}px, ${dy*flingDist}px) rotate(${rand(-90,90)}deg) scale(.6)`;
-      const elRef = m.el;
-      setTimeout(() => { if(elRef.parentNode) elRef.parentNode.removeChild(elRef); }, 550);
+  /* =========================================================
+     朝
+     ========================================================= */
+  function morning(){
+    running = false;
+    gauge = 100;
+    updateGauge();
+    // 残っている考えごと：責める考えは消え、事実はメモに残る
+    thoughts.forEach(t => {
+      if(t.done) return;
+      if(t.kind === 'fact' || t.kind === 'mine') fileToMemo(t, false);
+      else if(t.kind === 'sheep'){ t.done = true; t.el.remove(); }
+      else blast(t);
     });
-    monsters = [];
-  }
-
-  function onButtonClick(){
-    if(cleared) return;
-    clickCount++;
-
-    const step = rand(4, 9);
-    gauge = Math.min(GAUGE_MAX, gauge + step);
-    updateGaugeUI();
-
-    blastAllMonsters();
-    spawnShockwave();
-    spawnMantra();
-
-    centerButton.style.transform = 'scale(.9)';
-    setTimeout(() => { centerButton.style.transform = ''; }, 100);
-
-    if(gauge >= GAUGE_MAX){
-      triggerMorning();
-    }
-  }
-
-  function triggerMorning(){
-    cleared = true;
-    clearTimeout(spawnTimer);
-    if(rafId) cancelAnimationFrame(rafId);
-
-    blastAllMonsters();
-
     app.classList.add('morning');
     flash.classList.add('on');
+    setSleeper();
+    setHint('', 0);
+
+    const before = Object.keys(save.mantras).length;
+    save.nights += 1;
+    save.letGo += letGo;
+    save.filed += memo.length;
+    save.sheep += sheepCount;
+    newMantras.forEach(m => { save.mantras[m] = true; });
+    writeSave();
+    const learned = Object.keys(save.mantras).length - before;
 
     setTimeout(() => {
-      clickNumEl.textContent = clickCount;
-      blastNumEl.textContent = blastCount;
+      renderResult(learned);
       resultScreen.classList.add('show');
       sendResultToPortal();
-    }, 900);
+    }, 1000);
+  }
+
+  // その夜のデータから「見てたよ」の言葉を組み立てる（評価語は使わない）
+  function buildLines(){
+    const n = v => `<b>${v}</b>`;
+    const main = pick([
+      { icon:'💭', text:`${n(letGo)} 個の考えごとを、夜のうちに手放した` },
+      { icon:'🌙', text:`${n(Math.round(elapsed))} 秒かけて、眠りについた` }
+    ]);
+    const extras = [];
+    if(memo.length > 0){
+      extras.push({ icon:'📝', text:`事実の ${n(memo.length)} 個は、吹き飛ばさずに明日へ残した` });
+    }
+    if(tosses > 0){
+      extras.push(pick([
+        { icon:'🛏️', text:`${n(tosses)} 回寝返りをうって、それでも朝になった` },
+        { icon:'🛏️', text:`届いてしまった考えごとが ${n(tosses)} 個あった。それでも朝は来た` }
+      ]));
+    } else {
+      extras.push({ icon:'🛏️', text:`一度も寝返りをうたなかった` });
+    }
+    if(sheepCount > 0){
+      extras.push({ icon:'🐑', text:`ひつじを ${n(sheepCount)} ひき数えた` });
+    }
+    if(bossDone){
+      extras.push({ icon:'💜', text:`「${BOSS_TEXT}」に、${n(BOSS_HP)} 回立ち向かった` });
+    }
+    return [main].concat(shuffle(extras).slice(0, 2));
+  }
+
+  function renderResult(learned){
+    if(save.nights === 1){
+      introLine.textContent = '責める考えは、夜のうちに手放していい。事実だけ、明日に持っていけばいい。';
+      introLine.style.display = 'block';
+    } else {
+      introLine.style.display = 'none';
+    }
+    factRows.innerHTML = '';
+    buildLines().forEach(l => factRows.appendChild(makeRow(l, false)));
+    if(learned > 0){
+      factRows.appendChild(makeRow({ icon:'📖', text:`新しいおまじないを ${learned} 個おぼえた（${Object.keys(save.mantras).length} / ${MANTRAS.length}）` }, true));
+    }
+
+    memoList.innerHTML = '';
+    memo.forEach(m => {
+      const li = document.createElement('li');
+      li.textContent = m;
+      memoList.appendChild(li);
+    });
+    memoEmpty.style.display = memo.length ? 'none' : 'block';
+
+    totalLine.textContent = `これまで ${save.nights} 夜 ・ 手放した考えごと 合計 ${save.letGo} 個 ・ おまじない帳 ${Object.keys(save.mantras).length} / ${MANTRAS.length}`;
+  }
+
+  function makeRow(line, isEvent){
+    const row = document.createElement('div');
+    row.className = 'factRow' + (isEvent ? ' event' : '');
+    const icon = document.createElement('div');
+    icon.className = 'icon';
+    icon.textContent = line.icon;
+    const txt = document.createElement('div');
+    txt.className = 'txt';
+    txt.innerHTML = line.text; // 数値と固定文だけなので安全（入力した言葉はここに入れない）
+    row.appendChild(icon);
+    row.appendChild(txt);
+    return row;
   }
 
   // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
+  // （プレイヤーが入力した言葉やメモの中身は送らない）
   function sendResultToPortal(){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'jikoken-defense',
-        summary: `連打${clickCount}回で朝を迎えた！（吹き飛ばした数${blastCount}）`,
-        detail: { clicks: clickCount, blasts: blastCount }
+        summary: `${letGo}個の考えごとを手放して朝を迎えた（${save.nights}夜目）`,
+        detail: { theme: theme.name, letGo, memo: memo.length, tosses, sheep: sheepCount, boss: bossDone, seconds: Math.round(elapsed), nights: save.nights }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
-  function resetGame(){
-    cleared = false;
-    gauge = 0;
-    clickCount = 0;
-    blastCount = 0;
-    monsters.forEach(m => { if(m.el.parentNode) m.el.parentNode.removeChild(m.el); });
-    monsters = [];
-    updateGaugeUI();
+  document.getElementById('startBtn').addEventListener('click', startNight);
+  mineInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') startNight(); });
+  document.getElementById('changeTheme').addEventListener('click', () => chooseTheme(theme));
+  document.getElementById('retryBtn').addEventListener('click', showStart);
 
-    app.classList.remove('morning');
-    flash.classList.remove('on');
-    resultScreen.classList.remove('show');
-
-    lastTs = null;
-    clearTimeout(spawnTimer);
-    scheduleSpawn();
-    rafId = requestAnimationFrame(gameLoop);
-  }
-
-  centerButton.addEventListener('click', onButtonClick);
-  retryBtn.addEventListener('click', resetGame);
-
-  // ===== 初期化 =====
-  updateGaugeUI();
-  scheduleSpawn();
-  rafId = requestAnimationFrame(gameLoop);
+  showStart();
 })();
 </script>
 </body>
