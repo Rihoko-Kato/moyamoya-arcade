@@ -9,19 +9,13 @@
     --night1:#0d0b1e;
     --night2:#1b1638;
     --night3:#26204a;
-    --star:#ffffffaa;
     --monster-bg:#3a2560ee;
     --monster-border:#b07ae0;
-    --monster-text:#e2d4f5;
+    --monster-text:#efe2ff;
     --fact-bg:#3a3a44ee;
     --fact-border:#8a8a96;
     --fact-text:#d8d8de;
-    --mantra-color:#ffe9a8;
-    --gauge-start:#7ec9e8;
-    --gauge-end:#a78bfa;
-    --morning-bg1:#eaf6ff;
-    --morning-bg2:#d3ecff;
-    --morning-accent:#ffd76a;
+    --gold:#ffe9a8;
     --text-main:#e8e2f5;
   }
   *{ box-sizing:border-box; }
@@ -30,297 +24,152 @@
     font-family:"Hiragino Sans","Yu Gothic","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
     overflow:hidden;
     -webkit-user-select:none; user-select:none;
+    touch-action:manipulation;
   }
-
   #app{
-    position:relative;
-    width:100%; height:100%;
+    position:relative; width:100%; height:100%;
     background:linear-gradient(160deg, var(--night1), var(--night2) 55%, var(--night3));
-    transition: background 1.1s ease;
     color:var(--text-main);
     overflow:hidden;
+    transition:background 1s ease;
   }
-  #app.morning{
-    background: linear-gradient(160deg, var(--morning-bg1), var(--morning-bg2));
-    color:#4a3f2a;
-  }
+  #app.dawn{ background:linear-gradient(160deg, #ffd9b8, #ffeccf 60%, #d3ecff); }
 
-  /* 星（夜のみ） */
   #stars{ position:absolute; inset:0; z-index:0; transition:opacity .8s ease; }
-  #app.morning #stars{ opacity:0; }
-  .star{
-    position:absolute;
-    background:var(--star);
-    border-radius:50%;
-    opacity:.7;
-    animation:twinkle 3s ease-in-out infinite;
-  }
+  #app.dawn #stars{ opacity:0; }
+  .star{ position:absolute; background:#fff; border-radius:50%; animation:twinkle 3s ease-in-out infinite; }
   @keyframes twinkle{ 0%,100%{opacity:.25;} 50%{opacity:.9;} }
 
-  /* ヘッダー：眠りゲージ */
+  /* ===== HUD ===== */
   #hud{
-    position:absolute; top:0; left:0; right:0;
-    z-index:20;
-    padding:12px 16px 0;
-    display:flex; flex-direction:column; align-items:center;
+    position:absolute; top:0; left:0; right:0; z-index:20;
+    padding:8px 12px 0;
     pointer-events:none;
   }
-  #hud h1{
-    font-size:12px; letter-spacing:2px; font-weight:700;
-    color:#b7a9e0; margin:0 0 6px; opacity:.9;
-  }
+  #hudRow{ display:flex; justify-content:space-between; align-items:center; font-weight:800; }
+  #score{ font-size:20px; font-variant-numeric:tabular-nums; }
+  #score small{ display:block; font-size:10px; opacity:.7; font-weight:600; }
+  #nightLabel{ font-size:13px; letter-spacing:2px; color:#cfc4ee; text-align:center; }
+  #comboBox{ font-size:11px; color:var(--gold); text-align:center; opacity:0; transition:opacity .2s; }
+  #comboBox.on{ opacity:1; }
+  #comboBox b{ font-size:16px; }
+  #lives{ font-size:17px; letter-spacing:2px; }
+  #lives .lost{ opacity:.2; filter:grayscale(1); }
   #gaugeOuter{
-    width:100%; max-width:420px; height:18px;
-    background:#00000030;
-    border:2px solid #4d3f7a;
-    border-radius:14px;
-    overflow:hidden;
+    margin-top:6px;
+    height:12px; border-radius:8px; overflow:hidden;
+    background:#00000040; border:1.5px solid #4d3f7a;
     position:relative;
   }
-  #gaugeInner{
-    height:100%; width:0%;
-    background:linear-gradient(90deg,var(--gauge-start),var(--gauge-end));
-    transition:width .2s linear;
-    position:relative;
-  }
-  #gaugeInner::after{
-    content:""; position:absolute; inset:0;
-    background:repeating-linear-gradient(45deg, rgba(255,255,255,.25) 0 8px, transparent 8px 16px);
-  }
-  #gaugeLabel{
-    position:absolute; left:10px; top:0; bottom:0;
-    display:flex; align-items:center;
-    font-size:11px; font-weight:700; color:#fff; z-index:2;
-  }
-  #hint{
-    margin-top:8px;
-    font-size:11.5px; font-weight:700; color:#cfc4ee;
-    background:#ffffff14; padding:4px 12px; border-radius:12px;
-    min-height:22px;
-    transition:opacity .4s ease;
-  }
-  #hint:empty{ opacity:0; }
+  #gaugeInner{ height:100%; width:0%; background:linear-gradient(90deg,#7ec9e8,#a78bfa); }
+  #gaugeLabel{ position:absolute; left:8px; top:-1px; font-size:9.5px; font-weight:700; color:#fff; }
 
-  /* 明日のメモ（左下） */
-  #memoBadge{
-    position:absolute; left:12px; bottom:12px; z-index:20;
-    font-size:12px; font-weight:700; color:#d8d8de;
-    background:#ffffff14; border:1px solid #ffffff22;
-    padding:6px 12px; border-radius:14px;
-    pointer-events:none;
-  }
-  #memoBadge.bump{ animation:bump .35s ease; }
-  @keyframes bump{ 50%{ transform:scale(1.15); } }
-
-  /* 考えごと（モンスター） */
-  #monsterLayer{ position:absolute; inset:0; z-index:5; }
+  /* ===== 考えごと ===== */
+  #layer{ position:absolute; inset:0; z-index:5; }
   .thought{
     position:absolute;
-    max-width:150px;
-    padding:8px 12px;
+    width:max-content; /* 画面の端でも縦に潰れないように */
+    max-width:140px;
+    padding:7px 11px;
     border-radius:14px;
-    font-size:12.5px;
-    font-weight:700;
-    line-height:1.4;
+    font-size:12px; font-weight:700; line-height:1.4;
     text-align:center;
+    transform:translate(-50%,-50%);
     box-shadow:0 4px 10px rgba(0,0,0,.35);
     cursor:pointer;
-    transform:translate(-50%,-50%);
-    will-change:left, top;
     touch-action:manipulation;
   }
   .thought.emo{ background:var(--monster-bg); border:1.5px solid var(--monster-border); color:var(--monster-text); }
-  .thought.fact{
-    background:var(--fact-bg); border:1.5px solid var(--fact-border); color:var(--fact-text);
-    font-weight:500; border-radius:6px;
-  }
-  .thought.fact::before{ content:"事実 "; font-size:10px; opacity:.7; }
-  .thought.mine{
-    background:#1e2a44ee; border:1.5px dashed #a9c9ff; color:#dce9ff;
-  }
+  .thought.fact{ background:var(--fact-bg); border:1.5px solid var(--fact-border); color:var(--fact-text); font-weight:500; border-radius:5px; }
   .thought.boss{
-    max-width:200px;
-    font-size:16px; padding:12px 16px;
+    max-width:190px; font-size:15px; padding:10px 14px;
     background:#3a1f4aee; border:2px solid #d07ad8; color:#ffd8f4;
-    box-shadow:0 0 18px rgba(208,122,216,.5);
+    box-shadow:0 0 18px rgba(208,122,216,.55);
   }
-  .thought.boss .hp{ display:block; font-size:10px; letter-spacing:3px; opacity:.8; }
-  .thought.hit{ animation:hitShake .25s ease; }
-  @keyframes hitShake{
-    0%,100%{ margin-left:0; } 25%{ margin-left:-6px; } 75%{ margin-left:6px; }
-  }
-  .thought.sheep{
-    background:none; box-shadow:none; padding:0;
-    font-size:34px; line-height:1;
-  }
-  .thought.blasted{
-    transition:transform .5s cubic-bezier(.2,.7,.3,1), opacity .5s ease;
-    opacity:0; pointer-events:none;
-  }
-  .thought.filed{
-    transition:left .6s ease-in, top .6s ease-in, transform .6s ease-in, opacity .6s ease-in;
-    opacity:0; pointer-events:none;
-  }
-  .thought.faded{ transition:opacity .4s ease; opacity:0; pointer-events:none; }
+  .thought.boss .hp{ display:block; font-size:10px; letter-spacing:2px; opacity:.85; }
+  .thought.sheep{ background:none; box-shadow:none; padding:0; font-size:32px; line-height:1; }
+  .thought.hit{ animation:hitShake .2s ease; }
+  @keyframes hitShake{ 25%{ margin-left:-5px; } 75%{ margin-left:5px; } }
+  .thought.gone{ transition:transform .45s cubic-bezier(.2,.7,.3,1), opacity .45s ease; opacity:0; pointer-events:none; }
+  .thought.passed{ transition:opacity .35s ease, transform .35s ease; opacity:0; transform:translate(-50%,-50%) scale(.5); pointer-events:none; }
 
-  /* 眠る人（中央） */
   #sleeper{
-    position:absolute;
-    left:50%; top:56%;
+    position:absolute; left:50%; top:58%;
     transform:translate(-50%,-50%);
     z-index:4;
-    width:120px; height:120px;
-    border-radius:50%;
+    width:104px; height:104px; border-radius:50%;
     background:radial-gradient(circle at 35% 30%, #4a3f7a, #241d47);
-    box-shadow:0 0 0 8px rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.5), inset 0 0 20px rgba(255,255,255,.08);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-size:50px;
+    box-shadow:0 0 0 8px rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.5);
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px;
     pointer-events:none;
-    transition:background 1s ease;
   }
-  #sleeper .zzz{ font-size:12px; font-weight:800; color:#cfc4ee; letter-spacing:2px; margin-top:-4px; }
-  #sleeper.toss{ animation:toss .6s ease; }
-  @keyframes toss{
-    0%,100%{ transform:translate(-50%,-50%) rotate(0); }
-    30%{ transform:translate(-50%,-50%) rotate(-18deg); }
-    65%{ transform:translate(-50%,-50%) rotate(12deg); }
-  }
-  #app.morning #sleeper{ background:radial-gradient(circle at 35% 30%, #fff2c2, var(--morning-accent)); }
-  #app.morning #sleeper .zzz{ color:#a8916a; }
+  #sleeper.hurt{ animation:hurt .5s ease; }
+  @keyframes hurt{ 30%{ transform:translate(-50%,-50%) rotate(-16deg) scale(1.08); } 65%{ transform:translate(-50%,-50%) rotate(10deg); } }
+  #app.dawn #sleeper{ background:radial-gradient(circle at 35% 30%, #fff2c2, #ffd76a); }
 
-  .shockwave{
-    position:absolute;
-    width:20px; height:20px;
-    margin:-10px 0 0 -10px;
-    border-radius:50%;
-    border:3px solid #a9c9ffcc;
-    pointer-events:none;
-    z-index:12;
-    animation:shockExpand .5s ease-out forwards;
+  .burst{
+    position:absolute; width:20px; height:20px; margin:-10px 0 0 -10px;
+    border-radius:50%; border:3px solid #a9c9ffcc;
+    pointer-events:none; z-index:12;
+    animation:burst .45s ease-out forwards;
   }
-  @keyframes shockExpand{
-    0%{ opacity:.9; transform:scale(0.2); }
-    100%{ opacity:0; transform:scale(6); }
+  @keyframes burst{ from{ opacity:.9; transform:scale(.2); } to{ opacity:0; transform:scale(5); } }
+  .pts{
+    position:absolute; transform:translate(-50%,-50%);
+    font-size:14px; font-weight:900; color:var(--gold);
+    text-shadow:0 2px 6px rgba(0,0,0,.6);
+    pointer-events:none; z-index:18; white-space:nowrap;
+    animation:ptsUp .8s ease forwards;
   }
+  .pts.bad{ color:#ff8a9a; }
+  .pts.fact{ color:#d8d8de; font-size:12px; }
+  @keyframes ptsUp{ 0%{ opacity:0; margin-top:0; } 20%{ opacity:1; } 100%{ opacity:0; margin-top:-50px; } }
 
-  /* おまじない・小さなメッセージ */
-  .mantra{
-    position:absolute;
-    font-size:15px;
-    font-weight:800;
-    color:var(--mantra-color);
-    text-shadow:0 2px 6px rgba(0,0,0,.5);
-    pointer-events:none;
-    z-index:18;
-    animation:mantraPop 1.1s ease forwards;
-    white-space:nowrap;
-  }
-  .mantra.small{ font-size:12px; color:#d8d8de; }
-  .mantra.big{ font-size:20px; color:#ffd8f4; }
-  @keyframes mantraPop{
-    0%{ opacity:0; transform:translate(-50%,0) scale(.6); }
-    18%{ opacity:1; transform:translate(-50%,-10px) scale(1.08); }
-    100%{ opacity:0; transform:translate(-50%,-70px) scale(1); }
-  }
-
-  #flash{
-    position:fixed; inset:0;
-    background:#fff;
+  #banner{
+    position:absolute; left:50%; top:36%; transform:translate(-50%,-50%);
+    z-index:25; text-align:center; pointer-events:none;
     opacity:0;
-    z-index:40;
-    pointer-events:none;
   }
-  #flash.on{ animation:flashFire .9s ease-out forwards; }
-  @keyframes flashFire{
-    0%{ opacity:0; }
-    12%{ opacity:1; }
-    100%{ opacity:0; }
-  }
+  #banner.show{ animation:banner 1.8s ease forwards; }
+  @keyframes banner{ 0%{ opacity:0; transform:translate(-50%,-30%); } 15%,75%{ opacity:1; transform:translate(-50%,-50%); } 100%{ opacity:0; } }
+  #banner .big{ font-size:30px; font-weight:900; letter-spacing:4px; color:var(--gold); text-shadow:0 3px 12px rgba(0,0,0,.4); }
+  #banner .small{ font-size:13px; font-weight:700; margin-top:4px; }
+  #app.dawn #banner .big{ color:#c9891a; text-shadow:none; }
+  #app.dawn #banner .small{ color:#6a5a3a; }
 
-  /* はじまり（夜）画面・朝の結果画面 共通 */
+  /* ===== はじまり・結果 ===== */
   .overlay{
-    position:fixed; inset:0;
+    position:fixed; inset:0; z-index:50;
+    background:rgba(13,11,30,.92);
     display:none; flex-direction:column; align-items:center;
-    z-index:50; text-align:center; padding:16px;
-    overflow-y:auto;
+    padding:16px; overflow-y:auto; text-align:center; color:var(--text-main);
   }
   .overlay.show{ display:flex; }
   .overlayInner{ margin:auto 0; width:100%; max-width:360px; }
-
-  #startScreen{ background:rgba(13,11,30,.88); color:var(--text-main); }
-  #startScreen .moon{ font-size:44px; margin-bottom:4px; }
-  #startScreen h2{ font-size:19px; margin:0 0 4px; }
-  #themeLine{ font-size:13px; color:#cfc4ee; margin-bottom:14px; }
-  #themeLine b{ color:#ffe9a8; }
-  #changeTheme{
-    margin-left:6px; border:1px solid #ffffff33; background:none; color:#cfc4ee;
-    border-radius:10px; padding:2px 8px; font-size:11px; cursor:pointer; font-family:inherit;
+  .title{ font-size:22px; font-weight:900; margin-bottom:4px; color:var(--gold); }
+  .howto{
+    text-align:left; font-size:13px; line-height:1.85;
+    background:#ffffff0e; border-radius:14px; padding:10px 14px; margin:12px 0;
   }
-  #mineLabel{ display:block; font-size:11.5px; color:#b7a9e0; margin-bottom:6px; text-align:left; }
-  #mineInput{
-    width:100%; padding:10px 12px; border-radius:12px;
-    border:1.5px solid #4d3f7a; background:#0e0a2a; color:var(--text-main);
-    font-size:13.5px; font-family:inherit; outline:none;
-  }
-  #mineInput:focus{ border-color:#a78bfa; }
-  #mineNote{ font-size:10.5px; color:#8a7fb0; margin:5px 0 14px; text-align:left; }
-  #howTo{
-    font-size:11.5px; color:#cfc4ee; text-align:left; line-height:1.8;
-    background:#ffffff0c; border-radius:12px; padding:8px 12px; margin-bottom:14px;
-  }
-  .nightBtn{
-    padding:13px 34px; border:none; border-radius:30px;
-    background:linear-gradient(160deg,#4a3f7a,#2c2457);
-    color:#f2eeff; font-weight:800; font-size:15px; font-family:inherit;
-    box-shadow:0 0 0 2px #8a6fc0 inset, 0 8px 16px rgba(0,0,0,.4);
-    cursor:pointer;
-  }
-
-  #resultScreen{ background:rgba(255,255,255,.88); backdrop-filter:blur(2px); color:#4a3f2a; }
-  #resultIcon{ font-size:52px; margin-bottom:2px; animation:iconPop .5s cubic-bezier(.3,1.6,.4,1); }
-  @keyframes iconPop{
-    0%{ transform:scale(0) rotate(-10deg); opacity:0; }
-    70%{ transform:scale(1.15) rotate(3deg); opacity:1; }
-    100%{ transform:scale(1) rotate(0); }
-  }
-  .flatReport{
-    display:inline-block;
-    font-size:12.5px; color:#8a8a8a; font-weight:700;
-    background:#f0f0f0; border-radius:12px; padding:6px 14px;
-    margin-bottom:10px;
-  }
-  #introLine{ font-size:12.5px; color:#a8762a; font-weight:700; margin:0 0 10px; line-height:1.6; }
-  .factRow{
-    display:flex; align-items:center; gap:10px;
-    background:linear-gradient(135deg,#fff6dc,#eaf4ff);
-    border-radius:12px;
-    padding:8px 12px;
-    margin-bottom:6px;
-    text-align:left;
-  }
-  .factRow.event{ background:#f3f0ff; }
-  .factRow .icon{ font-size:18px; }
-  .factRow .txt{ font-size:13px; font-weight:700; color:#5a4a2a; line-height:1.5; }
-  .factRow .txt b{ color:#c9891a; font-size:14.5px; }
-  #memoBox{
-    margin-top:10px;
-    background:#ffffff; border:1.5px solid #e2e2e8; border-radius:10px;
-    padding:8px 12px; text-align:left;
-  }
-  #memoBox h3{ font-size:12px; margin:0 0 4px; color:#6a6a74; }
-  #memoList{ margin:0; padding-left:18px; font-size:12.5px; color:#4a4a54; line-height:1.7; }
-  #memoEmpty{ font-size:12px; color:#9a9aa4; }
-  #totalLine{ font-size:11.5px; color:#a8916a; margin:10px 0 0; font-weight:700; line-height:1.6; }
-  #retryBtn{
-    margin-top:12px;
-    padding:12px 32px;
-    border:none; border-radius:30px;
+  .tag{ display:inline-block; font-size:11px; font-weight:800; padding:0 7px; border-radius:7px; margin-right:3px; }
+  .tag.e{ background:var(--monster-bg); border:1px solid var(--monster-border); }
+  .tag.f{ background:var(--fact-bg); border:1px solid var(--fact-border); border-radius:3px; }
+  .best{ font-size:12px; color:#b7a9e0; margin-bottom:12px; }
+  .mainBtn{
+    padding:13px 38px; border:none; border-radius:30px;
     background:linear-gradient(160deg,#ffd76a,#e0a93a);
-    color:#4a2f10; font-weight:800; font-size:15px; font-family:inherit;
-    box-shadow:0 6px 0 #a97c1e, 0 10px 16px rgba(0,0,0,.2);
-    cursor:pointer;
+    color:#4a2f10; font-weight:900; font-size:16px; font-family:inherit;
+    box-shadow:0 6px 0 #a97c1e; cursor:pointer;
   }
-  #retryBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #a97c1e; }
+  #finalScore{ font-size:46px; font-weight:900; color:var(--gold); line-height:1.1; font-variant-numeric:tabular-nums; }
+  #newBest{ display:inline-block; margin:4px 0; font-size:12px; font-weight:900; letter-spacing:2px; color:#4a2f10; background:var(--gold); padding:3px 12px; border-radius:12px; }
+  #bestLine{ font-size:12px; color:#b7a9e0; margin-bottom:10px; }
+  .stats{ display:flex; gap:8px; justify-content:center; margin-bottom:12px; }
+  .stat{ background:#ffffff10; border-radius:12px; padding:8px 10px; min-width:84px; }
+  .stat .n{ font-size:20px; font-weight:900; color:var(--gold); }
+  .stat .l{ font-size:10.5px; color:#b7a9e0; }
+  #comment{ font-size:13px; background:#ffffff0e; border-radius:12px; padding:8px 12px; margin-bottom:14px; }
 </style>
 </head>
 <body>
@@ -329,312 +178,221 @@
   <div id="stars"></div>
 
   <div id="hud">
-    <h1>自己嫌悪ディフェンス</h1>
-    <div id="gaugeOuter">
-      <div id="gaugeInner"></div>
-      <div id="gaugeLabel">眠りの深さ</div>
+    <div id="hudRow">
+      <div id="score"><small>SCORE</small><span id="scoreVal">0</span></div>
+      <div>
+        <div id="nightLabel">1夜目</div>
+        <div id="comboBox"><b id="comboVal">0</b> COMBO</div>
+      </div>
+      <div id="lives"></div>
     </div>
-    <div id="hint"></div>
+    <div id="gaugeOuter"><div id="gaugeInner"></div><div id="gaugeLabel">朝まで</div></div>
   </div>
 
-  <div id="sleeper"><span id="sleeperFace">😪</span><span class="zzz" id="sleeperZzz"></span></div>
-  <div id="monsterLayer"></div>
-  <div id="memoBadge">📝 明日のメモ <span id="memoCount">0</span></div>
+  <div id="sleeper"><span id="face">😴</span></div>
+  <div id="layer"></div>
+  <div id="banner"><div class="big" id="bannerBig"></div><div class="small" id="bannerSmall"></div></div>
 </div>
-
-<div id="flash"></div>
 
 <div id="startScreen" class="overlay show">
   <div class="overlayInner">
-    <div class="moon">🌙</div>
-    <h2 id="nightTitle">夜になった</h2>
-    <div id="themeLine">今夜のモヤモヤ：<b id="themeName"></b><button id="changeTheme">かえる</button></div>
-    <label id="mineLabel" for="mineInput">いま気になってること（なくてもOK）</label>
-    <input id="mineInput" type="text" maxlength="30" placeholder="例）明日の発表のこと" />
-    <div id="mineNote">入力した言葉はこの画面の中だけで使われ、どこにも送られません。</div>
-    <div id="howTo">
-      💭 むらさきの考えごと → タップで吹き飛ばす<br>
-      🗒️ グレーの「事実」 → タップで明日のメモへ<br>
-      🐑 ひつじ → タップすると眠りが深くなる
+    <div class="title">🌙 自己嫌悪ディフェンス</div>
+    <div class="howto">
+      眠ろうとすると、考えごとが押し寄せてくる。<br>
+      <span class="tag e">むらさき</span>タップで吹き飛ばす<br>
+      <span class="tag f">グレー</span>さわらずに通すと得点<br>
+      🐑 タップでボーナス＆眠りが深くなる<br>
+      ゲージがたまると朝。夜を重ねるほど手強くなる。<br>
+      ❤ がなくなったら、おしまい。
     </div>
-    <button class="nightBtn" id="startBtn">電気を消す</button>
+    <div class="best" id="startBest"></div>
+    <button class="mainBtn" id="startBtn">電気を消す</button>
   </div>
 </div>
 
 <div id="resultScreen" class="overlay">
   <div class="overlayInner">
-    <div id="resultIcon">☀️</div>
-    <div class="flatReport">朝が来た（事実）</div>
-    <div id="introLine"></div>
-    <div id="factRows"></div>
-    <div id="memoBox">
-      <h3>📝 明日のメモ</h3>
-      <ul id="memoList"></ul>
-      <div id="memoEmpty">（なし）</div>
+    <div class="title">ねむれなかった…</div>
+    <div id="finalScore">0</div>
+    <div id="newBest">NEW BEST!</div>
+    <div id="bestLine"></div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stNight">0</div><div class="l">越えた夜</div></div>
+      <div class="stat"><div class="n" id="stBlast">0</div><div class="l">吹き飛ばした数</div></div>
+      <div class="stat"><div class="n" id="stCombo">0</div><div class="l">最大コンボ</div></div>
     </div>
-    <div id="totalLine"></div>
-    <button id="retryBtn">また夜になる</button>
+    <div id="comment"></div>
+    <button class="mainBtn" id="retryBtn">もう一度ねる</button>
   </div>
 </div>
 
 <script>
 (function(){
-  const app = document.getElementById('app');
-  const starsLayer = document.getElementById('stars');
-  const gaugeInner = document.getElementById('gaugeInner');
-  const hint = document.getElementById('hint');
-  const monsterLayer = document.getElementById('monsterLayer');
-  const sleeper = document.getElementById('sleeper');
-  const sleeperFace = document.getElementById('sleeperFace');
-  const sleeperZzz = document.getElementById('sleeperZzz');
-  const memoBadge = document.getElementById('memoBadge');
-  const memoCount = document.getElementById('memoCount');
-  const flash = document.getElementById('flash');
-  const startScreen = document.getElementById('startScreen');
-  const nightTitle = document.getElementById('nightTitle');
-  const themeName = document.getElementById('themeName');
-  const mineInput = document.getElementById('mineInput');
-  const resultScreen = document.getElementById('resultScreen');
-  const introLine = document.getElementById('introLine');
-  const factRows = document.getElementById('factRows');
-  const memoList = document.getElementById('memoList');
-  const memoEmpty = document.getElementById('memoEmpty');
-  const totalLine = document.getElementById('totalLine');
-
-  /* =========================================================
-     今夜のテーマ（研究の「しんどいシーン」から）
-     emo：自分を責める解釈（吹き飛ばす） / fact：ただの事実（明日のメモへ）
-     ========================================================= */
+  /* 夜ごとのテーマ（研究の「しんどいシーン」から） */
   const THEMES = [
     { name:'バイトのこと',
-      emo:['先輩なのに情けない','あの時フォローに入れなかった','店長どう思ったかな','また同じミスした','要領悪すぎる','頼りないって思われたかも','もっと早く動けたのに','迷惑かけてばっかり','向いてないのかも','あの子に任せきりだった'],
-      fact:['明日もシフトがある','閉店作業が15分遅れた','新人が2人入っていた','ドリンクの在庫が切れていた','電話が3件鳴った','次のシフトは土曜'] },
+      emo:['先輩なのに情けない','フォローに入れなかった','店長どう思ったかな','また同じミスした','要領悪すぎる','頼りないって思われた','迷惑かけてばっかり','向いてないのかも'],
+      fact:['明日もシフトがある','閉店が15分遅れた','新人が2人いた','電話が3件鳴った','次のシフトは土曜'] },
     { name:'制作のこと',
-      emo:['この程度しかできなかった','いつも無計画だ','センスがない気がする','時間かけたのに意味なかった','人に見せられない','みんなもっと上手い','理想に全然届かない','また中途半端','才能ないのかな','やり直したい'],
-      fact:['締め切りは金曜','色の調整が残っている','今日は3時間作業した','参考資料を5つ集めた','試作を2回作った','明日は材料を買いに行く'] },
+      emo:['この程度しかできない','いつも無計画だ','センスがない','時間かけたのに無駄','人に見せられない','みんなもっと上手い','また中途半端','才能ないのかな'],
+      fact:['締め切りは金曜','今日は3時間作業した','試作を2回作った','色の調整が残ってる','材料はあと半分'] },
     { name:'面接・発表のこと',
-      emo:['みんな賢そうだった','私だけ何も言えなかった','胸を張れる経験がない','もっと頑張れたはず','あきれられたかも','自分には何もない','話がまとまってなかった','声が震えてた','比べたら全然だめ','準備不足だった'],
-      fact:['面接は20分だった','質問に3つ答えた','結果は来週わかる','次の面接は火曜','発表は8分で終わった','質疑で1つ質問が来た'] },
+      emo:['みんな賢そうだった','何も言えなかった','胸を張れる経験がない','あきれられたかも','自分には何もない','声が震えてた','比べたら全然だめ','準備不足だった'],
+      fact:['面接は20分だった','質問に3つ答えた','結果は来週わかる','次の面接は火曜','発表は8分で終わった'] },
     { name:'家族・親しい人のこと',
-      emo:['なんであんな言い方しか…','素直になれなかった','また強がっちゃった','嫌な顔してなかったかな','ありがとうって言えなかった','前もこんなことあった','可愛げがないな','言い過ぎたかも','気を遣わせたかも','自分ばっかり'],
-      fact:['まだ謝れていない','週末に会う予定がある','LINEの返信が来ていた','明日の朝ごはんは一緒','お土産を渡しそびれた','電話は10分だった'] }
+      emo:['なんであんな言い方…','素直になれなかった','また強がっちゃった','嫌な顔してたかな','ありがとうって言えなかった','可愛げがないな','言い過ぎたかも','前もこんなことあった'],
+      fact:['週末に会う予定がある','LINEの返信が来てた','朝ごはんは一緒','電話は10分だった','お土産を渡しそびれた'] }
   ];
-  const BOSS_TEXT = '自分はダメな人間だ';
-  const BOSS_HP = 3;
+  const BOSS_TEXTS = ['自分はダメな人間だ','どうせ何やってもムダ','みんなに嫌われてる','自分には何もない'];
+  const MANTRAS = ['まあいっか！','寝たら忘れる！','それはそれ！','明日考えよう','おふとんの勝ち','今日は閉店！','続きは夢で','ひと晩おいとこ','いったん保留！','深呼吸〜'];
+  const COMMENTS = {
+    great: ['夜の番人みたいだった','もう考えごとの方が逃げていく','その連打、プロ級'],
+    good:  ['いい夜を重ねたね','ひつじも感心してた','かなり眠れてた'],
+    normal:['次はもっと眠れそう','今夜はここまで','おふとんはまた待ってる']
+  };
 
-  const MANTRAS = [
-    'まあいっか！','寝たら忘れる！','気にしない気にしない！','なるようになる！','明日の自分に任せた！',
-    '考えすぎ考えすぎ！','もう寝る！','それはそれ！','誰もそこまで見てない！','おやすみなさい！',
-    '今日はもう終わり！','大丈夫、大丈夫！','明日考えよう','それは今じゃなくていい','布団はあったかい',
-    '今日はもう閉店！','続きはまた明日','考えるのは朝の自分','深呼吸〜','おふとんの勝ち',
-    '今夜は休業','とりあえず目を閉じる','まぶたが重い','今日はここまで','枕がふかふか',
-    '電気は消した','続きは夢で','そういう日もある','ひと晩おいとこう','いったん保留！'
-  ];
-
-  /* =========================================================
-     累計記録（この端末に保存。入力した言葉は保存しない）
-     ========================================================= */
-  const SAVE_KEY = 'jikokenDefense_v1';
-  function defaultSave(){ return { nights:0, letGo:0, filed:0, sheep:0, mantras:{} }; }
+  const SAVE_KEY = 'jikokenArcade_v1';
   function loadSave(){
-    try{
-      const raw = localStorage.getItem(SAVE_KEY);
-      return raw ? Object.assign(defaultSave(), JSON.parse(raw)) : defaultSave();
-    }catch(e){ return defaultSave(); }
+    try{ return Object.assign({ best:0, bestNight:0 }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { best:0, bestNight:0 }; }
   }
-  function writeSave(){
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){ /* 保存できない環境では今回分だけ */ }
-  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
   let save = loadSave();
 
-  function rand(min, max){ return min + Math.random() * (max - min); }
+  function rand(a,b){ return a + Math.random()*(b-a); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function shuffle(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  }
 
-  function createStars(){
+  const app = document.getElementById('app');
+  const layer = document.getElementById('layer');
+  const sleeper = document.getElementById('sleeper');
+  const face = document.getElementById('face');
+  const gaugeInner = document.getElementById('gaugeInner');
+
+  (function stars(){
+    const box = document.getElementById('stars');
     for(let i=0;i<46;i++){
       const s = document.createElement('div');
       s.className = 'star';
-      s.style.left = rand(0,100) + '%';
-      s.style.top = rand(0,90) + '%';
-      const size = rand(1,2.6);
-      s.style.width = size+'px';
-      s.style.height = size+'px';
-      s.style.animationDelay = rand(0,3)+'s';
-      starsLayer.appendChild(s);
+      const z = rand(1, 2.4);
+      s.style.width = z + 'px'; s.style.height = z + 'px';
+      s.style.left = rand(0,100) + '%'; s.style.top = rand(0,90) + '%';
+      s.style.animationDelay = rand(0,3) + 's';
+      box.appendChild(s);
     }
-  }
-  createStars();
+  })();
 
-  /* =========================================================
-     夜の状態
-     ========================================================= */
-  let theme = null;
-  let emoDeck = [], factDeck = [];
-  let running = false;
-  let gauge = 0;
-  let elapsed = 0;
-  let thoughts = [];
-  let memo = [];
-  let letGo = 0, tosses = 0, sheepCount = 0, bossDone = false, bossSpawned = false;
-  let mineTexts = [];
-  let newMantras = [];
-  let nextEmo = 0, nextFact = 0, nextSheep = 0, nextMine = 0;
-  let rafId = null, lastTs = null;
-  let factHintShown = false;
+  const MAX_LIVES = 3;
 
-  function chooseTheme(exclude){
-    const list = THEMES.filter(t => t !== exclude);
-    theme = pick(list);
-    themeName.textContent = theme.name;
-  }
+  /* ===== 状態 ===== */
+  let running = false, paused = false;
+  let night = 1, theme = null;
+  let score = 0, combo = 0, maxCombo = 0, lives = MAX_LIVES;
+  let blasted = 0, nightsCleared = 0;
+  let gauge = 0, thoughts = [];
+  let nextEmo = 0, nextFact = 0, nextSheep = 0, bossSpawned = false;
+  let lastTs = null, rafId = null;
 
-  function showStart(){
-    nightTitle.textContent = save.nights > 0 ? `${save.nights + 1} 回目の夜` : '夜になった';
-    chooseTheme(theme);
-    mineInput.value = '';
-    startScreen.classList.add('show');
-  }
+  // 夜が進むほど速く・多く
+  function travelSecs(){ return Math.max(4.2, 9 - (night - 1) * 0.8); }
+  function emoInterval(){ return Math.max(0.45, 1.35 - (night - 1) * 0.14); }
 
-  function startNight(){
-    startScreen.classList.remove('show');
-    resultScreen.classList.remove('show');
-    app.classList.remove('morning');
-    flash.classList.remove('on');
-    thoughts.forEach(t => t.el.remove());
-    thoughts = [];
-    memo = [];
-    gauge = 0; elapsed = 0;
-    letGo = 0; tosses = 0; sheepCount = 0;
-    bossDone = false; bossSpawned = false;
-    newMantras = [];
-    emoDeck = shuffle(theme.emo);
-    factDeck = shuffle(theme.fact);
-    const mine = mineInput.value.trim();
-    mineTexts = mine ? [mine] : [];
-    nextEmo = 0.6; nextFact = rand(3, 4.5); nextSheep = rand(7, 11); nextMine = rand(3, 6);
-    factHintShown = false;
-    memoCount.textContent = '0';
-    updateGauge();
-    setSleeper();
-    setHint('むらさきの考えごとをタップして吹き飛ばそう', 3500);
-    running = true;
-    lastTs = null;
-    if(rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(loop);
-  }
-
-  let hintTimer = null;
-  function setHint(text, ms){
-    hint.textContent = text;
-    clearTimeout(hintTimer);
-    if(ms) hintTimer = setTimeout(() => { hint.textContent = ''; }, ms);
-  }
-
-  function updateGauge(){
-    gaugeInner.style.width = Math.max(0, Math.min(100, gauge)) + '%';
-  }
-
-  function setSleeper(){
-    if(app.classList.contains('morning')){ sleeperFace.textContent = '😌'; sleeperZzz.textContent = ''; return; }
-    sleeperFace.textContent = gauge < 35 ? '😪' : '😴';
-    sleeperZzz.textContent = gauge < 35 ? '' : gauge < 70 ? 'zz' : 'zzZ';
-  }
-
-  /* =========================================================
-     考えごとの出現
-     ========================================================= */
   function center(){
-    const r = sleeper.getBoundingClientRect();
-    const a = app.getBoundingClientRect();
+    const r = sleeper.getBoundingClientRect(), a = app.getBoundingClientRect();
     return { cx: r.left - a.left + r.width/2, cy: r.top - a.top + r.height/2 };
   }
+  function renderHud(){
+    document.getElementById('scoreVal').textContent = score.toLocaleString();
+    document.getElementById('comboVal').textContent = combo;
+    document.getElementById('comboBox').classList.toggle('on', combo >= 3);
+    document.getElementById('nightLabel').textContent = `${night}夜目`;
+    const lv = document.getElementById('lives');
+    lv.innerHTML = '';
+    for(let i=0;i<MAX_LIVES;i++){
+      const s = document.createElement('span');
+      s.textContent = '❤'; s.style.color = '#ff5a7a';
+      if(i >= lives) s.className = 'lost';
+      lv.appendChild(s);
+    }
+    gaugeInner.style.width = Math.min(100, gauge) + '%';
+  }
 
-  function spawnThought(kind, text){
+  /* ===== 出現 ===== */
+  function spawn(kind){
     const w = app.clientWidth, h = app.clientHeight;
+    const { cx, cy } = center();
     const el = document.createElement('div');
     el.className = 'thought ' + kind;
-    let x, y, vx, vy;
-    const { cx, cy } = center();
-
+    let x, y, vx, vy, hp = 1, text = '';
     if(kind === 'sheep'){
       el.textContent = '🐑';
-      x = -40; y = rand(h*0.22, h*0.45);
-      vx = rand(60, 90); vy = 0;
+      x = -30; y = rand(h*0.25, h*0.42); vx = rand(70, 100); vy = 0;
     } else {
       if(kind === 'boss'){
-        el.innerHTML = `${BOSS_TEXT}<span class="hp">${'●'.repeat(BOSS_HP)}</span>`;
+        text = pick(BOSS_TEXTS);
+        hp = 3 + Math.floor(night / 2);
+        el.innerHTML = '<span class="txt"></span><span class="hp"></span>';
+        el.querySelector('.txt').textContent = text;
+        el.querySelector('.hp').textContent = '●'.repeat(hp);
       } else {
+        text = kind === 'emo' ? pick(theme.emo) : pick(theme.fact);
         el.textContent = text;
       }
       const edge = pick(['top','left','right','bottom']);
-      const m = 70;
-      if(edge === 'top'){ x = rand(30, w-30); y = -m; }
+      const m = 60;
+      if(edge === 'top'){ x = rand(30, w-30); y = 60; }
       else if(edge === 'bottom'){ x = rand(30, w-30); y = h + m; }
-      else if(edge === 'left'){ x = -m; y = rand(80, h-40); }
-      else { x = w + m; y = rand(80, h-40); }
+      else if(edge === 'left'){ x = -m; y = rand(90, h-40); }
+      else { x = w + m; y = rand(90, h-40); }
       const dist = Math.max(1, Math.hypot(cx - x, cy - y));
-      // 画面の大きさに関係なく、8〜12秒くらいで中央に届く速さ（事実はゆっくり）
-      let secs = kind === 'fact' || kind === 'mine' ? rand(13, 16) : kind === 'boss' ? 14 : rand(8, 12) - gauge/100*2;
-      const speed = dist / secs;
-      vx = (cx - x) / dist * speed;
-      vy = (cy - y) / dist * speed;
+      const secs = kind === 'fact' ? travelSecs() * 1.3 : kind === 'boss' ? travelSecs() * 1.8 : travelSecs() * rand(0.85, 1.15);
+      vx = (cx - x) / dist * dist / secs;
+      vy = (cy - y) / dist * dist / secs;
     }
-
     el.style.left = x + 'px';
     el.style.top = y + 'px';
-    monsterLayer.appendChild(el);
-    const t = { kind, text, el, x, y, vx, vy, hp: kind === 'boss' ? BOSS_HP : 1, done:false };
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); onTap(t); });
+    layer.appendChild(el);
+    const t = { kind, el, x, y, vx, vy, hp, maxHp:hp, done:false };
+    el.addEventListener('pointerdown', e => { e.preventDefault(); tap(t); });
     thoughts.push(t);
-    return t;
   }
 
-  function nextFromDeck(deck, source){
-    if(deck.length === 0) deck.push(...shuffle(source));
-    return deck.pop();
-  }
-
-  /* =========================================================
-     タップ
-     ========================================================= */
-  function onTap(t){
-    if(!running || t.done) return;
+  /* ===== タップ ===== */
+  function tap(t){
+    if(!running || paused || t.done) return;
     if(t.kind === 'emo'){
+      combo++; maxCombo = Math.max(maxCombo, combo); blasted++;
+      const mult = 1 + Math.floor(combo / 10);
+      const pts = 10 * mult;
+      score += pts;
+      gauge += 1;
       blast(t);
-      letGo++;
-      gauge += 1.5;
-      spawnMantra(t.x, t.y, pickMantra(), '');
+      showPts(t.x, t.y, Math.random() < 0.35 ? pick(MANTRAS) : `+${pts}`);
     } else if(t.kind === 'boss'){
       t.hp--;
       t.el.classList.remove('hit'); void t.el.offsetWidth; t.el.classList.add('hit');
-      t.el.querySelector('.hp').textContent = '●'.repeat(t.hp) + '○'.repeat(BOSS_HP - t.hp);
-      spawnShock(t.x, t.y);
+      t.el.querySelector('.hp').textContent = '●'.repeat(t.hp) + '○'.repeat(t.maxHp - t.hp);
+      burstAt(t.x, t.y);
       if(t.hp <= 0){
+        combo++; maxCombo = Math.max(maxCombo, combo); blasted++;
+        score += 100 * night;
+        gauge += 8;
         blast(t);
-        letGo++;
-        bossDone = true;
-        gauge += 6;
-        spawnMantra(t.x, t.y, 'それは事実じゃない', 'big');
+        showPts(t.x, t.y, `撃破！ +${100 * night}`);
       }
-    } else if(t.kind === 'fact' || t.kind === 'mine'){
-      fileToMemo(t, true);
+    } else if(t.kind === 'fact'){
+      // 事実は撃たなくていい。さわるとコンボが切れる
+      combo = 0;
+      t.el.classList.remove('hit'); void t.el.offsetWidth; t.el.classList.add('hit');
+      showPts(t.x, t.y, 'それは事実', 'bad');
     } else if(t.kind === 'sheep'){
       t.done = true;
-      sheepCount++;
-      gauge += 8;
-      spawnMantra(t.x, t.y, `ひつじが${sheepCount}ひき`, 'small');
-      t.el.classList.add('faded');
+      score += 50;
+      gauge += 7;
+      t.el.classList.add('passed');
       setTimeout(() => t.el.remove(), 400);
+      showPts(t.x, t.y, '🐑 +50');
     }
-    updateGauge();
+    renderHud();
   }
 
   function blast(t){
@@ -642,265 +400,181 @@
     const { cx, cy } = center();
     let dx = t.x - cx, dy = t.y - cy;
     const d = Math.max(1, Math.hypot(dx, dy));
-    dx /= d; dy /= d;
-    t.el.classList.add('blasted');
-    t.el.style.transform = `translate(-50%,-50%) translate(${dx*400}px, ${dy*400}px) rotate(${rand(-90,90)}deg) scale(.6)`;
-    spawnShock(t.x, t.y);
-    setTimeout(() => t.el.remove(), 550);
+    t.el.classList.add('gone');
+    t.el.style.transform = `translate(-50%,-50%) translate(${dx/d*300}px, ${dy/d*300}px) rotate(${rand(-90,90)}deg) scale(.6)`;
+    burstAt(t.x, t.y);
+    setTimeout(() => t.el.remove(), 480);
+  }
+  function burstAt(x, y){
+    const b = document.createElement('div');
+    b.className = 'burst';
+    b.style.left = x + 'px'; b.style.top = y + 'px';
+    app.appendChild(b);
+    setTimeout(() => b.remove(), 460);
+  }
+  function showPts(x, y, text, cls){
+    const p = document.createElement('div');
+    p.className = 'pts' + (cls ? ' ' + cls : '');
+    p.textContent = text;
+    p.style.left = Math.max(50, Math.min(app.clientWidth - 50, x)) + 'px';
+    p.style.top = y + 'px';
+    app.appendChild(p);
+    setTimeout(() => p.remove(), 800);
   }
 
-  // 事実と、自分で入れた考えごとは、吹き飛ばさずに明日のメモへ
-  function fileToMemo(t, byTap){
+  function reach(t){
     t.done = true;
-    if(!memo.includes(t.text)) memo.push(t.text); // 同じ事実は1回だけメモする
-    memoCount.textContent = memo.length;
-    memoBadge.classList.remove('bump'); void memoBadge.offsetWidth; memoBadge.classList.add('bump');
-    spawnMantra(t.x, t.y, byTap ? '明日のメモへ' : 'メモに入った', 'small');
-    const r = memoBadge.getBoundingClientRect(), a = app.getBoundingClientRect();
-    t.el.classList.add('filed');
-    t.el.style.left = (r.left - a.left + r.width/2) + 'px';
-    t.el.style.top = (r.top - a.top) + 'px';
-    t.el.style.transform = 'translate(-50%,-50%) scale(.3)';
-    setTimeout(() => t.el.remove(), 650);
-  }
-
-  function pickMantra(){
-    const m = pick(MANTRAS);
-    if(!save.mantras[m] && !newMantras.includes(m)) newMantras.push(m);
-    return m;
-  }
-
-  function spawnShock(x, y){
-    const sw = document.createElement('div');
-    sw.className = 'shockwave';
-    sw.style.left = x + 'px';
-    sw.style.top = y + 'px';
-    app.appendChild(sw);
-    setTimeout(() => sw.remove(), 520);
-  }
-
-  function spawnMantra(x, y, text, cls){
-    const el = document.createElement('div');
-    el.className = 'mantra' + (cls ? ' ' + cls : '');
-    el.textContent = text;
-    el.style.left = Math.max(60, Math.min(app.clientWidth - 60, x)) + 'px';
-    el.style.top = (y - 10) + 'px';
-    app.appendChild(el);
-    setTimeout(() => el.remove(), 1100);
-  }
-
-  function toss(t){
-    t.done = true;
-    tosses++;
-    gauge -= t.kind === 'boss' ? 15 : 7;
-    t.el.classList.add('faded');
-    setTimeout(() => t.el.remove(), 400);
-    sleeper.classList.remove('toss'); void sleeper.offsetWidth; sleeper.classList.add('toss');
-    sleeperFace.textContent = '😣';
-    setTimeout(() => { if(running) setSleeper(); }, 600);
-    if(t.kind === 'boss'){
-      bossDone = false;
-      bossSpawned = false; // 届いてしまったら、また後で来る
+    if(t.kind === 'fact'){
+      // 通した事実は得点に
+      score += 20;
+      showPts(t.x, t.y - 20, '+20', 'fact');
+      t.el.classList.add('passed');
+      setTimeout(() => t.el.remove(), 360);
+      return;
     }
+    lives--;
+    combo = 0;
+    t.el.classList.add('passed');
+    setTimeout(() => t.el.remove(), 360);
+    sleeper.classList.remove('hurt'); void sleeper.offsetWidth; sleeper.classList.add('hurt');
+    face.textContent = '😣';
+    setTimeout(() => { face.textContent = '😴'; }, 600);
+    if(navigator.vibrate) navigator.vibrate([30,40,30]);
   }
 
-  /* =========================================================
-     ループ
-     ========================================================= */
+  /* ===== ループ ===== */
   function loop(ts){
     if(!running) return;
     if(lastTs === null) lastTs = ts;
     const dt = Math.min(0.05, (ts - lastTs) / 1000);
     lastTs = ts;
-    elapsed += dt;
 
-    const w = app.clientWidth;
-    const { cx, cy } = center();
+    if(!paused){
+      nextEmo -= dt; nextFact -= dt; nextSheep -= dt;
+      if(nextEmo <= 0){ spawn('emo'); nextEmo = emoInterval() * rand(0.8, 1.2); }
+      if(nextFact <= 0){ spawn('fact'); nextFact = rand(2.8, 4.2); }
+      if(nextSheep <= 0){ spawn('sheep'); nextSheep = rand(7, 11); }
+      if(!bossSpawned && gauge >= 50){ bossSpawned = true; spawn('boss'); }
 
-    // 出現
-    nextEmo -= dt;
-    if(nextEmo <= 0){
-      spawnThought('emo', nextFromDeck(emoDeck, theme.emo));
-      nextEmo = rand(1.1, 1.8) - gauge/100 * 0.6;
-    }
-    nextFact -= dt;
-    if(nextFact <= 0){
-      spawnThought('fact', nextFromDeck(factDeck, theme.fact));
-      nextFact = rand(3.5, 5);
-      if(!factHintShown){
-        factHintShown = true;
-        setHint('グレーは「事実」。吹き飛ばさずに、タップで明日のメモへ', 4500);
-      }
-    }
-    nextSheep -= dt;
-    if(nextSheep <= 0){
-      spawnThought('sheep');
-      nextSheep = rand(8, 13);
-    }
-    if(mineTexts.length > 0){
-      nextMine -= dt;
-      if(nextMine <= 0){
-        spawnThought('mine', mineTexts.shift());
-      }
-    }
-    if(!bossSpawned && gauge >= 45){
-      bossSpawned = true;
-      spawnThought('boss');
-    }
+      const { cx, cy } = center();
+      let pressure = 0;
+      thoughts.forEach(t => {
+        if(t.done) return;
+        t.x += t.vx * dt; t.y += t.vy * dt;
+        t.el.style.left = t.x + 'px'; t.el.style.top = t.y + 'px';
+        if(t.kind === 'sheep'){
+          if(t.x > app.clientWidth + 40){ t.done = true; t.el.remove(); }
+          return;
+        }
+        if(t.kind !== 'fact') pressure += t.kind === 'boss' ? 2 : 1;
+        if(Math.hypot(cx - t.x, cy - t.y) < 54) reach(t);
+      });
+      thoughts = thoughts.filter(t => !t.done || t.el.isConnected);
 
-    // 移動と到達
-    let pressure = 0;
-    thoughts.forEach(t => {
-      if(t.done) return;
-      t.x += t.vx * dt;
-      t.y += t.vy * dt;
-      t.el.style.left = t.x + 'px';
-      t.el.style.top = t.y + 'px';
-      if(t.kind === 'sheep'){
-        if(t.x > w + 50){ t.done = true; t.el.remove(); }
-        return;
-      }
-      if(t.kind === 'emo' || t.kind === 'boss') pressure += t.kind === 'boss' ? 2 : 1;
-      if(Math.hypot(cx - t.x, cy - t.y) < 62){
-        if(t.kind === 'fact' || t.kind === 'mine') fileToMemo(t, false);
-        else toss(t);
-      }
-    });
-    thoughts = thoughts.filter(t => !t.done || t.el.isConnected);
+      // 眠りは少しずつ深くなる。考えごとが多いほどゆっくり
+      gauge += Math.max(1.2, 4.5 - pressure * 0.45) * dt; // 1晩おおよそ20〜30秒
+      renderHud();
 
-    // 眠りは少しずつ深くなる。責める考えごとが多いほど、ゆっくりになる
-    gauge += Math.max(0.6, 4.5 - pressure * 0.7) * dt;
-    gauge = Math.max(0, gauge);
-    updateGauge();
-    if(Math.random() < 0.05) setSleeper();
-
-    if(gauge >= 100){
-      morning();
-      return;
+      if(lives <= 0){ gameOver(); return; }
+      if(gauge >= 100){ morning(); }
     }
     rafId = requestAnimationFrame(loop);
   }
 
-  /* =========================================================
-     朝
-     ========================================================= */
-  function morning(){
-    running = false;
-    gauge = 100;
-    updateGauge();
-    // 残っている考えごと：責める考えは消え、事実はメモに残る
+  function clearThoughts(){
     thoughts.forEach(t => {
       if(t.done) return;
-      if(t.kind === 'fact' || t.kind === 'mine') fileToMemo(t, false);
-      else if(t.kind === 'sheep'){ t.done = true; t.el.remove(); }
-      else blast(t);
+      if(t.kind === 'emo' || t.kind === 'boss') blast(t);
+      else { t.done = true; t.el.classList.add('passed'); setTimeout(() => t.el.remove(), 360); }
     });
-    app.classList.add('morning');
-    flash.classList.add('on');
-    setSleeper();
-    setHint('', 0);
+    thoughts = [];
+  }
 
-    const before = Object.keys(save.mantras).length;
-    save.nights += 1;
-    save.letGo += letGo;
-    save.filed += memo.length;
-    save.sheep += sheepCount;
-    newMantras.forEach(m => { save.mantras[m] = true; });
-    writeSave();
-    const learned = Object.keys(save.mantras).length - before;
+  function showBanner(big, small){
+    document.getElementById('bannerBig').textContent = big;
+    document.getElementById('bannerSmall').textContent = small;
+    const b = document.getElementById('banner');
+    b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  }
 
+  // 朝が来たら次の夜へ
+  function morning(){
+    paused = true;
+    nightsCleared++;
+    const bonus = 200 * night + lives * 50;
+    score += bonus;
+    clearThoughts();
+    app.classList.add('dawn');
+    face.textContent = '😌';
+    showBanner('朝！', `${night}夜目クリア　+${bonus}`);
+    renderHud();
     setTimeout(() => {
-      renderResult(learned);
-      resultScreen.classList.add('show');
-      sendResultToPortal();
-    }, 1000);
+      if(!running) return;
+      night++;
+      startNight();
+    }, 2000);
   }
 
-  // その夜のデータから「見てたよ」の言葉を組み立てる（評価語は使わない）
-  function buildLines(){
-    const n = v => `<b>${v}</b>`;
-    const main = pick([
-      { icon:'💭', text:`${n(letGo)} 個の考えごとを、夜のうちに手放した` },
-      { icon:'🌙', text:`${n(Math.round(elapsed))} 秒かけて、眠りについた` }
-    ]);
-    const extras = [];
-    if(memo.length > 0){
-      extras.push({ icon:'📝', text:`事実の ${n(memo.length)} 個は、吹き飛ばさずに明日へ残した` });
-    }
-    if(tosses > 0){
-      extras.push(pick([
-        { icon:'🛏️', text:`${n(tosses)} 回寝返りをうって、それでも朝になった` },
-        { icon:'🛏️', text:`届いてしまった考えごとが ${n(tosses)} 個あった。それでも朝は来た` }
-      ]));
-    } else {
-      extras.push({ icon:'🛏️', text:`一度も寝返りをうたなかった` });
-    }
-    if(sheepCount > 0){
-      extras.push({ icon:'🐑', text:`ひつじを ${n(sheepCount)} ひき数えた` });
-    }
-    if(bossDone){
-      extras.push({ icon:'💜', text:`「${BOSS_TEXT}」に、${n(BOSS_HP)} 回立ち向かった` });
-    }
-    return [main].concat(shuffle(extras).slice(0, 2));
+  function startNight(){
+    theme = THEMES[(night - 1) % THEMES.length];
+    gauge = 0;
+    bossSpawned = false;
+    nextEmo = 0.8; nextFact = rand(2.5, 3.5); nextSheep = rand(5, 9);
+    app.classList.remove('dawn');
+    face.textContent = '😴';
+    showBanner(`${night}夜目`, `今夜のモヤモヤ：${theme.name}`);
+    renderHud();
+    paused = false;
   }
 
-  function renderResult(learned){
-    if(save.nights === 1){
-      introLine.textContent = '責める考えは、夜のうちに手放していい。事実だけ、明日に持っていけばいい。';
-      introLine.style.display = 'block';
-    } else {
-      introLine.style.display = 'none';
-    }
-    factRows.innerHTML = '';
-    buildLines().forEach(l => factRows.appendChild(makeRow(l, false)));
-    if(learned > 0){
-      factRows.appendChild(makeRow({ icon:'📖', text:`新しいおまじないを ${learned} 個おぼえた（${Object.keys(save.mantras).length} / ${MANTRAS.length}）` }, true));
-    }
-
-    memoList.innerHTML = '';
-    memo.forEach(m => {
-      const li = document.createElement('li');
-      li.textContent = m;
-      memoList.appendChild(li);
-    });
-    memoEmpty.style.display = memo.length ? 'none' : 'block';
-
-    totalLine.textContent = `これまで ${save.nights} 夜 ・ 手放した考えごと 合計 ${save.letGo} 個 ・ おまじない帳 ${Object.keys(save.mantras).length} / ${MANTRAS.length}`;
+  function startGame(){
+    document.getElementById('startScreen').classList.remove('show');
+    document.getElementById('resultScreen').classList.remove('show');
+    layer.innerHTML = '';
+    thoughts = [];
+    night = 1; score = 0; combo = 0; maxCombo = 0; lives = MAX_LIVES; blasted = 0; nightsCleared = 0;
+    running = true;
+    startNight();
+    lastTs = null;
+    rafId = requestAnimationFrame(loop);
   }
 
-  function makeRow(line, isEvent){
-    const row = document.createElement('div');
-    row.className = 'factRow' + (isEvent ? ' event' : '');
-    const icon = document.createElement('div');
-    icon.className = 'icon';
-    icon.textContent = line.icon;
-    const txt = document.createElement('div');
-    txt.className = 'txt';
-    txt.innerHTML = line.text; // 数値と固定文だけなので安全（入力した言葉はここに入れない）
-    row.appendChild(icon);
-    row.appendChild(txt);
-    return row;
+  function gameOver(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    clearThoughts();
+    const isBest = score > save.best;
+    if(isBest) save.best = score;
+    save.bestNight = Math.max(save.bestNight, nightsCleared);
+    writeSave();
+    document.getElementById('finalScore').textContent = score.toLocaleString();
+    document.getElementById('newBest').style.display = isBest && score > 0 ? 'inline-block' : 'none';
+    document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()} ／ 最高 ${save.bestNight}夜`;
+    document.getElementById('stNight').textContent = nightsCleared;
+    document.getElementById('stBlast').textContent = blasted;
+    document.getElementById('stCombo').textContent = maxCombo;
+    const pool = nightsCleared >= 5 ? COMMENTS.great : nightsCleared >= 2 ? COMMENTS.good : COMMENTS.normal;
+    document.getElementById('comment').textContent = pick(pool);
+    setTimeout(() => document.getElementById('resultScreen').classList.add('show'), 600);
+    sendResultToPortal();
   }
 
-  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
-  // （プレイヤーが入力した言葉やメモの中身は送らない）
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score はランキング用）
   function sendResultToPortal(){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'jikoken-defense',
-        summary: `${letGo}個の考えごとを手放して朝を迎えた（${save.nights}夜目）`,
-        detail: { theme: theme.name, letGo, memo: memo.length, tosses, sheep: sheepCount, boss: bossDone, seconds: Math.round(elapsed), nights: save.nights }
+        summary: `スコア ${score.toLocaleString()}（${nightsCleared}夜を越えた）`,
+        detail: { score, nights: nightsCleared, blasted, maxCombo }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
-  document.getElementById('startBtn').addEventListener('click', startNight);
-  mineInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') startNight(); });
-  document.getElementById('changeTheme').addEventListener('click', () => chooseTheme(theme));
-  document.getElementById('retryBtn').addEventListener('click', showStart);
-
-  showStart();
+  document.getElementById('startBest').textContent = save.best > 0 ? `自己ベスト ${save.best.toLocaleString()} ／ 最高 ${save.bestNight}夜` : '';
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+  renderHud();
 })();
 </script>
 </body>

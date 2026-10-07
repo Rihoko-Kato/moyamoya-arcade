@@ -10,16 +10,13 @@
   :root{
     --indigo-deep:#1f3350;
     --indigo-mid:#2e4a70;
-    --indigo-line:#4a6a94;
-    --washi-cream:#f6efe0;
-    --washi-cream-dark:#e8dcc0;
+    --washi:#f6efe0;
     --gold:#c9a227;
     --gold-light:#e6c869;
     --vermillion:#b23a2f;
-    --vermillion-dark:#8a2a22;
     --charcoal:#3a332a;
-    --bg-paper:#efe6d8;
-    --bg-paper2:#e6dbc4;
+    --paper1:#efe6d8;
+    --paper2:#e6dbc4;
   }
   *{ box-sizing:border-box; }
   html,body{
@@ -28,989 +25,507 @@
     color:var(--charcoal);
     overflow:hidden;
     -webkit-user-select:none; user-select:none;
+    touch-action:none;
     background:
-      radial-gradient(circle at 20% 10%, #ffffff40 0%, transparent 40%),
-      linear-gradient(160deg, var(--bg-paper), var(--bg-paper2));
+      repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 2px, transparent 2px 6px),
+      linear-gradient(160deg, var(--paper1), var(--paper2));
   }
   .mincho{ font-family:"Shippori Mincho", serif; }
-
-  #app{ position:relative; width:100%; height:100%; }
-
-  /* 和紙の織り目テクスチャ（背景全体にうっすら） */
-  #paperTexture{
-    position:absolute; inset:0; pointer-events:none; z-index:0;
-    background-image:
-      repeating-linear-gradient(45deg, rgba(255,255,255,.25) 0 2px, transparent 2px 6px),
-      repeating-linear-gradient(-45deg, rgba(0,0,0,.03) 0 2px, transparent 2px 6px);
-    opacity:.5;
+  #app{
+    position:relative; width:100%; height:100%;
+    max-width:520px; margin:0 auto;
+    display:flex; flex-direction:column; align-items:center;
+    padding:8px 10px 10px;
   }
 
-  header{
-    position:relative; z-index:2;
-    text-align:center;
-    padding:16px 0 4px;
-  }
-  header h1{
-    font-size:15px; letter-spacing:6px; font-weight:700;
-    color:var(--indigo-deep); margin:0;
-    opacity:.8;
-  }
-  header .kanji-sub{
-    display:block; font-size:11px; letter-spacing:3px; color:#8a7a5a; margin-top:4px; font-weight:400;
-  }
+  /* ===== HUD ===== */
+  #hud{ width:100%; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  #scoreBox{ font-weight:700; }
+  #scoreBox small{ display:block; font-size:10px; color:#8a7a5a; }
+  #scoreVal{ font-size:20px; font-variant-numeric:tabular-nums; }
+  #destBox{ text-align:center; font-size:11px; color:#8a7a5a; }
+  #destName{ display:block; font-size:14px; font-weight:700; color:var(--indigo-deep); }
+  #lineBar{ width:90px; height:5px; margin:3px auto 0; border-radius:3px; background:#0001; overflow:hidden; }
+  #lineBarIn{ height:100%; width:0; background:var(--gold); transition:width .3s ease; }
+  #nextBox{ text-align:center; font-size:10px; color:#8a7a5a; }
+  #nextCanvas{ display:block; margin-top:2px; background:#fffaf0; border:1px solid #d8c69a; border-radius:6px; }
 
-  /* ===== 箱ステージ ===== */
-  #boxStage{
-    position:absolute;
-    left:50%; top:46%;
-    transform:translate(-50%,-50%);
-    width:300px; height:260px;
-    perspective:1200px;
-    z-index:3;
-  }
-  #boxShip{
-    position:absolute; inset:0;
-    transition:transform .9s cubic-bezier(.5,0,.85,.25), opacity .9s ease;
-  }
-  #boxShip.launch{
-    transform:translateY(-1100px) rotate(-8deg) scale(.85);
-    opacity:0;
-  }
-
-  /* 蓋（開いた状態で奥に立っている） */
-  #lid{
-    position:absolute;
-    left:50%; bottom:0;
-    width:264px; height:126px;
-    margin-left:-132px;
-    transform-origin:top center;
-    transform:rotateX(-112deg);
-    transition:transform .75s cubic-bezier(.4,1.4,.4,1);
-    transform-style:preserve-3d;
-    z-index:6;
-  }
-  #lid.closed{ transform:rotateX(0deg); }
-  #lidFace{
-    position:absolute; inset:0;
-    border-radius:10px 10px 4px 4px;
-    background:
-      linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep)),
-      repeating-linear-gradient(60deg, rgba(255,255,255,.05) 0 3px, transparent 3px 9px);
-    background-blend-mode:normal;
-    box-shadow:
-      0 6px 18px rgba(0,0,0,.35),
-      inset 0 0 0 2px rgba(230,200,105,.55),
-      inset 0 0 22px rgba(0,0,0,.25);
-  }
-  #lidFace::before{
-    content:"";
-    position:absolute; inset:10px;
-    border:1px solid rgba(230,200,105,.35);
-    border-radius:6px;
-  }
-  #lidFace::after{
-    content:"結";
-    position:absolute; left:50%; top:50%;
-    transform:translate(-50%,-50%);
-    font-family:"Shippori Mincho", serif;
-    font-size:30px;
-    color:rgba(230,200,105,.5);
-  }
-
-  /* 箱本体（前面パネル＋内部の受け皿） */
-  #boxBody{
-    position:absolute;
-    left:50%; bottom:0;
-    width:264px; height:126px;
-    margin-left:-132px;
-    border-radius:8px 8px 14px 14px;
-    background:linear-gradient(180deg, var(--indigo-mid), var(--indigo-deep));
-    box-shadow:
-      0 16px 30px rgba(30,20,10,.35),
-      inset 0 0 0 2px rgba(230,200,105,.5);
-    z-index:3;
-  }
-  #boxBody::before{
-    /* 手前の帯（金の縁取り） */
-    content:"";
-    position:absolute; left:10px; right:10px; top:8px; bottom:8px;
-    border:1px solid rgba(230,200,105,.3);
-    border-radius:5px;
-  }
-
-  #innerWell{
-    position:absolute;
-    left:50%; top:148px;
-    width:216px; height:96px;
-    margin-left:-108px;
-    border-radius:8px;
-    background:
-      linear-gradient(180deg, var(--washi-cream), var(--washi-cream-dark));
-    box-shadow:
-      inset 0 10px 22px rgba(60,40,20,.35),
-      inset 0 -2px 0 rgba(255,255,255,.4),
-      0 4px 10px rgba(0,0,0,.25);
-    z-index:4;
-    display:flex;
-    flex-wrap:wrap;
-    align-content:flex-start;
-    gap:6px;
-    padding:10px;
-    overflow:hidden;
-  }
-  #innerWell.drop-hover{
-    box-shadow:
-      inset 0 10px 22px rgba(60,40,20,.35),
-      inset 0 0 0 3px var(--gold),
-      0 4px 10px rgba(0,0,0,.25);
-  }
-
-  .settledBlock{
+  /* ===== 箱 ===== */
+  #boxWrap{
+    flex:1; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    min-height:0; margin:6px 0;
     position:relative;
-    background:linear-gradient(160deg,#fff, #f0e6d2);
-    border:1px solid #d8c69a;
-    border-radius:6px;
-    padding:5px 8px;
-    font-size:11px;
-    color:var(--charcoal);
-    box-shadow:0 2px 4px rgba(0,0,0,.2);
-    max-width:90px;
-    line-height:1.3;
-    pointer-events:none;
   }
+  #board{
+    display:block;
+    border-radius:8px;
+    background:linear-gradient(180deg, #f6efe0, #e8dcc0);
+    box-shadow:
+      0 0 0 6px var(--indigo-mid),
+      0 0 0 8px var(--gold-light),
+      0 14px 24px rgba(30,20,10,.3);
+  }
+  #shipBanner{
+    position:absolute; left:50%; top:40%;
+    transform:translate(-50%,-50%);
+    text-align:center; pointer-events:none; opacity:0; z-index:5;
+  }
+  #shipBanner.show{ animation:banner 1.4s ease forwards; }
+  @keyframes banner{ 0%{ opacity:0; transform:translate(-50%,-30%) scale(.8); } 15%,75%{ opacity:1; transform:translate(-50%,-50%) scale(1); } 100%{ opacity:0; } }
+  #shipBanner .big{
+    font-family:"Shippori Mincho", serif;
+    font-size:26px; font-weight:700; color:#fff;
+    background:var(--vermillion); padding:4px 18px; border-radius:8px;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+  }
+  #shipBanner .small{ margin-top:6px; font-size:13px; font-weight:700; color:var(--indigo-deep); background:#fffaf0e8; padding:3px 10px; border-radius:10px; display:inline-block; }
 
-  /* ===== 浮遊するモヤモヤブロック（ドラッグ対象） ===== */
-  .moyaBlock{
-    position:fixed;
-    z-index:30;
-    max-width:170px;
-    min-width:64px;
-    padding:12px 16px;
-    background:linear-gradient(160deg,#fffdf8, #f2e6cc);
-    border:1px solid #d8c69a;
-    border-radius:10px;
-    box-shadow:0 8px 16px rgba(60,40,10,.25), 0 2px 4px rgba(0,0,0,.1);
-    font-size:13.5px;
-    line-height:1.5;
-    color:var(--charcoal);
-    cursor:grab;
-    touch-action:none;
-    will-change:transform;
-  }
-  .moyaBlock.dragging{
-    cursor:grabbing;
-    box-shadow:0 18px 30px rgba(30,20,10,.35);
-    z-index:60;
-  }
-  .moyaBlock.popIn{
-    animation:popIn .4s cubic-bezier(.3,1.6,.4,1);
-  }
-  @keyframes popIn{
-    0%{ transform:scale(.3) translateY(10px); opacity:0; }
-    70%{ transform:scale(1.08); opacity:1; }
-    100%{ transform:scale(1); }
-  }
-  .moyaBlock.settling{
-    transition:transform .38s cubic-bezier(.5,-0.3,.3,1.35), opacity .3s ease;
-  }
-  .moyaBlock.rejected{
-    transition:transform .4s cubic-bezier(.3,1.5,.4,1);
-  }
-
-  /* ===== 下部入力エリア ===== */
-  #inputBar{
-    position:absolute;
-    left:0; right:0; bottom:0;
-    z-index:10;
-    display:flex;
-    gap:10px;
-    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
-    background:linear-gradient(0deg, rgba(239,230,216,.98), rgba(239,230,216,.85) 70%, transparent);
-  }
-  #moyaInput{
-    flex:1;
-    min-width:0;
-    padding:13px 16px;
-    border-radius:14px;
-    border:1.5px solid #cbb98f;
-    background:#fffdf7;
-    font-size:14px;
-    color:var(--charcoal);
-    font-family:inherit;
-    outline:none;
-  }
-  #moyaInput:focus{ border-color:var(--gold); }
-  #spitBtn{
-    flex-shrink:0;
-    padding:0 22px;
-    border:none;
-    border-radius:14px;
+  /* ===== ボタン ===== */
+  #pad{ width:100%; display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
+  .pbtn{
+    padding:12px 0;
+    border:none; border-radius:12px;
     background:linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep));
-    color:#f6efe0;
-    font-weight:700;
-    font-size:14px;
-    letter-spacing:1px;
-    box-shadow:0 5px 0 #16273e, 0 8px 14px rgba(0,0,0,.25);
-    transition:transform .07s ease, box-shadow .07s ease;
+    color:#f6efe0; font-size:18px; font-weight:700; font-family:inherit;
+    box-shadow:0 4px 0 #16273e; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
   }
-  #spitBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #16273e; }
+  .pbtn:active{ transform:translateY(3px); box-shadow:0 1px 0 #16273e; }
+  .pbtn.drop{ background:linear-gradient(160deg, var(--gold-light), var(--gold)); color:#4a3a10; box-shadow:0 4px 0 #9c7d1c; }
 
-  /* ===== フタを閉めるボタン ===== */
-  #closeLidBtn{
-    position:absolute;
-    left:50%; top:calc(46% + 150px);
-    transform:translate(-50%, 0) scale(0);
-    z-index:15;
-    padding:12px 26px;
-    border:none; border-radius:24px;
-    background:linear-gradient(160deg, var(--gold-light), var(--gold));
-    color:#4a3a10;
-    font-weight:700; font-size:14px; letter-spacing:1px;
-    box-shadow:0 6px 0 #9c7d1c, 0 10px 16px rgba(0,0,0,.25);
-    transition:transform .35s cubic-bezier(.3,1.6,.4,1), opacity .3s ease;
-    opacity:0;
-    pointer-events:none;
-  }
-  #closeLidBtn.show{
-    transform:translate(-50%, 0) scale(1);
-    opacity:1;
-    pointer-events:auto;
-  }
-  #closeLidBtn:active{ transform:translate(-50%,4px) scale(.98); }
-
-  /* ===== リボン演出 ===== */
-  .ribbonWrap{
-    position:absolute; inset:0; z-index:6; pointer-events:none;
-  }
-  .ribbonV, .ribbonH{
-    position:absolute;
-    background:linear-gradient(90deg, var(--vermillion-dark), var(--vermillion) 50%, var(--vermillion-dark));
-    box-shadow:0 2px 6px rgba(0,0,0,.3);
-    transform:scale(0);
-    opacity:0;
-    animation:ribbonGrow .45s cubic-bezier(.3,1.6,.4,1) forwards;
-  }
-  .ribbonV{ left:50%; top:134px; width:26px; height:126px; margin-left:-13px; transform-origin:top center; }
-  .ribbonH{ left:18px; top:197px; width:264px; height:26px; margin-top:-13px; transform-origin:left center; animation-delay:.1s; }
-  @keyframes ribbonGrow{
-    0%{ transform:scale(0); opacity:0; }
-    100%{ transform:scale(1); opacity:1; }
-  }
-  .bow{
-    position:absolute; left:50%; top:197px;
-    width:70px; height:46px;
-    margin:-23px 0 0 -35px;
-    z-index:7;
-    transform:scale(0) rotate(0deg);
-    animation:bowPop .5s cubic-bezier(.3,1.7,.4,1) forwards;
-    animation-delay:.35s;
-  }
-  @keyframes bowPop{
-    0%{ transform:scale(0) rotate(-30deg); opacity:0; }
-    70%{ transform:scale(1.15) rotate(6deg); opacity:1; }
-    100%{ transform:scale(1) rotate(0deg); }
-  }
-  .bow::before, .bow::after{
-    content:"";
-    position:absolute; top:0; width:34px; height:38px;
-    background:radial-gradient(circle at 35% 30%, var(--vermillion), var(--vermillion-dark));
-    box-shadow:0 3px 8px rgba(0,0,0,.3);
-  }
-  .bow::before{ left:0; border-radius:60% 60% 60% 5%; transform:rotate(-18deg); }
-  .bow::after{ right:0; border-radius:60% 60% 5% 60%; transform:rotate(18deg); }
-  .bowKnot{
-    position:absolute; left:50%; top:50%;
-    width:16px; height:16px;
-    margin:-8px 0 0 -8px;
-    background:var(--gold);
-    border-radius:4px;
-    z-index:8;
-    box-shadow:0 2px 4px rgba(0,0,0,.3);
-  }
-
-  /* ===== 結果画面 ===== */
-  /* ===== 箱の柄（出荷数で増える） ===== */
-  #boxRow{
-    position:relative; z-index:12;
-    display:flex; justify-content:center; align-items:center; gap:6px;
-    font-size:11px; color:#8a7a5a; margin-top:4px; min-height:20px;
-  }
-  .boxSwatch{
-    width:18px; height:18px; border-radius:5px; cursor:pointer;
-    box-shadow:0 1px 3px rgba(0,0,0,.3), inset 0 0 0 1.5px rgba(230,200,105,.6);
-  }
-  .boxSwatch.selected{ outline:2px solid var(--gold); outline-offset:2px; }
-
-  /* ===== 札えらび ===== */
-  #tagPicker{
-    position:absolute;
-    left:50%; top:-6px;
-    transform:translateX(-50%) scale(.6);
-    z-index:9;
-    display:flex; align-items:center; gap:6px;
-    background:#fffaf0f2; border:1px solid #d8c69a; border-radius:16px;
-    padding:6px 10px;
-    box-shadow:0 6px 14px rgba(0,0,0,.2);
-    opacity:0; pointer-events:none;
-    transition:opacity .2s ease, transform .25s cubic-bezier(.3,1.6,.4,1);
-    white-space:nowrap;
-  }
-  #tagPicker.show{ opacity:1; pointer-events:auto; transform:translateX(-50%) scale(1); }
-  #tagPicker .q{ font-size:11px; color:#8a7a5a; }
-  .tagBtn{
-    border:1px solid #cbb98f; background:#fff; color:var(--charcoal);
-    border-radius:10px; padding:4px 9px; font-size:12px; font-weight:700;
-    font-family:inherit; cursor:pointer;
-  }
-  .tagBtn[data-tag="fact"]{ border-color:#8a8a96; }
-  .tagBtn[data-tag="feel"]{ border-color:#c98aa0; }
-  .tagBtn[data-tag="both"]{ border-color:#c9a227; }
-
-  /* 箱に入ったモヤモヤ：色が抜けて、ただの言葉になる */
-  .moyaBlock.inBox{
-    transition:filter 1.2s ease, background 1.2s ease, border-color 1.2s ease, left .38s ease, top .38s ease, transform .38s ease;
-    font-size:11.5px; padding:6px 10px; max-width:120px;
-  }
-  .moyaBlock.gray{
-    filter:grayscale(1);
-    background:#ececec;
-    border-color:#bdbdbd;
-    color:#6a6a6a;
-  }
-  .moyaBlock .tag{
-    position:absolute; top:-9px; right:-6px;
-    font-size:9.5px; font-weight:700; color:#fff;
-    padding:1px 6px; border-radius:8px;
-    background:#8a8a96;
-  }
-  .moyaBlock .tag.feel{ background:#c98aa0; }
-  .moyaBlock .tag.both{ background:#c9a227; }
-
-  /* ===== 届け先えらび・伝票 共通 ===== */
+  /* ===== はじまり・結果 ===== */
   .overlay{
-    position:fixed; inset:0;
-    background:rgba(40,30,20,.6);
+    position:fixed; inset:0; z-index:50;
+    background:rgba(40,30,20,.75);
     display:none; flex-direction:column; align-items:center;
-    z-index:80; text-align:center; padding:16px;
-    overflow-y:auto;
+    padding:16px; overflow-y:auto; text-align:center;
+    touch-action:pan-y;
   }
   .overlay.show{ display:flex; }
-  .overlayInner{ margin:auto 0; width:100%; max-width:360px; }
-
-  #destScreen h2{ font-size:17px; color:#fff6e0; margin:0 0 4px; letter-spacing:2px; }
-  #destScreen .sub{ font-size:12px; color:#e8dcc0; margin-bottom:12px; }
-  #destCards{ display:flex; flex-direction:column; gap:8px; }
-  .destCard{
-    display:flex; align-items:center; gap:12px;
+  .card{
+    margin:auto 0; width:100%; max-width:340px;
     background:linear-gradient(160deg,#fffaf0,#f2e6cc);
-    border:1px solid #d8c69a; border-radius:14px;
-    padding:10px 14px; text-align:left; cursor:pointer;
-    font-family:inherit; color:var(--charcoal);
-    box-shadow:0 4px 10px rgba(0,0,0,.25);
-  }
-  .destCard:active{ transform:scale(.98); }
-  .destCard .ic{ font-size:28px; }
-  .destCard .nm{ font-size:14px; font-weight:700; }
-  .destCard .ds{ font-size:11px; color:#8a7a5a; }
-  .destCard.rare{ border:2px solid var(--gold); background:linear-gradient(160deg,#fff8dc,#f6e2a8); }
-  .destCard.rare .nm::after{ content:" ✦レア"; font-size:10px; color:var(--vermillion); }
-  .destCard .new{ font-size:10px; color:var(--vermillion); font-weight:700; margin-left:4px; }
-
-  /* 伝票 */
-  #slip{
-    background:#fffdf6;
-    border:1px solid #d8c69a;
-    border-radius:6px;
-    padding:16px 16px 14px;
-    text-align:left;
+    border:1px solid #d8c69a; border-radius:18px;
+    padding:20px 18px;
     box-shadow:0 20px 40px rgba(0,0,0,.35);
-    position:relative;
-    animation:cardPop .5s cubic-bezier(.3,1.6,.4,1);
-    background-image:repeating-linear-gradient(0deg, transparent 0 27px, #f0e6d2 27px 28px);
   }
-  @keyframes cardPop{
-    0%{ transform:scale(.7); opacity:0; }
-    100%{ transform:scale(1); opacity:1; }
-  }
-  #slip .slipHead{
-    display:flex; justify-content:space-between; align-items:baseline;
-    border-bottom:2px solid var(--vermillion); padding-bottom:6px; margin-bottom:8px;
-  }
-  #slip .slipTitle{ font-size:15px; font-weight:700; color:var(--vermillion); letter-spacing:3px; }
-  #slip .slipNo{ font-size:10.5px; color:#8a7a5a; font-family:monospace; }
-  .slipRow{ display:flex; gap:8px; font-size:12.5px; line-height:28px; }
-  .slipRow .k{ width:72px; flex-shrink:0; color:#8a7a5a; font-size:11.5px; }
-  .slipRow .v{ color:var(--charcoal); font-weight:700; }
-  #slipComment{
-    margin-top:6px; padding:8px 10px;
-    background:#f6efe0; border-radius:8px;
-    font-size:13px; line-height:1.6; color:var(--indigo-deep); font-weight:700;
-  }
-  #slipComment .who{ display:block; font-size:10.5px; color:#8a7a5a; font-weight:500; }
-  #slip .stampDone{
-    position:absolute; right:14px; top:44px;
-    width:62px; height:62px; border-radius:50%;
-    border:3px solid var(--vermillion); color:var(--vermillion);
-    display:flex; align-items:center; justify-content:center;
-    font-size:13px; font-weight:700; transform:rotate(-14deg); opacity:.75;
-    font-family:"Shippori Mincho", serif;
-  }
-
-  #afterSlip{ margin-top:12px; }
-  .flatReport{
-    display:inline-block;
-    font-size:12.5px; color:#e8dcc0; font-weight:700;
-    background:#00000030; border-radius:12px; padding:6px 14px;
-    margin-bottom:8px;
-  }
-  #introLine{ font-size:12.5px; color:#ffe9a8; font-weight:700; margin:0 0 8px; line-height:1.6; }
-  .factRow{
-    display:flex; align-items:center; gap:10px;
-    background:#fffaf0e8; border-radius:12px;
-    padding:8px 12px; margin-bottom:6px; text-align:left;
-  }
-  .factRow.event{ background:#f6e2a8e8; }
-  .factRow .icon{ font-size:17px; }
-  .factRow .txt{ font-size:12.5px; font-weight:700; color:var(--charcoal); line-height:1.5; }
-  .factRow .txt b{ color:var(--vermillion); font-size:14px; }
-  #totalLine{ font-size:11.5px; color:#e8dcc0; margin:8px 0 0; font-weight:700; }
-  #newBoxBtn{
-    margin-top:12px;
-    padding:12px 28px; border:none; border-radius:24px;
+  .title{ font-family:"Shippori Mincho", serif; font-size:22px; font-weight:700; color:var(--indigo-deep); letter-spacing:3px; }
+  .howto{ text-align:left; font-size:12.5px; line-height:1.85; background:#ffffff90; border-radius:12px; padding:10px 12px; margin:12px 0; }
+  .best{ font-size:12px; color:#8a7a5a; margin-bottom:12px; }
+  .mainBtn{
+    padding:12px 34px; border:none; border-radius:24px;
     background:linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep));
-    color:#f6efe0; font-weight:700; font-size:13.5px; letter-spacing:1px; font-family:inherit;
-    box-shadow:0 5px 0 #16273e, 0 8px 14px rgba(0,0,0,.25);
-    cursor:pointer;
+    color:#f6efe0; font-weight:700; font-size:15px; font-family:inherit;
+    box-shadow:0 5px 0 #16273e; cursor:pointer;
   }
-  #newBoxBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #16273e; }
+  .stamp{ font-family:"Shippori Mincho", serif; font-size:13px; letter-spacing:4px; color:var(--vermillion); font-weight:700; }
+  #finalScore{ font-size:42px; font-weight:700; color:var(--indigo-deep); line-height:1.15; font-variant-numeric:tabular-nums; }
+  #newBest{ display:inline-block; margin:4px 0; font-size:11.5px; font-weight:700; letter-spacing:2px; color:#fff; background:var(--vermillion); padding:2px 12px; border-radius:10px; }
+  #bestLine{ font-size:12px; color:#8a7a5a; margin-bottom:10px; }
+  .stats{ display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
+  .stat{ background:#ffffffa0; border-radius:10px; padding:7px 10px; min-width:84px; }
+  .stat .n{ font-size:18px; font-weight:700; color:var(--indigo-deep); }
+  .stat .l{ font-size:10.5px; color:#8a7a5a; }
+  #comment{ font-size:13px; background:#ffffffa0; border-radius:10px; padding:7px 10px; margin-bottom:14px; }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <div id="paperTexture"></div>
-
-  <header>
-    <h1 class="mincho">モヤモヤ納品</h1>
-    <span class="kanji-sub">— 心の荷物、お預かりします —</span>
-    <div id="boxRow"></div>
-  </header>
-
-  <div id="boxStage">
-    <div id="tagPicker">
-      <span class="q">札をつける？</span>
-      <button class="tagBtn" data-tag="fact">事実</button>
-      <button class="tagBtn" data-tag="feel">気持ち</button>
-      <button class="tagBtn" data-tag="both">どっちも</button>
-    </div>
-    <div id="boxShip">
-      <div id="lid">
-        <div id="lidFace"></div>
-      </div>
-      <div id="boxBody"></div>
-      <div id="innerWell"></div>
-      <div class="ribbonWrap" id="ribbonWrap" style="display:none;">
-        <div class="ribbonV"></div>
-        <div class="ribbonH"></div>
-        <div class="bow"><div class="bowKnot"></div></div>
-      </div>
-    </div>
+  <div id="hud">
+    <div id="scoreBox"><small>SCORE</small><span id="scoreVal">0</span></div>
+    <div id="destBox">いまの届け先<span id="destName"></span><div id="lineBar"><div id="lineBarIn"></div></div></div>
+    <div id="nextBox">NEXT<canvas id="nextCanvas"></canvas></div>
   </div>
 
-  <button id="closeLidBtn">フタを閉めて、届け先を選ぶ</button>
+  <div id="boxWrap">
+    <canvas id="board"></canvas>
+    <div id="shipBanner"><div class="big" id="bannerBig">出荷！</div><div class="small" id="bannerSmall"></div></div>
+  </div>
 
-  <div id="inputBar">
-    <input id="moyaInput" type="text" maxlength="40" placeholder="今日のモヤモヤを書き出してみる…" />
-    <button id="spitBtn">書き出す</button>
+  <div id="pad">
+    <button class="pbtn" data-a="left">◀</button>
+    <button class="pbtn" data-a="rotate">⟳</button>
+    <button class="pbtn" data-a="right">▶</button>
+    <button class="pbtn" data-a="down">▼</button>
+    <button class="pbtn drop" data-a="drop">⤓</button>
   </div>
 </div>
 
-<div id="destScreen" class="overlay">
-  <div class="overlayInner">
-    <h2 class="mincho">届け先を選んでください</h2>
-    <div class="sub" id="destSub"></div>
-    <div id="destCards"></div>
+<div id="startScreen" class="overlay show">
+  <div class="card">
+    <div class="title">モヤモヤ納品</div>
+    <div class="howto">
+      モヤモヤが書かれたブロックが落ちてくる。箱にすきまなく詰めよう。<br>
+      横1列そろうと <b>出荷！</b> 5列出荷するごとに、届け先が遠くなる。<br>
+      箱からあふれたら、おしまい。<br>
+      <span style="font-size:11.5px;color:#8a7a5a">◀▶ 移動　⟳ 回転　▼ ゆっくり落とす　⤓ 一気に落とす<br>画面のスワイプ・タップ、キーボード（←→↑↓・スペース）でも操作できます</span>
+    </div>
+    <div class="best" id="startBest"></div>
+    <button class="mainBtn" id="startBtn">箱を用意する</button>
   </div>
 </div>
 
 <div id="resultScreen" class="overlay">
-  <div class="overlayInner">
-    <div id="slip">
-      <div class="slipHead">
-        <span class="slipTitle mincho">お届け伝票</span>
-        <span class="slipNo" id="slipNo"></span>
-      </div>
-      <div class="stampDone">受領</div>
-      <div class="slipRow"><span class="k">お届け先</span><span class="v" id="slipDest"></span></div>
-      <div class="slipRow"><span class="k">品名</span><span class="v" id="slipItem"></span></div>
-      <div class="slipRow"><span class="k">重さ</span><span class="v" id="slipWeight"></span></div>
-      <div class="slipRow"><span class="k">到着</span><span class="v" id="slipEta"></span></div>
-      <div id="slipComment"><span class="who" id="slipWho"></span><span id="slipText"></span></div>
+  <div class="card">
+    <div class="stamp">— 本日の納品 —</div>
+    <div id="finalScore">0</div>
+    <div id="newBest">NEW BEST!</div>
+    <div id="bestLine"></div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stLines">0</div><div class="l">出荷した列</div></div>
+      <div class="stat"><div class="n" id="stDest" style="font-size:14px">-</div><div class="l">いちばん遠い届け先</div></div>
     </div>
-    <div id="afterSlip">
-      <div class="flatReport" id="flatReport"></div>
-      <div id="introLine"></div>
-      <div id="factRows"></div>
-      <div id="totalLine"></div>
-      <button id="newBoxBtn">また箱を用意する</button>
-    </div>
+    <div id="comment"></div>
+    <button class="mainBtn" id="retryBtn">また箱を用意する</button>
   </div>
 </div>
 
 <script>
 (function(){
-  const app = document.getElementById('app');
-  const boxStage = document.getElementById('boxStage');
-  const boxShip = document.getElementById('boxShip');
-  const lid = document.getElementById('lid');
-  const innerWell = document.getElementById('innerWell');
-  const ribbonWrap = document.getElementById('ribbonWrap');
-  const closeLidBtn = document.getElementById('closeLidBtn');
-  const moyaInput = document.getElementById('moyaInput');
-  const spitBtn = document.getElementById('spitBtn');
-  const tagPicker = document.getElementById('tagPicker');
-  const boxRow = document.getElementById('boxRow');
-  const destScreen = document.getElementById('destScreen');
-  const destSub = document.getElementById('destSub');
-  const destCards = document.getElementById('destCards');
-  const resultScreen = document.getElementById('resultScreen');
-  const flatReport = document.getElementById('flatReport');
-  const introLine = document.getElementById('introLine');
-  const factRows = document.getElementById('factRows');
-  const totalLine = document.getElementById('totalLine');
-  const newBoxBtn = document.getElementById('newBoxBtn');
+  const COLS = 8, ROWS = 14;
 
-  const GRAMS_PER_CHAR = 15; // 1文字 = 15g として重さにする
+  // 4文字のモヤモヤ（1マス1文字）
+  const WORDS = ['情けない','もう無理','嫌われた','自己嫌悪','気まずい','言いすぎ','中途半端','失敗した','落ち込む','自信ない',
+                 '才能ない','要領悪い','不安だな','焦ってる','空回りだ','寝不足だ','締め切り','恥かいた','比べがち','後悔多め',
+                 '素直ゼロ','強がった','また遅刻','先延ばし','気にしい'].filter(w => Array.from(w).length === 4);
 
-  /* =========================================================
-     届け先（スケールの大きい場所ほど「大きな世界」）
-     ========================================================= */
-  const DESTS = [
-    { id:'moon',    icon:'🌕', name:'月の裏側',         desc:'38万km先の静かな倉庫', who:'うさぎ配送員',
-      eta:['3日後','次の満月の夜'], say:['餅といっしょに、ちゃんと保管しておくね','月から見ると、地球はまるくて小さいよ','受け取りました。ここはとても静かです'] },
-    { id:'penguin', icon:'🐧', name:'南極 ペンギン配送センター', desc:'冷凍でしっかり保管', who:'ペンギン一同',
-      eta:['1週間後','白夜が明けたころ'], say:['冷凍保存しておきます','みんなで順番に眺めました。ふむふむ','ここは寒いので、たいていのものは固まって動かなくなります'] },
-    { id:'deepsea', icon:'🐟', name:'深海6000m',         desc:'暗くて静かな海の底', who:'デメニギス',
-      eta:['ゆっくり沈んで10日後','そのうち'], say:['暗いところで、預かっておくね','ここは水圧がすごいので、たいていのものは小さくなる','光る魚たちが見張ってくれています'] },
-    { id:'future',  icon:'📮', name:'1年後の自分',       desc:'タイムカプセル便', who:'1年後のあなた',
-      eta:['ちょうど1年後','来年の今日'], say:['届いたよ。ちょっと懐かしい','開けるかどうかは、そのとき決めるね','こんなこと考えてたんだね、と思いました'] },
-    { id:'galaxy',  icon:'🌌', name:'銀河の果ての倉庫',   desc:'138億年保管できます', who:'倉庫番ロボ',
-      eta:['光の速さで2万年後','いつか'], say:['登録番号を振りました。ずっと置いておけます','宇宙は広いので、置き場所には困りません','ピピッ。受領完了'] },
-    { id:'edo',     icon:'🏃', name:'江戸時代',           desc:'飛脚が走って届けます', who:'飛脚の源さん',
-      eta:['300年前に到着済み','へい、明日には'], say:['へい、確かに！','江戸でもみんな、似たようなことで悩んでましたぜ','重さは問題ねえ。走るだけでさ'] },
-    { id:'dino',    icon:'🦕', name:'白亜紀',             desc:'6600万年前の大地', who:'トリケラトプス',
-      eta:['6600万年前','ずっと昔'], say:['（もぐもぐ…）','受け取りのしるしに、足跡を押しておいた','このへんは火山がにぎやかです'] },
-    { id:'fuji',    icon:'🗻', name:'富士山頂',           desc:'雲の上でひと晩あずかります', who:'山小屋のおじさん',
-      eta:['明日の朝','ご来光のころ'], say:['ここからだと、雲が下に見えるよ','ひと晩、あずかっておくね','朝日に当てておきました'] },
-    { id:'cat',     icon:'🐈', name:'ねこの集会所',       desc:'夜の公園で受け取ります', who:'ボスねこ',
-      eta:['今夜','気が向いたら'], say:['にゃ（確かに）','中身より、箱のほうに興味がある','みんなで箱に入って寝ています'] },
-    { id:'turtle',  icon:'🐢', name:'太平洋のまんなか',   desc:'ウミガメがのんびり運びます', who:'ウミガメ',
-      eta:['100年くらいかけて','のんびり'], say:['のんびり運んでいくね','海は広いから、まあ、だいたい浮かんでいられる','途中でクジラにも見せておくね'] }
-  ];
-  const RARE_DESTS = [
-    { id:'museum',  icon:'🏛️', name:'未来の博物館',       desc:'展示品として受け付けます', who:'学芸員',
-      eta:['西暦3000年','展示準備中'], say:['「2020年代のモヤモヤ」として展示します','来館者が熱心に見ていました'] },
-    { id:'blackhole', icon:'🕳️', name:'ブラックホール',   desc:'返品はできません', who:'事象の地平面 係',
-      eta:['……','時間の概念がありません'], say:['……（吸い込まれました）','光も出てこられないので、中身は誰にも見えません'] }
-  ];
-  const RARE_RATE = 0.12;
-  const ALL_DESTS = DESTS.concat(RARE_DESTS);
+  // テトロミノ（n×n の中での座標）
+  const SHAPES = {
+    I:{ n:4, cells:[[0,1],[1,1],[2,1],[3,1]], color:'#9fb8d8' },
+    O:{ n:2, cells:[[0,0],[1,0],[0,1],[1,1]], color:'#e6c869' },
+    T:{ n:3, cells:[[0,1],[1,1],[2,1],[1,0]], color:'#c9a0d8' },
+    L:{ n:3, cells:[[0,1],[1,1],[2,1],[2,0]], color:'#e8a878' },
+    J:{ n:3, cells:[[0,0],[0,1],[1,1],[2,1]], color:'#8fb8c8' },
+    S:{ n:3, cells:[[1,0],[2,0],[0,1],[1,1]], color:'#a8cf8a' },
+    Z:{ n:3, cells:[[0,0],[1,0],[1,1],[2,1]], color:'#e09a9a' }
+  };
+  const TYPES = Object.keys(SHAPES);
 
-  /* 箱の柄（出荷数で増える） */
-  const BOXES = [
-    { id:'ai',     name:'藍',   from:0,  mid:'#2e4a70', deep:'#1f3350' },
-    { id:'shu',    name:'朱',   from:3,  mid:'#b5493c', deep:'#7e2a22' },
-    { id:'sakura', name:'桜',   from:6,  mid:'#d68aa0', deep:'#a85a72' },
-    { id:'wakaba', name:'若草', from:10, mid:'#7fa25a', deep:'#4f7036' },
-    { id:'kin',    name:'金',   from:16, mid:'#c9a227', deep:'#8a6e14' }
-  ];
+  const DESTS = ['🏠 となりの町','🗻 富士山頂','🌕 月の裏側','🐧 南極','🐟 深海6000m','🦕 白亜紀','🏃 江戸時代','🌌 銀河の果て','🏛️ 未来の博物館','🕳️ ブラックホール'];
+  const LINES_PER_DEST = 5;
+  const COMMENTS = {
+    great: ['宇宙規模の配送業者だ','その詰め方、職人芸','もはや倉庫の主'],
+    good:  ['いい箱詰めだった','手際がよくなってきた','遠くまで届けたね'],
+    normal:['まずは近場から','次はもっと遠くへ','箱はいくらでもあるよ']
+  };
 
-  /* =========================================================
-     累計記録（書いた言葉は保存しない）
-     ========================================================= */
-  const SAVE_KEY = 'moyamoyaDelivery_v1';
-  function defaultSave(){ return { ships:0, items:0, grams:0, dests:{}, box:'ai' }; }
+  const SAVE_KEY = 'moyamoyaPack_v1';
   function loadSave(){
-    try{
-      const raw = localStorage.getItem(SAVE_KEY);
-      return raw ? Object.assign(defaultSave(), JSON.parse(raw)) : defaultSave();
-    }catch(e){ return defaultSave(); }
+    try{ return Object.assign({ best:0, bestDest:0 }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { best:0, bestDest:0 }; }
   }
-  function writeSave(){
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){ /* 保存できない環境では今回分だけ */ }
-  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
   let save = loadSave();
 
-  function rand(min,max){ return min + Math.random()*(max-min); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function shuffle(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  }
-  function fmtWeight(g){ return g >= 1000 ? (g/1000).toFixed(2) + 'kg' : g + 'g'; }
 
-  /* =========================================================
-     この回の状態
-     ========================================================= */
-  let blocks = [];      // { el, text, inBox, tag }
-  let sealed = false;
-  let pendingTagBlock = null;
-  let tagTimer = null;
-  let writtenCount = 0;
+  const board = document.getElementById('board');
+  const ctx = board.getContext('2d');
+  const nextCanvas = document.getElementById('nextCanvas');
+  const nctx = nextCanvas.getContext('2d');
+  let cell = 28;
 
-  function currentBox(){ return BOXES.find(b => b.id === save.box && save.ships >= b.from) || BOXES[0]; }
-  function applyBox(){
-    const b = currentBox();
-    boxShip.style.setProperty('--indigo-mid', b.mid);
-    boxShip.style.setProperty('--indigo-deep', b.deep);
+  /* ===== 状態 ===== */
+  let grid = [];        // grid[y][x] = { ch, color } | null
+  let piece = null, nextPiece = null;
+  let running = false, clearing = false;
+  let score = 0, lines = 0, destIndex = 0;
+  let dropTimer = 0, lastTs = null, rafId = null;
+  let bag = [];
+
+  function emptyGrid(){ grid = Array.from({ length:ROWS }, () => Array(COLS).fill(null)); }
+
+  function newPiece(){
+    if(bag.length === 0) bag = TYPES.slice().sort(() => Math.random() - .5);
+    const type = bag.pop();
+    const s = SHAPES[type];
+    const word = Array.from(pick(WORDS));
+    // 読む順（上→下、左→右）に1文字ずつ置く
+    const order = s.cells.slice().sort((a,b) => a[1] - b[1] || a[0] - b[0]);
+    const cells = order.map((c, i) => ({ x:c[0], y:c[1], ch:word[i] }));
+    return { type, n:s.n, color:s.color, cells, x:Math.floor((COLS - s.n) / 2), y:-1, word:word.join('') };
   }
-  function renderBoxRow(){
-    const list = BOXES.filter(b => save.ships >= b.from);
-    boxRow.innerHTML = '';
-    if(list.length <= 1) return;
-    const label = document.createElement('span');
-    label.textContent = '箱：';
-    boxRow.appendChild(label);
-    list.forEach(b => {
-      const sw = document.createElement('div');
-      sw.className = 'boxSwatch' + (b.id === currentBox().id ? ' selected' : '');
-      sw.style.background = `linear-gradient(160deg, ${b.mid}, ${b.deep})`;
-      sw.title = b.name;
-      sw.addEventListener('click', () => {
-        if(sealed) return;
-        save.box = b.id;
-        writeSave();
-        applyBox();
-        renderBoxRow();
-      });
-      boxRow.appendChild(sw);
+
+  function collides(p, dx, dy, cells){
+    return (cells || p.cells).some(c => {
+      const x = p.x + c.x + dx, y = p.y + c.y + dy;
+      if(x < 0 || x >= COLS || y >= ROWS) return true;
+      return y >= 0 && grid[y][x];
     });
   }
 
-  /* ===== ブロック生成 ===== */
-  function spitOutBlock(){
-    const text = moyaInput.value.trim();
-    if(!text || sealed) return;
-    moyaInput.value = '';
-    writtenCount++;
-
-    const el = document.createElement('div');
-    el.className = 'moyaBlock popIn';
-    el.textContent = text;
-    document.body.appendChild(el);
-    const b = { el, text, inBox:false, tag:null };
-    blocks.push(b);
-
-    // 入力欄の少し上にランダムな位置で出現
-    const barRect = spitBtn.getBoundingClientRect();
-    const bw = el.offsetWidth || 120;
-    const startX = Math.min(window.innerWidth - bw - 20,
-                    Math.max(20, window.innerWidth/2 - bw/2 + rand(-90,90)));
-    const startY = barRect.top - 80 + rand(-20,10);
-    el.style.left = startX + 'px';
-    el.style.top = startY + 'px';
-
-    attachDrag(b);
-  }
-
-  // ===== ドラッグ処理（重みのある手触り）。タップだけでも箱に入る =====
-  function attachDrag(b){
-    const block = b.el;
-    let dragging = false;
-    let px, py, curX, curY, offX, offY, downX, downY;
-    let rafId = null;
-    let lastCurX = 0;
-
-    function onPointerDown(e){
-      if(sealed || b.inBox) return;
-      dragging = true;
-      block.classList.add('dragging');
-      block.classList.remove('settling','popIn');
-      block.setPointerCapture(e.pointerId);
-      const r = block.getBoundingClientRect();
-      curX = r.left; curY = r.top; lastCurX = curX;
-      downX = e.clientX; downY = e.clientY;
-      offX = e.clientX - r.left;
-      offY = e.clientY - r.top;
-      px = curX; py = curY;
-      block.style.transition = 'none';
-      loop();
-      block.addEventListener('pointermove', onPointerMove);
-      block.addEventListener('pointerup', onPointerUp);
-      block.addEventListener('pointercancel', onPointerUp);
-    }
-
-    function onPointerMove(e){
-      if(!dragging) return;
-      px = e.clientX - offX;
-      py = e.clientY - offY;
-      innerWell.classList.toggle('drop-hover', isOverWell());
-    }
-
-    function isOverWell(){
-      const w = innerWell.getBoundingClientRect();
-      const cx = curX + block.offsetWidth/2;
-      const cy = curY + block.offsetHeight/2;
-      return cx > w.left && cx < w.right && cy > w.top - 20 && cy < w.bottom;
-    }
-
-    function loop(){
-      if(!dragging) return;
-      curX += (px - curX) * 0.28;
-      curY += (py - curY) * 0.28;
-      const vx = curX - lastCurX;
-      lastCurX = curX;
-      const rot = Math.max(-14, Math.min(14, vx * 1.4));
-      block.style.left = curX + 'px';
-      block.style.top = curY + 'px';
-      block.style.transform = `rotate(${rot}deg)`;
-      rafId = requestAnimationFrame(loop);
-    }
-
-    function onPointerUp(e){
-      if(!dragging) return;
-      dragging = false;
-      cancelAnimationFrame(rafId);
-      block.classList.remove('dragging');
-      block.removeEventListener('pointermove', onPointerMove);
-      block.removeEventListener('pointerup', onPointerUp);
-      block.removeEventListener('pointercancel', onPointerUp);
-      innerWell.classList.remove('drop-hover');
-
-      const tapped = Math.hypot(e.clientX - downX, e.clientY - downY) < 6;
-      if(tapped || isOverWell()){
-        settleIntoBox(b);
-      } else {
-        block.classList.add('settling');
-        block.style.transform = 'rotate(0deg)';
+  function rotate(){
+    if(!piece || piece.type === 'O') return;
+    const rotated = piece.cells.map(c => ({ x: piece.n - 1 - c.y, y: c.x, ch: c.ch }));
+    for(const kick of [0, -1, 1, -2, 2]){
+      if(!collides(piece, kick, 0, rotated)){
+        piece.cells = rotated;
+        piece.x += kick;
+        draw();
+        return;
       }
     }
-
-    block.addEventListener('pointerdown', onPointerDown);
+  }
+  function move(dx){
+    if(piece && !collides(piece, dx, 0)){ piece.x += dx; draw(); }
+  }
+  function softDrop(){
+    if(!piece) return;
+    if(!collides(piece, 0, 1)){ piece.y++; score += 1; dropTimer = 0; renderHud(); draw(); }
+    else lock();
+  }
+  function hardDrop(){
+    if(!piece) return;
+    let d = 0;
+    while(!collides(piece, 0, d + 1)) d++;
+    piece.y += d;
+    score += d * 2;
+    lock();
   }
 
-  function settleIntoBox(b){
-    const block = b.el;
-    b.inBox = true;
-    block.classList.add('inBox');
-    const w = innerWell.getBoundingClientRect();
-    requestAnimationFrame(() => {
-      const targetX = w.left + rand(8, Math.max(10, w.width - block.offsetWidth - 8));
-      const targetY = w.top + rand(6, Math.max(8, w.height - block.offsetHeight - 6));
-      block.style.left = targetX + 'px';
-      block.style.top = targetY + 'px';
-      block.style.transform = `rotate(${rand(-8,8)}deg)`;
+  function lock(){
+    let over = false;
+    piece.cells.forEach(c => {
+      const x = piece.x + c.x, y = piece.y + c.y;
+      if(y < 0){ over = true; return; }
+      grid[y][x] = { ch:c.ch, color:piece.color };
     });
-    block.style.pointerEvents = 'none';
-    closeLidBtn.classList.add('show');
-    askTag(b);
+    piece = null;
+    renderHud();
+    if(over){ gameOver(); return; }
+    const full = [];
+    for(let y=0;y<ROWS;y++) if(grid[y].every(Boolean)) full.push(y);
+    if(full.length){
+      clearRows(full);
+    } else {
+      spawn();
+    }
+    draw();
   }
 
-  /* ===== 札（任意）。選んでも選ばなくても、やがて色が抜ける ===== */
-  function askTag(b){
-    if(pendingTagBlock && pendingTagBlock !== b) grayOut(pendingTagBlock);
-    pendingTagBlock = b;
-    tagPicker.classList.add('show');
-    clearTimeout(tagTimer);
-    tagTimer = setTimeout(() => { grayOut(b); }, 4000);
+  function clearRows(full){
+    clearing = true;
+    let flashes = 0;
+    const iv = setInterval(() => {
+      flashes++;
+      draw(flashes % 2 ? full : []);
+      if(flashes >= 4){
+        clearInterval(iv);
+        full.forEach(y => { grid.splice(y, 1); grid.unshift(Array(COLS).fill(null)); });
+        const before = destIndex;
+        lines += full.length;
+        score += [0, 100, 300, 500, 800][full.length] * (destIndex + 1);
+        destIndex = Math.min(DESTS.length - 1, Math.floor(lines / LINES_PER_DEST));
+        if(destIndex > before) banner('出荷完了！', `次の届け先：${DESTS[destIndex]}`);
+        else banner(full.length >= 2 ? `${full.length}列 出荷！` : '出荷！', DESTS[destIndex] + ' へ');
+        clearing = false;
+        renderHud();
+        spawn();
+        draw();
+      }
+    }, 70);
   }
-  function setTag(tag){
-    const b = pendingTagBlock;
-    if(!b) return;
-    b.tag = tag;
-    const t = document.createElement('span');
-    t.className = 'tag ' + tag;
-    t.textContent = tag === 'fact' ? '事実' : tag === 'feel' ? '気持ち' : 'どっちも';
-    b.el.appendChild(t);
-    grayOut(b);
+
+  function spawn(){
+    piece = nextPiece || newPiece();
+    nextPiece = newPiece();
+    drawNext();
+    if(collides(piece, 0, 0)) gameOver();
   }
-  function grayOut(b){
-    b.el.classList.add('gray');
-    if(pendingTagBlock === b){
-      pendingTagBlock = null;
-      tagPicker.classList.remove('show');
-      clearTimeout(tagTimer);
+
+  function banner(big, small){
+    document.getElementById('bannerBig').textContent = big;
+    document.getElementById('bannerSmall').textContent = small;
+    const b = document.getElementById('shipBanner');
+    b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  }
+
+  function gravity(){ return Math.max(0.09, 0.75 - destIndex * 0.07); }   // 秒/1マス
+
+  /* ===== 描画 ===== */
+  function resize(){
+    const wrap = document.getElementById('boxWrap');
+    const h = wrap.clientHeight - 16, w = wrap.clientWidth - 24;
+    cell = Math.max(16, Math.floor(Math.min(h / ROWS, w / COLS)));
+    const dpr = window.devicePixelRatio || 1;
+    board.width = COLS * cell * dpr; board.height = ROWS * cell * dpr;
+    board.style.width = COLS * cell + 'px'; board.style.height = ROWS * cell + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const nc = Math.round(cell * 0.6);
+    nextCanvas.width = 4 * nc * dpr; nextCanvas.height = 2.5 * nc * dpr;
+    nextCanvas.style.width = 4 * nc + 'px'; nextCanvas.style.height = 2.5 * nc + 'px';
+    nctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(); drawNext();
+  }
+
+  function drawCell(c2, x, y, size, color, ch, alpha){
+    c2.globalAlpha = alpha == null ? 1 : alpha;
+    c2.fillStyle = color;
+    c2.fillRect(x + 1, y + 1, size - 2, size - 2);
+    c2.fillStyle = 'rgba(255,255,255,.35)';
+    c2.fillRect(x + 1, y + 1, size - 2, 3);
+    c2.strokeStyle = 'rgba(58,51,42,.35)';
+    c2.lineWidth = 1;
+    c2.strokeRect(x + 1.5, y + 1.5, size - 3, size - 3);
+    if(ch){
+      c2.fillStyle = '#3a332a';
+      c2.font = `700 ${Math.floor(size * 0.55)}px "Zen Kaku Gothic New", sans-serif`;
+      c2.textAlign = 'center'; c2.textBaseline = 'middle';
+      c2.fillText(ch, x + size/2, y + size/2 + 1);
+    }
+    c2.globalAlpha = 1;
+  }
+
+  function draw(flashRows){
+    const W = COLS * cell, H = ROWS * cell;
+    ctx.clearRect(0, 0, W, H);
+    // うっすらマス目
+    ctx.strokeStyle = 'rgba(0,0,0,.05)';
+    for(let x=1;x<COLS;x++){ ctx.beginPath(); ctx.moveTo(x*cell, 0); ctx.lineTo(x*cell, H); ctx.stroke(); }
+    for(let y=1;y<ROWS;y++){ ctx.beginPath(); ctx.moveTo(0, y*cell); ctx.lineTo(W, y*cell); ctx.stroke(); }
+    for(let y=0;y<ROWS;y++){
+      for(let x=0;x<COLS;x++){
+        const g = grid[y][x];
+        if(!g) continue;
+        const flash = flashRows && flashRows.includes(y);
+        drawCell(ctx, x*cell, y*cell, cell, flash ? '#fff6c8' : g.color, g.ch);
+      }
+    }
+    if(piece){
+      // 落ちる場所のガイド
+      let d = 0;
+      while(!collides(piece, 0, d + 1)) d++;
+      piece.cells.forEach(c => {
+        const y = piece.y + c.y + d;
+        if(y >= 0) drawCell(ctx, (piece.x + c.x)*cell, y*cell, cell, piece.color, '', 0.22);
+      });
+      piece.cells.forEach(c => {
+        const y = piece.y + c.y;
+        if(y >= 0) drawCell(ctx, (piece.x + c.x)*cell, y*cell, cell, piece.color, c.ch);
+      });
     }
   }
-  tagPicker.querySelectorAll('.tagBtn').forEach(btn => {
-    btn.addEventListener('click', () => setTag(btn.dataset.tag));
+
+  function drawNext(){
+    const nc = Math.round(cell * 0.6);
+    nctx.clearRect(0, 0, 4*nc, 2.5*nc);
+    if(!nextPiece) return;
+    const xs = nextPiece.cells.map(c => c.x), ys = nextPiece.cells.map(c => c.y);
+    const minX = Math.min(...xs), minY = Math.min(...ys);
+    const w = Math.max(...xs) - minX + 1, h = Math.max(...ys) - minY + 1;
+    const ox = (4 - w) * nc / 2, oy = (2.5 - h) * nc / 2;
+    nextPiece.cells.forEach(c => drawCell(nctx, ox + (c.x - minX)*nc, oy + (c.y - minY)*nc, nc, nextPiece.color, c.ch));
+  }
+
+  function renderHud(){
+    document.getElementById('scoreVal').textContent = score.toLocaleString();
+    document.getElementById('destName').textContent = DESTS[destIndex];
+    document.getElementById('lineBarIn').style.width = ((lines % LINES_PER_DEST) / LINES_PER_DEST * 100) + '%';
+  }
+
+  /* ===== ループ ===== */
+  function loop(ts){
+    if(!running) return;
+    if(lastTs === null) lastTs = ts;
+    const dt = Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts;
+    if(!clearing && piece){
+      dropTimer += dt;
+      if(dropTimer >= gravity()){
+        dropTimer = 0;
+        if(!collides(piece, 0, 1)){ piece.y++; draw(); }
+        else lock();
+      }
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  /* ===== 操作 ===== */
+  function action(a){
+    if(!running || clearing) return;
+    if(a === 'left') move(-1);
+    else if(a === 'right') move(1);
+    else if(a === 'rotate') rotate();
+    else if(a === 'down') softDrop();
+    else if(a === 'drop') hardDrop();
+  }
+  document.querySelectorAll('.pbtn').forEach(b => b.addEventListener('click', () => action(b.dataset.a)));
+  window.addEventListener('keydown', e => {
+    const map = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'rotate', ArrowDown:'down', ' ':'drop' };
+    if(map[e.key]){ e.preventDefault(); action(map[e.key]); }
+  });
+  // スワイプ：左右で移動、下で一気に落とす、タップで回転
+  let sx = 0, sy = 0, lastX = 0, moved = false, tracking = false;
+  board.addEventListener('pointerdown', e => { sx = lastX = e.clientX; sy = e.clientY; moved = false; tracking = true; });
+  window.addEventListener('pointermove', e => {
+    if(!tracking) return;
+    const step = cell * 0.9;
+    while(e.clientX - lastX > step){ action('right'); lastX += step; moved = true; }
+    while(lastX - e.clientX > step){ action('left'); lastX -= step; moved = true; }
+  });
+  window.addEventListener('pointerup', e => {
+    if(!tracking) return;
+    tracking = false;
+    const dy = e.clientY - sy, dx = e.clientX - sx;
+    if(dy > cell * 2 && Math.abs(dy) > Math.abs(dx)) action('drop');
+    else if(!moved && Math.abs(dx) < 10 && Math.abs(dy) < 10) action('rotate');
   });
 
-  /* ===== フタを閉める → 届け先 ===== */
-  function openDestPicker(){
-    if(sealed) return;
-    if(pendingTagBlock) grayOut(pendingTagBlock);
-    sealed = true;
-    closeLidBtn.classList.remove('show');
-    lid.classList.add('closed');
-    setTimeout(() => { ribbonWrap.style.display = 'block'; }, 450);
-
-    const inBox = blocks.filter(b => b.inBox);
-    const grams = inBox.reduce((s,b) => s + Array.from(b.text).length * GRAMS_PER_CHAR, 0);
-    destSub.textContent = `${inBox.length}個・${fmtWeight(grams)}`;
-
-    let options = shuffle(DESTS).slice(0, 3);
-    if(Math.random() < RARE_RATE) options[2] = pick(RARE_DESTS);
-    destCards.innerHTML = '';
-    options.forEach(d => {
-      const card = document.createElement('button');
-      card.className = 'destCard' + (RARE_DESTS.includes(d) ? ' rare' : '');
-      card.innerHTML = `<span class="ic"></span><span><span class="nm"></span>${save.dests[d.id] ? '' : '<span class="new">NEW</span>'}<br><span class="ds"></span></span>`;
-      card.querySelector('.ic').textContent = d.icon;
-      card.querySelector('.nm').textContent = d.name;
-      card.querySelector('.ds').textContent = d.desc;
-      card.addEventListener('click', () => ship(d, inBox, grams));
-      destCards.appendChild(card);
-    });
-    setTimeout(() => destScreen.classList.add('show'), 1100);
+  function startGame(){
+    document.getElementById('startScreen').classList.remove('show');
+    document.getElementById('resultScreen').classList.remove('show');
+    emptyGrid();
+    score = 0; lines = 0; destIndex = 0; bag = []; nextPiece = null; clearing = false;
+    renderHud();
+    spawn();
+    running = true;
+    lastTs = null; dropTimer = 0;
+    resize();
+    rafId = requestAnimationFrame(loop);
   }
 
-  function ship(dest, inBox, grams){
-    destScreen.classList.remove('show');
-    // 箱の中のブロックも一緒に飛んでいく
-    inBox.forEach(b => {
-      b.el.style.transition = 'transform .9s cubic-bezier(.5,0,.85,.25), opacity .9s ease';
-      b.el.style.transform = 'translateY(-1100px)';
-      b.el.style.opacity = '0';
-    });
-    boxShip.classList.add('launch');
-
-    const newDest = !save.dests[dest.id];
-    const beforeBoxes = BOXES.filter(b => save.ships >= b.from).length;
-    save.ships += 1;
-    save.items += inBox.length;
-    save.grams += grams;
-    save.dests[dest.id] = true;
+  function gameOver(){
+    if(!running) return;
+    running = false;
+    cancelAnimationFrame(rafId);
+    const isBest = score > save.best;
+    if(isBest) save.best = score;
+    save.bestDest = Math.max(save.bestDest, destIndex);
     writeSave();
-    const newBoxes = BOXES.filter(b => save.ships >= b.from).slice(beforeBoxes);
-
-    setTimeout(() => {
-      renderResult(dest, inBox, grams, newDest, newBoxes);
-      resultScreen.classList.add('show');
-      sendResultToPortal(dest, inBox, grams);
-    }, 1000);
+    document.getElementById('finalScore').textContent = score.toLocaleString();
+    document.getElementById('newBest').style.display = isBest && score > 0 ? 'inline-block' : 'none';
+    document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()}`;
+    document.getElementById('stLines').textContent = lines;
+    document.getElementById('stDest').textContent = DESTS[destIndex];
+    const pool = destIndex >= 4 ? COMMENTS.great : destIndex >= 2 ? COMMENTS.good : COMMENTS.normal;
+    document.getElementById('comment').textContent = pick(pool);
+    setTimeout(() => document.getElementById('resultScreen').classList.add('show'), 500);
+    sendResultToPortal();
   }
 
-  /* ===== 伝票と結果 ===== */
-  function renderResult(dest, inBox, grams, newDest, newBoxes){
-    document.getElementById('slipNo').textContent = 'No.' + String(Math.floor(rand(100000, 999999)));
-    document.getElementById('slipDest').textContent = `${dest.icon} ${dest.name}`;
-    document.getElementById('slipItem').textContent = `モヤモヤ ${inBox.length} 個`;
-    document.getElementById('slipWeight').textContent = fmtWeight(grams);
-    document.getElementById('slipEta').textContent = pick(dest.eta);
-    document.getElementById('slipWho').textContent = `受取人：${dest.who}`;
-    document.getElementById('slipText').textContent = `「${pick(dest.say)}」`;
-
-    // 結果は事実として（グレースケール）
-    flatReport.textContent = `${inBox.length}個、${fmtWeight(grams)} を出荷した（事実）`;
-
-    // 意図が伝わるよう、最初の1回だけ一言そえる
-    if(save.ships === 1){
-      introLine.textContent = '箱に入れても、なくなるわけじゃない。ただ、置き場所が決まった。';
-      introLine.style.display = 'block';
-    } else {
-      introLine.style.display = 'none';
-    }
-
-    factRows.innerHTML = '';
-    buildLines(inBox).forEach(l => factRows.appendChild(makeRow(l, false)));
-    if(newDest){
-      const seen = Object.keys(save.dests).length;
-      factRows.appendChild(makeRow({ icon:'🗺️', text:`はじめての届け先だった（配送先帳 ${seen} / ${ALL_DESTS.length}）` }, true));
-    }
-    newBoxes.forEach(b => factRows.appendChild(makeRow({ icon:'🎁', text:`新しい箱「${b.name}」が使えるようになった` }, true)));
-
-    totalLine.textContent = `これまでに ${save.ships} 回、合計 ${fmtWeight(save.grams)} を出荷`;
-  }
-
-  // その回のデータから「見てたよ」の言葉を組み立てる（評価語は使わない）
-  function buildLines(inBox){
-    const n = v => `<b>${v}</b>`;
-    const chars = blocks.reduce((s,b) => s + Array.from(b.text).length, 0);
-    const main = pick([
-      { icon:'✍️', text:`${n(writtenCount)} 個のモヤモヤを、言葉にして書き出してた` },
-      { icon:'✍️', text:`ぜんぶで ${n(chars)} 文字、書き出してた` }
-    ]);
-    const extras = [];
-    const facts = inBox.filter(b => b.tag === 'fact').length;
-    const feels = inBox.filter(b => b.tag === 'feel').length;
-    const boths = inBox.filter(b => b.tag === 'both').length;
-    if(facts + feels + boths > 0){
-      const parts = [];
-      if(facts) parts.push(`「事実」${n(facts)}`);
-      if(feels) parts.push(`「気持ち」${n(feels)}`);
-      if(boths) parts.push(`「どっちも」${n(boths)}`);
-      extras.push({ icon:'🏷️', text:`${parts.join('・')} の札をつけてた` });
-    }
-    const kept = blocks.length - inBox.length;
-    if(kept > 0){
-      extras.push({ icon:'🤲', text:`${n(kept)} 個は箱に入れずに、手元に残した` });
-    } else if(inBox.length >= 2){
-      extras.push({ icon:'📦', text:`書いたものは全部、箱に入れた` });
-    }
-    const longest = inBox.slice().sort((a,b) => b.text.length - a.text.length)[0];
-    if(longest && Array.from(longest.text).length >= 12){
-      extras.push({ icon:'⚖️', text:`いちばん重かったのは ${n(fmtWeight(Array.from(longest.text).length * GRAMS_PER_CHAR))}` });
-    }
-    return [main].concat(shuffle(extras).slice(0, 2));
-  }
-
-  function makeRow(line, isEvent){
-    const row = document.createElement('div');
-    row.className = 'factRow' + (isEvent ? ' event' : '');
-    const icon = document.createElement('div');
-    icon.className = 'icon';
-    icon.textContent = line.icon;
-    const txt = document.createElement('div');
-    txt.className = 'txt';
-    txt.innerHTML = line.text; // 数値と固定文だけ（書いた言葉はここに入れない）
-    row.appendChild(icon);
-    row.appendChild(txt);
-    return row;
-  }
-
-  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
-  // （書いた言葉の中身は送らない）
-  function sendResultToPortal(dest, inBox, grams){
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score はランキング用）
+  function sendResultToPortal(){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'moyamoya-delivery',
-        summary: `モヤモヤを${inBox.length}個（${fmtWeight(grams)}）、${dest.name}へ出荷！`,
-        detail: { delivered: inBox.length, grams, dest: dest.id, written: writtenCount, ships: save.ships }
+        summary: `スコア ${score.toLocaleString()}（${lines}列出荷・${DESTS[destIndex]}まで）`,
+        detail: { score, lines, dest: destIndex }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
-  function resetAll(){
-    sealed = false;
-    blocks.forEach(b => b.el.remove());
-    blocks = [];
-    writtenCount = 0;
-    pendingTagBlock = null;
-    tagPicker.classList.remove('show');
-    lid.classList.remove('closed');
-    boxShip.classList.remove('launch');
-    ribbonWrap.style.display = 'none';
-    closeLidBtn.classList.remove('show');
-    resultScreen.classList.remove('show');
-    applyBox();
-    renderBoxRow();
-  }
-
-  spitBtn.addEventListener('click', spitOutBlock);
-  moyaInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.isComposing) spitOutBlock();
-  });
-  closeLidBtn.addEventListener('click', openDestPicker);
-  newBoxBtn.addEventListener('click', resetAll);
-
-  applyBox();
-  renderBoxRow();
+  window.addEventListener('resize', resize);
+  document.getElementById('startBest').textContent = save.best > 0 ? `自己ベスト ${save.best.toLocaleString()}` : '';
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+  emptyGrid();
+  renderHud();
+  // フォント読み込み後にサイズを合わせて描き直す
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(resize);
+  resize();
 })();
 </script>
 </body>
