@@ -336,6 +336,10 @@
   }
   #consultBtn:disabled{ opacity:.6; }
   #consultBtn{ cursor:pointer; font-family:inherit; }
+  /* サイトに埋め込んだときなど、高さが低い画面では犬を小さく */
+  @media (max-height:600px){
+    #charStage{ top:50%; transform:translate(-50%,-50%) scale(.55); }
+  }
 
   /* 返事ボタン */
   #replyChips{ display:none; flex-wrap:wrap; gap:8px; justify-content:center; }

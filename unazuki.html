@@ -578,13 +578,8 @@
     save.talks++;
     writeSave();
 
-    flatReport.textContent = `${heard.length}個の話を受け取った（事実）`;
-    if(save.talks === 1){
-      introLine.textContent = '話したことは、いいも悪いもなく、ただ起きたこと。';
-      introLine.style.display = 'block';
-    } else {
-      introLine.style.display = 'none';
-    }
+    flatReport.textContent = `${heard.length}個の話をきいたよ`;
+    introLine.style.display = 'none';
 
     heardList.innerHTML = '';
     heard.forEach(h => {

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>モヤモヤ相談所</title>
+<style>
+  :root{
+    --wall1:#fbf3e6;
+    --wall2:#f1e3cc;
+    --wood:#8a6248;
+    --wood-dark:#5f4230;
+    --ink:#3a2f28;
+    --sub:#8a7a6a;
+    --accent:#e0708a;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    font-family:"Hiragino Sans","Yu Gothic","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.025) 0 2px, transparent 2px 46px),
+      linear-gradient(180deg, var(--wall1), var(--wall2));
+  }
+
+  /* ===== ロビー ===== */
+  #lobby{
+    position:absolute; inset:0;
+    overflow-y:auto;
+    padding:14px 14px 20px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  #sign{
+    display:inline-block;
+    background:linear-gradient(180deg,#a87a58,var(--wood));
+    color:#fff6e8;
+    font-weight:900; font-size:18px; letter-spacing:4px;
+    padding:8px 22px;
+    border-radius:10px;
+    border:3px solid var(--wood-dark);
+    box-shadow:0 4px 0 var(--wood-dark), 0 8px 14px rgba(0,0,0,.15);
+  }
+  #question{ font-size:14px; font-weight:800; margin:14px 0 10px; }
+
+  #windows{
+    width:100%; max-width:460px;
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  .window{
+    position:relative;
+    background:#fffdf8;
+    border:2px solid #e2d2b6;
+    border-radius:16px;
+    padding:12px 10px 10px;
+    text-align:center;
+    cursor:pointer;
+    font-family:inherit; color:inherit;
+    box-shadow:0 3px 0 #e2d2b6;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .window:hover{ transform:translateY(-2px); box-shadow:0 5px 0 #e2d2b6; }
+  .window:active{ transform:translateY(2px); box-shadow:0 1px 0 #e2d2b6; }
+  .window .ic{ font-size:34px; line-height:1.2; }
+  .window .mood{ font-size:13px; font-weight:800; margin:4px 0 2px; line-height:1.4; }
+  .window .who{ font-size:10.5px; color:var(--sub); }
+  .window .visits{
+    position:absolute; top:6px; right:8px;
+    font-size:10px; color:var(--sub); font-weight:700;
+  }
+  .window.omakase{ grid-column:1 / -1; padding:10px; }
+  .window.omakase .mood{ margin:0; }
+
+  /* スタンプカード */
+  #stampCard{
+    width:100%; max-width:460px;
+    margin-top:14px;
+    background:#fffdf8;
+    border:2px dashed #d8c3a0;
+    border-radius:14px;
+    padding:10px 12px;
+  }
+  #stampHead{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:12px; font-weight:800; margin-bottom:8px;
+  }
+  #stampHead span{ font-size:10.5px; color:var(--sub); font-weight:700; }
+  #stamps{ display:grid; grid-template-columns:repeat(10, 1fr); gap:4px; }
+  .slot{
+    aspect-ratio:1;
+    border-radius:50%;
+    border:1.5px dashed #e2d2b6;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px;
+  }
+  .slot.on{ border:2px solid var(--accent); background:#fff0f3; }
+  .slot.new{ animation:stampIn .5s cubic-bezier(.3,1.7,.4,1); }
+  @keyframes stampIn{
+    0%{ transform:scale(2.2) rotate(-25deg); opacity:0; }
+    100%{ transform:scale(1) rotate(0); opacity:1; }
+  }
+  #stampNote{ font-size:10.5px; color:var(--sub); margin-top:6px; text-align:center; min-height:14px; }
+
+  /* ===== 窓口の中 ===== */
+  #room{
+    position:absolute; inset:0;
+    display:none; flex-direction:column;
+    background:#fff;
+  }
+  #room.show{ display:flex; }
+  #roomBar{
+    flex-shrink:0;
+    display:flex; align-items:center; gap:10px;
+    padding:6px 10px;
+    background:linear-gradient(180deg,#a87a58,var(--wood));
+    color:#fff6e8;
+    font-size:13px; font-weight:800;
+  }
+  #backBtn{
+    border:1.5px solid #fff6e888; background:none; color:#fff6e8;
+    border-radius:12px; padding:4px 10px;
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  #roomFrame{ flex:1; width:100%; border:none; display:block; }
+
+  #stampToast{
+    position:absolute; left:50%; top:46px; z-index:10;
+    transform:translateX(-50%) scale(.8);
+    background:#fffdf8; border:2px solid var(--accent); color:var(--accent);
+    font-size:12px; font-weight:900; padding:5px 14px; border-radius:16px;
+    opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .3s cubic-bezier(.3,1.6,.4,1);
+  }
+  #stampToast.show{ opacity:1; transform:translateX(-50%) scale(1); }
+</style>
+</head>
+<body>
+
+<div id="lobby">
+  <div id="sign">モヤモヤ相談所</div>
+  <div id="question">今日は、どうしたい？</div>
+  <div id="windows"></div>
+
+  <div id="stampCard">
+    <div id="stampHead">来所スタンプカード <span id="cardNo"></span></div>
+    <div id="stamps"></div>
+    <div id="stampNote"></div>
+  </div>
+</div>
+
+<div id="room">
+  <div id="roomBar">
+    <button id="backBtn">← 相談所</button>
+    <span id="roomName"></span>
+  </div>
+  <iframe id="roomFrame" title="窓口"></iframe>
+  <div id="stampToast"></div>
+</div>
+
+<script>
+(function(){
+  /* 窓口（中身は既存のボットをそのまま読み込む） */
+  const WINDOWS = [
+    { id:'nod',    icon:'🤖', mood:'ただ聞いてほしい',             who:'うなずきロボ',          url:'unazuki.html' },
+    { id:'good',   icon:'🎰', mood:'いいことを1個さがしたい',       who:'いいこと抽出マシーン',  url:'iikotocyusyutsu.html' },
+    { id:'oracle', icon:'🔮', mood:'適当でいいから「大丈夫」って言われたい', who:'適当お告げボット', url:'tekitootsuge.html' },
+    { id:'buddy',  icon:'😎', mood:'笑い飛ばしてほしい',           who:'ぶっとびポジティブ相棒', url:'buttobi.html' }
+  ];
+  const CARD_SIZE = 10;
+
+  /* 来所の記録（この端末だけ） */
+  const SAVE_KEY = 'soudanjo_v1';
+  function loadSave(){
+    try{ return Object.assign({ stamps:[], cards:0, visits:{} }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { stamps:[], cards:0, visits:{} }; }
+  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+  let save = loadSave();
+
+  const lobby = document.getElementById('lobby');
+  const room = document.getElementById('room');
+  const roomFrame = document.getElementById('roomFrame');
+  const roomName = document.getElementById('roomName');
+  const stampToast = document.getElementById('stampToast');
+  let current = null;
+  let newStampIndex = -1;
+
+  function renderWindows(){
+    const box = document.getElementById('windows');
+    box.innerHTML = '';
+    WINDOWS.forEach(w => {
+      const b = document.createElement('button');
+      b.className = 'window';
+      b.innerHTML = `<div class="ic"></div><div class="mood"></div><div class="who"></div>`;
+      b.querySelector('.ic').textContent = w.icon;
+      b.querySelector('.mood').textContent = w.mood;
+      b.querySelector('.who').textContent = w.who;
+      const v = save.visits[w.id] || 0;
+      if(v > 0){
+        const s = document.createElement('span');
+        s.className = 'visits';
+        s.textContent = `${v}回`;
+        b.appendChild(s);
+      }
+      b.addEventListener('click', () => enter(w));
+      box.appendChild(b);
+    });
+    const om = document.createElement('button');
+    om.className = 'window omakase';
+    om.innerHTML = '<div class="mood">🎲 おまかせ（どれでもいい）</div>';
+    om.addEventListener('click', () => enter(WINDOWS[Math.floor(Math.random() * WINDOWS.length)]));
+    box.appendChild(om);
+  }
+
+  function renderStamps(){
+    const box = document.getElementById('stamps');
+    box.innerHTML = '';
+    for(let i=0;i<CARD_SIZE;i++){
+      const s = document.createElement('div');
+      const id = save.stamps[i];
+      s.className = 'slot' + (id ? ' on' : '') + (i === newStampIndex ? ' new' : '');
+      const w = WINDOWS.find(x => x.id === id);
+      s.textContent = w ? w.icon : '';
+      box.appendChild(s);
+    }
+    document.getElementById('cardNo').textContent = `${save.cards + 1}枚目`;
+    const kinds = new Set(save.stamps).size;
+    document.getElementById('stampNote').textContent =
+      save.stamps.length === 0 ? '窓口に行くと、スタンプが押されます'
+      : kinds === WINDOWS.length ? '4つの窓口ぜんぶに行った！'
+      : `あと ${CARD_SIZE - save.stamps.length} 個でカードがいっぱい`;
+    newStampIndex = -1;
+  }
+
+  // 窓口に入るとスタンプ1個（カードがいっぱいになったら次のカードへ）
+  function addStamp(w){
+    if(save.stamps.length >= CARD_SIZE){
+      save.stamps = [];
+      save.cards++;
+    }
+    save.stamps.push(w.id);
+    newStampIndex = save.stamps.length - 1;
+    save.visits[w.id] = (save.visits[w.id] || 0) + 1;
+    writeSave();
+  }
+
+  function enter(w){
+    current = w;
+    addStamp(w);
+    roomName.textContent = `${w.icon} ${w.who}`;
+    roomFrame.src = w.url;
+    lobby.style.display = 'none';
+    room.classList.add('show');
+    stampToast.textContent = save.stamps.length === CARD_SIZE ? '🎉 スタンプカードがいっぱいになった！' : `スタンプ ${save.stamps.length} / ${CARD_SIZE}`;
+    stampToast.classList.add('show');
+    setTimeout(() => stampToast.classList.remove('show'), 1600);
+  }
+
+  function leave(){
+    room.classList.remove('show');
+    roomFrame.src = 'about:blank';
+    lobby.style.display = '';
+    current = null;
+    renderWindows();
+    renderStamps();
+  }
+  document.getElementById('backBtn').addEventListener('click', leave);
+
+  // 窓口からの記録を、サイト（親ウィンドウ）へ「相談所」の記録として中継する
+  window.addEventListener('message', (event) => {
+    const msg = event.data;
+    if(!msg || msg.type !== 'moyamoyaGameResult' || event.source !== roomFrame.contentWindow) return;
+    if(window.parent === window) return;
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'soudanjo',
+        summary: `${current ? current.who : ''}：${msg.summary || ''}`,
+        detail: Object.assign({ window: current ? current.id : null }, msg.detail || {})
+      }, '*');
+    }catch(e){ /* 何もしない */ }
+  });
+
+  renderWindows();
+  renderStamps();
+})();
+</script>
+</body>
+</html>

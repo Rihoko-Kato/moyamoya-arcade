@@ -705,7 +705,7 @@
 
     // 成分表示（事実として）
     const good = goodPercent(text);
-    document.getElementById('analysisText').textContent = `解析結果：モヤモヤ ${100 - good}% ／ いいこと ${good}%（事実）`;
+    document.getElementById('analysisText').textContent = `解析結果：モヤモヤ ${100 - good}% ／ いいこと ${good}%`;
     document.getElementById('barMoya').style.width = (100 - good) + '%';
     document.getElementById('barGood').style.width = good + '%';
     analysis.classList.add('show');
