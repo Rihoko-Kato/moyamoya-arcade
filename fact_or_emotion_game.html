@@ -8,928 +8,631 @@
   :root{
     --bg1:#12151c;
     --bg2:#1b2029;
-    --fact-color:#2fbfa3;      /* 事実:青緑 */
-    --fact-color-dim:#1d6f60;
-    --emotion-color:#e2566b;  /* 感情:赤 */
-    --emotion-color-dim:#8a2e3a;
+    --fact-color:#2fbfa3;
+    --fact-dim:#1d6f60;
+    --emotion-color:#e2566b;
+    --emotion-dim:#8a2e3a;
     --card-bg:#242a35;
     --text-main:#eef1f5;
     --text-sub:#9aa3b2;
     --accent:#f4c95d;
   }
-  *{box-sizing:border-box;}
+  *{ box-sizing:border-box; }
   html,body{
-    margin:0;padding:0;height:100%;
+    margin:0; padding:0; height:100%;
     font-family:"Hiragino Sans","Yu Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
     background:linear-gradient(160deg,var(--bg1),var(--bg2));
     color:var(--text-main);
     overflow:hidden;
     touch-action:none;
-    -webkit-user-select:none;user-select:none;
+    -webkit-user-select:none; user-select:none;
   }
   #app{
     position:relative;
-    width:100%;
-    height:100%;
-    max-width:480px;
+    width:100%; height:100%;
+    max-width:520px;
     margin:0 auto;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:space-between;
-    padding:18px 16px 22px;
+    display:flex; flex-direction:column;
   }
 
-  /* ヘッダー */
-  header{
-    width:100%;
-    text-align:center;
-    padding-top:6px;
-  }
-  header h1{
-    font-size:16px;
-    letter-spacing:2px;
-    color:var(--text-sub);
-    font-weight:500;
-    margin:0 0 10px;
-  }
-  #progressWrap{
-    width:100%;
-    height:8px;
-    background:#0007;
-    border-radius:6px;
-    overflow:hidden;
-  }
-  #progressBar{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg,var(--fact-color),var(--accent));
-    transition:width .35s ease;
-  }
-  #counter{
-    margin-top:6px;
-    font-size:12px;
-    color:var(--text-sub);
-  }
-
-  /* ゾーン表示（左右仕分け先） */
-  .zoneLabels{
-    width:100%;
-    display:flex;
-    justify-content:space-between;
-    font-size:12px;
-    color:var(--text-sub);
-    padding:0 6px;
-    margin-top:2px;
-  }
-  .zoneLabels span{ opacity:.8; }
-  .zoneLabels .left{ color:var(--emotion-color); }
-  .zoneLabels .right{ color:var(--fact-color); }
-
-  /* カードエリア */
-  #cardStage{
-    position:relative;
-    width:100%;
-    flex:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    min-height:260px;
-  }
-
-  .card{
-    position:absolute;
-    width:88%;
-    max-width:340px;
-    min-height:200px;
-    background:var(--card-bg);
-    border-radius:22px;
-    box-shadow:0 12px 30px rgba(0,0,0,.45);
-    border:2px solid #3a4150;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px 22px;
-    text-align:center;
-    font-size:22px;
-    line-height:1.6;
-    font-weight:600;
-    cursor:grab;
-    will-change:transform;
-    transition:transform .25s ease, opacity .25s ease, box-shadow .2s ease, border-color .2s ease;
-    touch-action:none;
-  }
-  .card.grabbing{ cursor:grabbing; transition:none; }
-  .card .hint{
-    position:absolute;
-    top:14px;
-    font-size:12px;
-    padding:4px 10px;
-    border-radius:20px;
-    font-weight:700;
-    letter-spacing:2px;
-    opacity:0;
-    transition:opacity .15s ease;
-  }
-  .hint.factHint{ right:14px; color:var(--fact-color); border:1px solid var(--fact-color); }
-  .hint.emoHint{ left:14px; color:var(--emotion-color); border:1px solid var(--emotion-color); }
-
-  /* 正誤フラッシュ */
-  .card.correct-fact{
-    border-color:var(--fact-color);
-    box-shadow:0 0 0 6px var(--fact-color-dim), 0 12px 30px rgba(0,0,0,.45);
-  }
-  .card.correct-emotion{
-    border-color:var(--emotion-color);
-    box-shadow:0 0 0 6px var(--emotion-color-dim), 0 12px 30px rgba(0,0,0,.45);
-  }
-  .card.wrong{
-    animation: shake .4s ease;
-    border-color:#ff3b3b;
-  }
-  @keyframes shake{
-    0%,100%{ transform:translateX(0) rotate(0); }
-    20%{ transform:translateX(-10px) rotate(-2deg); }
-    40%{ transform:translateX(10px) rotate(2deg); }
-    60%{ transform:translateX(-8px) rotate(-1.5deg); }
-    80%{ transform:translateX(8px) rotate(1.5deg); }
-  }
-
-  /* 仕分け先アイコン（背景に薄く表示） */
-  #bgIcons{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    pointer-events:none;
-    padding:0 8px;
-    z-index:0;
-  }
-  #bgIcons .icon{
-    font-size:44px;
-    opacity:.15;
-  }
-
-  /* フローティングテキスト（受け止めた／捨てた） */
-  .floatText{
-    position:absolute;
-    top:40%;
-    font-size:15px;
-    font-weight:700;
-    padding:8px 16px;
-    border-radius:20px;
-    pointer-events:none;
-    opacity:0;
+  /* ===== HUD ===== */
+  #hud{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px 6px;
+    font-weight:800;
     z-index:5;
   }
+  #scoreBox{ font-size:22px; font-variant-numeric:tabular-nums; letter-spacing:1px; }
+  #scoreBox small{ display:block; font-size:10px; color:var(--text-sub); font-weight:600; letter-spacing:0; }
+  #comboBox{
+    font-size:13px; color:var(--accent); text-align:center; min-width:80px;
+    opacity:0; transition:opacity .2s ease;
+  }
+  #comboBox.on{ opacity:1; }
+  #comboBox b{ font-size:22px; display:block; line-height:1; }
+  #comboBox.pop b{ animation:comboPop .25s ease; }
+  @keyframes comboPop{ 50%{ transform:scale(1.35); } }
+  #lives{ font-size:18px; letter-spacing:2px; }
+  #lives .lost{ opacity:.2; filter:grayscale(1); }
 
-  /* ボタン */
+  /* ===== 落ちてくるエリア ===== */
+  #field{
+    position:relative;
+    flex:1;
+    overflow:hidden;
+    border-top:1px solid #ffffff10;
+    border-bottom:1px solid #ffffff10;
+    background:
+      linear-gradient(90deg, rgba(226,86,107,.07), transparent 22%, transparent 78%, rgba(47,191,163,.07));
+  }
+  #dangerLine{
+    position:absolute; left:0; right:0; bottom:0; height:4px;
+    background:linear-gradient(90deg,var(--emotion-color),var(--accent),var(--fact-color));
+    opacity:.5;
+  }
+  .sideTag{
+    position:absolute; top:50%; transform:translateY(-50%);
+    font-size:28px; opacity:.18; pointer-events:none;
+  }
+  .sideTag.l{ left:8px; } .sideTag.r{ right:8px; }
+
+  .fcard{
+    position:absolute;
+    left:50%;
+    width:min(78%, 300px);
+    transform:translateX(-50%);
+    background:var(--card-bg);
+    border:2px solid #3a4150;
+    border-radius:16px;
+    padding:14px 14px;
+    text-align:center;
+    font-size:16px; font-weight:700; line-height:1.5;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+    will-change:top, transform;
+  }
+  .fcard.active{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(244,201,93,.35), 0 8px 20px rgba(0,0,0,.4);
+  }
+  .fcard.mix .half{ display:block; }
+  .fcard.mix .cut{
+    display:block; height:0; margin:8px -14px;
+    border-top:2px dashed #8a93a5;
+    position:relative;
+  }
+  .fcard.mix .cut::after{
+    content:"✂"; position:absolute; left:-2px; top:-12px; font-size:14px; color:#8a93a5;
+  }
+  .fcard.wrong{ animation:wrongShake .3s ease; border-color:#ff3b3b; }
+  @keyframes wrongShake{
+    0%,100%{ margin-left:0; } 25%{ margin-left:-10px; } 75%{ margin-left:10px; }
+  }
+  .fcard.fly{ transition:transform .35s ease, opacity .35s ease; opacity:0; }
+  .fcard.dropped{ transition:opacity .4s ease; opacity:0; border-color:#ff3b3b; }
+
+  .piece{
+    position:absolute;
+    width:min(40%, 160px);
+    background:var(--card-bg);
+    border:2px solid #3a4150;
+    border-radius:12px;
+    padding:10px;
+    text-align:center;
+    font-size:13.5px; font-weight:700; line-height:1.4;
+    transform:translate(-50%,-50%);
+    transition:transform .5s cubic-bezier(.3,.7,.3,1), opacity .5s ease;
+  }
+  .piece.f{ border-color:var(--fact-color); }
+  .piece.e{ border-color:var(--emotion-color); }
+
+  .pts{
+    position:absolute; pointer-events:none;
+    font-weight:900; font-size:18px;
+    transform:translate(-50%,-50%);
+    animation:ptsUp .7s ease forwards;
+    text-shadow:0 2px 6px rgba(0,0,0,.6);
+    white-space:nowrap;
+  }
+  @keyframes ptsUp{
+    0%{ opacity:0; transform:translate(-50%,-30%) scale(.7); }
+    20%{ opacity:1; transform:translate(-50%,-60%) scale(1.1); }
+    100%{ opacity:0; transform:translate(-50%,-160%) scale(1); }
+  }
+  #speedUp{
+    position:absolute; left:50%; top:40%;
+    transform:translate(-50%,-50%);
+    font-size:20px; font-weight:900; color:var(--accent);
+    letter-spacing:4px; opacity:0; pointer-events:none;
+  }
+  #speedUp.show{ animation:speedShow 1.2s ease; }
+  @keyframes speedShow{ 0%,100%{ opacity:0; } 20%,70%{ opacity:1; } }
+
+  /* ===== ボタン ===== */
   #controls{
-    width:100%;
-    display:flex;
-    gap:14px;
-    margin-top:10px;
+    display:flex; gap:10px;
+    padding:10px 12px calc(12px + env(safe-area-inset-bottom));
   }
   .actionBtn{
     flex:1;
-    padding:18px 8px;
-    border:none;
-    border-radius:18px;
-    font-size:16px;
-    font-weight:700;
-    letter-spacing:1px;
-    color:#fff;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:4px;
+    padding:14px 6px;
+    border:none; border-radius:16px;
+    font-size:15px; font-weight:800; color:#fff;
+    font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    box-shadow:0 5px 0 rgba(0,0,0,.35);
+    cursor:pointer;
     -webkit-tap-highlight-color:transparent;
-    box-shadow:0 6px 14px rgba(0,0,0,.35);
-    transition:transform .08s ease, filter .1s ease;
   }
-  .actionBtn:active{ transform:scale(.94); filter:brightness(1.15); }
-  .actionBtn .sub{ font-size:11px; font-weight:400; opacity:.85; }
-  #trashBtn{ background:linear-gradient(135deg,var(--emotion-color),#a83349); }
+  .actionBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.35); }
+  .actionBtn .sub{ font-size:10.5px; font-weight:500; opacity:.85; }
+  #emoBtn{ background:linear-gradient(135deg,var(--emotion-color),#a83349); }
+  #cutBtn{ flex:0 0 80px; background:linear-gradient(135deg,#6a7385,#4a5263); }
   #factBtn{ background:linear-gradient(135deg,var(--fact-color),#1c8f79); }
 
-  #splitBtn{
-    flex:0 0 86px;
-    background:linear-gradient(135deg,#6a7385,#4a5263);
-  }
-  #controls.noSplit #splitBtn{ display:none; }
-  .actionBtn{ cursor:pointer; font-family:inherit; }
-
-  /* 混ざったカード（事実＋気持ち） */
-  .card .mixHint{
-    position:absolute; bottom:12px; left:0; right:0;
-    font-size:11px; color:var(--text-sub); font-weight:500; letter-spacing:1px;
-  }
-  .piece{
-    position:absolute;
-    width:44%;
-    min-height:120px;
-    background:var(--card-bg);
-    border-radius:16px;
-    border:2px solid #3a4150;
-    display:flex; align-items:center; justify-content:center;
-    padding:16px 12px;
-    text-align:center;
-    font-size:16px; line-height:1.5; font-weight:600;
-    box-shadow:0 10px 24px rgba(0,0,0,.45);
-    transition:transform .6s cubic-bezier(.3,.7,.3,1), opacity .6s ease;
-    z-index:4;
-  }
-  .piece.fact{ border-color:var(--fact-color); color:#dff7f1; }
-  .piece.emo{ border-color:var(--emotion-color); color:#ffe1e6; }
-  .snip{
-    position:absolute; left:50%; top:50%;
-    transform:translate(-50%,-50%);
-    font-size:40px; z-index:6; pointer-events:none;
-    animation:snip .5s ease forwards;
-  }
-  @keyframes snip{
-    0%{ transform:translate(-120%,-50%) rotate(-20deg); opacity:0; }
-    40%{ opacity:1; }
-    100%{ transform:translate(40%,-50%) rotate(10deg); opacity:0; }
-  }
-
-  /* 考え直しのヒント */
-  #hintBox{
-    position:absolute;
-    left:50%; bottom:6px;
-    transform:translateX(-50%);
-    width:92%; max-width:360px;
-    background:#0b0e14ee;
-    border:1px solid var(--accent);
-    color:#f6e7bf;
-    font-size:12.5px; line-height:1.6;
-    padding:8px 12px; border-radius:12px;
-    z-index:7;
-    opacity:0; pointer-events:none;
-    transition:opacity .25s ease;
-  }
-  #hintBox.show{ opacity:1; }
-
-  /* はじまり・結果画面 共通 */
+  /* ===== はじまり・結果 ===== */
   .overlay{
     position:fixed; inset:0;
-    background:rgba(10,12,18,.95);
+    background:rgba(10,12,18,.94);
     display:none; flex-direction:column; align-items:center;
     z-index:50; padding:16px;
-    overflow-y:auto;
-    touch-action:pan-y;
+    overflow-y:auto; touch-action:pan-y;
   }
   .overlay.show{ display:flex; }
-  .overlayInner{ margin:auto 0; width:100%; max-width:380px; text-align:center; }
-  .overlay h2{
-    font-size:20px; margin:0 0 6px;
-    background:linear-gradient(90deg,var(--fact-color),var(--accent));
+  .overlayInner{ margin:auto 0; width:100%; max-width:360px; text-align:center; }
+  .title{
+    font-size:24px; font-weight:900; margin:0 0 4px;
+    background:linear-gradient(90deg,var(--emotion-color),var(--accent),var(--fact-color));
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
-  .overlay .sub{ font-size:12.5px; color:var(--text-sub); line-height:1.7; margin-bottom:14px; }
-
-  .sceneGrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
-  .sceneBtn{
-    padding:12px 8px; border-radius:14px;
-    border:1.5px solid #3a4150; background:var(--card-bg); color:var(--text-main);
-    font-size:13.5px; font-weight:700; font-family:inherit; cursor:pointer;
-    position:relative;
+  .howto{
+    text-align:left; font-size:13px; line-height:1.9;
+    background:#ffffff0c; border-radius:14px; padding:10px 14px; margin:14px 0;
   }
-  .sceneBtn .stamp{ position:absolute; top:4px; right:6px; font-size:11px; color:var(--fact-color); }
-  .sceneBtn.wide{ grid-column:1 / -1; }
-  .sceneBtn.own{ border-color:var(--accent); color:var(--accent); }
-
-  #ownArea{ display:none; text-align:left; }
-  #ownArea.show{ display:block; }
-  #ownInput{
-    width:100%; min-height:120px; resize:vertical;
-    padding:10px 12px; border-radius:12px;
-    border:1.5px solid #3a4150; background:#0e1118; color:var(--text-main);
-    font-size:14px; font-family:inherit; line-height:1.7; outline:none;
-    -webkit-user-select:text; user-select:text;
-  }
-  #ownInput:focus{ border-color:var(--accent); }
-  #ownNote{ font-size:11px; color:var(--text-sub); margin:6px 0 12px; line-height:1.6; }
-
+  .howto .k{ display:inline-block; min-width:64px; font-weight:800; }
+  .howto .k.e{ color:var(--emotion-color); }
+  .howto .k.f{ color:var(--fact-color); }
+  .howto .k.c{ color:#b8bfcc; }
+  .best{ font-size:12.5px; color:var(--text-sub); margin-bottom:14px; }
   .mainBtn{
-    padding:13px 32px; border:none; border-radius:30px;
+    padding:14px 40px; border:none; border-radius:30px;
     background:linear-gradient(135deg,var(--accent),#e0a93a);
-    color:#1a1a1a; font-weight:800; font-size:15px; font-family:inherit;
-    box-shadow:0 6px 16px rgba(0,0,0,.4); cursor:pointer;
+    color:#1a1a1a; font-weight:900; font-size:16px; font-family:inherit;
+    box-shadow:0 6px 0 #a87a1e; cursor:pointer;
   }
-  .ghostBtn{
-    padding:12px 22px; border:1px solid #4a5263; border-radius:30px;
-    background:none; color:var(--text-main); font-weight:700; font-size:13.5px; font-family:inherit; cursor:pointer;
-  }
-  .btnRow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+  .mainBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #a87a1e; }
 
-  .flatReport{
-    display:inline-block;
-    font-size:12.5px; color:#b8bfcc; font-weight:700;
-    background:#ffffff12; border-radius:12px; padding:6px 14px; margin-bottom:10px;
+  #countdown{
+    position:absolute; left:50%; top:45%; transform:translate(-50%,-50%);
+    font-size:72px; font-weight:900; color:var(--accent);
+    z-index:20; pointer-events:none;
   }
-  #introLine{ font-size:12.5px; color:var(--accent); font-weight:700; margin:0 0 10px; line-height:1.7; }
-  .listBox{
-    text-align:left; border-radius:12px; padding:10px 12px; margin-bottom:8px;
-  }
-  .listBox h3{ font-size:12px; margin:0 0 4px; }
-  .listBox ul{ margin:0; padding-left:18px; font-size:13px; line-height:1.75; }
-  #factBox{ background:#2fbfa318; border:1px solid #2fbfa355; }
-  #factBox h3{ color:var(--fact-color); }
-  #emoBox{ background:#e2566b10; border:1px solid #e2566b33; }
-  #emoBox h3{ color:var(--emotion-color); }
-  #emoBox ul{ color:#8a8f9a; text-decoration:line-through; text-decoration-color:#e2566b88; }
-  .factRow{
-    display:flex; align-items:center; gap:10px;
-    background:var(--card-bg); border-radius:12px;
-    padding:8px 12px; margin-bottom:6px; text-align:left;
-  }
-  .factRow .icon{ font-size:17px; }
-  .factRow .txt{ font-size:13px; font-weight:700; line-height:1.5; }
-  .factRow .txt b{ color:var(--accent); font-size:14.5px; }
-  .factRow.event{ border:1px solid var(--accent); }
-  #totalLine{ font-size:11.5px; color:var(--text-sub); margin-top:8px; }
 
-  /* 初回説明トースト */
-  #tutorial{
-    position:absolute;
-    bottom:130px;
-    left:50%;
-    transform:translateX(-50%);
-    background:#000a;
-    padding:10px 18px;
-    border-radius:20px;
-    font-size:12px;
-    color:var(--text-sub);
-    white-space:nowrap;
-    animation:fadeInOut 4.5s ease forwards;
-    z-index:6;
+  #finalScore{ font-size:52px; font-weight:900; font-variant-numeric:tabular-nums; line-height:1.1; }
+  #newBest{
+    display:inline-block; margin:6px 0 2px;
+    font-size:12px; font-weight:900; letter-spacing:2px; color:#1a1a1a;
+    background:var(--accent); padding:3px 12px; border-radius:12px;
   }
-  @keyframes fadeInOut{
-    0%{opacity:0;} 10%{opacity:1;} 80%{opacity:1;} 100%{opacity:0;}
+  #bestLine{ font-size:12px; color:var(--text-sub); margin-bottom:12px; }
+  .stats{ display:flex; gap:8px; justify-content:center; margin-bottom:12px; }
+  .stat{ background:var(--card-bg); border-radius:12px; padding:8px 10px; min-width:84px; }
+  .stat .n{ font-size:20px; font-weight:900; }
+  .stat .l{ font-size:10.5px; color:var(--text-sub); }
+  #comment{
+    font-size:13px; color:#d8dde6; margin:4px 0 16px;
+    background:#ffffff0c; border-radius:12px; padding:8px 12px;
   }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <header>
-    <h1 id="sceneTitle">今日の振り返り</h1>
-    <div id="progressWrap"><div id="progressBar"></div></div>
-    <div id="counter">0 / 0</div>
-    <div class="zoneLabels">
-      <span class="left">← 気持ち：手放す</span>
-      <span class="right">事実：受け止める →</span>
-    </div>
-  </header>
+  <div id="hud">
+    <div id="scoreBox"><small>SCORE</small><span id="score">0</span></div>
+    <div id="comboBox"><b id="combo">0</b>COMBO</div>
+    <div id="lives"></div>
+  </div>
 
-  <div id="cardStage">
-    <div id="bgIcons">
-      <div class="icon">🗑️</div>
-      <div class="icon">📥</div>
-    </div>
-    <div id="hintBox"></div>
+  <div id="field">
+    <div class="sideTag l">🗑️</div>
+    <div class="sideTag r">📥</div>
+    <div id="speedUp">SPEED UP!</div>
+    <div id="dangerLine"></div>
   </div>
 
   <div id="controls">
-    <button class="actionBtn" id="trashBtn">
-      <span>気持ち</span>
-      <span class="sub">手放す</span>
-    </button>
-    <button class="actionBtn" id="splitBtn">
-      <span>✂</span>
-      <span class="sub">切り分ける</span>
-    </button>
-    <button class="actionBtn" id="factBtn">
-      <span>事実</span>
-      <span class="sub">受け止める</span>
-    </button>
+    <button class="actionBtn" id="emoBtn">← 気持ち<span class="sub">手放す</span></button>
+    <button class="actionBtn" id="cutBtn">✂<span class="sub">切る</span></button>
+    <button class="actionBtn" id="factBtn">事実 →<span class="sub">受け止める</span></button>
   </div>
 </div>
 
 <div id="startScreen" class="overlay show">
   <div class="overlayInner">
-    <h2>事実と感情の仕分け</h2>
-    <div class="sub">起きた「事実」と、そこにくっついた「気持ち」を分けてみよう。<br>混ざっているカードは ✂ で切り分けられる。</div>
-    <div id="sceneArea">
-      <div class="sceneGrid" id="sceneGrid"></div>
+    <div class="title">事実と感情の仕分け</div>
+    <div class="howto">
+      落ちてくるカードを、下に着く前に仕分けよう。<br>
+      <span class="k e">← 左へ</span>気持ち（手放す）<br>
+      <span class="k f">右へ →</span>事実（受け止める）<br>
+      <span class="k c">↓ 下へ</span>点線のあるカードは ✂ で切る<br>
+      <span style="font-size:11.5px;color:var(--text-sub)">画面のどこでもスワイプ／ボタン／キーボードの ← → ↓</span>
     </div>
-    <div id="ownArea">
-      <textarea id="ownInput" maxlength="400" placeholder="今日あったこと・思ったことを、1行に1つずつ&#10;例）&#10;発表の順番が最後だった&#10;うまく話せなくて恥ずかしかった"></textarea>
-      <div id="ownNote">1行が1枚のカードになります（最大10枚）。ここに正解はありません。自分で仕分けてみてください。<br>書いた内容はこの画面の中だけで使われ、どこにも保存・送信されません。</div>
-      <div class="btnRow">
-        <button class="ghostBtn" id="ownBack">もどる</button>
-        <button class="mainBtn" id="ownStart">仕分けはじめる</button>
-      </div>
-    </div>
+    <div class="best" id="startBest"></div>
+    <button class="mainBtn" id="startBtn">スタート</button>
   </div>
 </div>
 
-<div id="clearScreen" class="overlay">
+<div id="resultScreen" class="overlay">
   <div class="overlayInner">
-    <h2>振り返り、完了。</h2>
-    <div class="flatReport" id="flatReport"></div>
-    <div id="introLine"></div>
-    <div class="listBox" id="factBox">
-      <h3>📥 事実だけで読むと、こんな日</h3>
-      <ul id="factList"></ul>
+    <div class="title">おしまい</div>
+    <div id="finalScore">0</div>
+    <div id="newBest">NEW BEST!</div>
+    <div id="bestLine"></div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stSorted">0</div><div class="l">仕分けた枚数</div></div>
+      <div class="stat"><div class="n" id="stCombo">0</div><div class="l">最大コンボ</div></div>
+      <div class="stat"><div class="n" id="stCut">0</div><div class="l">✂ 切った枚数</div></div>
     </div>
-    <div class="listBox" id="emoBox">
-      <h3>🗑️ 手放した気持ち</h3>
-      <ul id="emoList"></ul>
-    </div>
-    <div id="factRows"></div>
-    <div id="totalLine"></div>
-    <div class="btnRow">
-      <button class="mainBtn" id="retryBtn">別のシーンで</button>
-    </div>
+    <div id="comment"></div>
+    <button class="mainBtn" id="retryBtn">もう一回</button>
   </div>
 </div>
 
 <script>
 (function(){
   /* =========================================================
-     シーン（研究の「しんどいシーン」から）
-     fact：事実 / emo：気持ち・解釈 / mix：事実と気持ちが混ざったもの
+     カード（研究の「しんどいシーン」から）
      ========================================================= */
-  const SCENES = [
-    { id:'baito', name:'バイトのこと',
-      fact:['今日は客数がいつもより多かった','シフト中、レジ対応に入った','新人スタッフが2人同時に入っていた','電話が閉店間際に3件鳴った','閉店作業が予定より15分遅れた','後輩が1人で品出しをしていた'],
-      emo:['先輩なのに情けない','自分はダメな人間だ','みんなに嫌われたかも','なんで自分だけ要領が悪いんだろう','もう顔を合わせられない'],
-      mix:[
-        { fact:'後輩のフォローに入れなかった', emo:'最悪の先輩だ' },
-        { fact:'店長に声をかけられた', emo:'きっと怒ってる' },
-        { fact:'注文を1つ間違えた', emo:'いつもこうだ' }
-      ] },
-    { id:'seisaku', name:'制作のこと',
-      fact:['作業に3時間かけた','新しい技法を1つ試した','締め切りは金曜','色の調整が残っている','試作を2回作り直した','友達に途中経過を見せた'],
-      emo:['この程度にしかできない','センスがない','時間をかけても意味がない','人に見せるのが恥ずかしい','いつも無計画だ'],
-      mix:[
-        { fact:'思っていた形にならなかった', emo:'才能がない' },
-        { fact:'友達が上手な作品を出した', emo:'私はだめだ' },
-        { fact:'予定より進まなかった', emo:'また中途半端' }
-      ] },
-    { id:'mensetsu', name:'面接・発表のこと',
-      fact:['面接は20分だった','質問に3つ答えた','隣の人は留学の話をしていた','発表は8分で終わった','結果は来週わかる','準備に2日かけた'],
-      emo:['胸を張れる経験がない','みんな賢そうだった','自分には何もない','絶対落ちた','どうしてもっと頑張れなかったんだろう'],
-      mix:[
-        { fact:'最初の質問で言葉に詰まった', emo:'もう終わった' },
-        { fact:'声が少し震えた', emo:'恥ずかしい' },
-        { fact:'面接官がメモを取らなかった', emo:'興味なかったんだ' }
-      ] },
-    { id:'kazoku', name:'家族・親しい人のこと',
-      fact:['夕飯のときに母と話した','「別にいい」と返事をした','部屋に戻ってドアを閉めた','週末に会う約束がある','LINEの返信は2時間後だった','ありがとうと言わなかった'],
-      emo:['可愛げがない自分が嫌だ','嫌われたかもしれない','素直になれない自分が嫌い','私ってほんと子どもだ','成長してない'],
-      mix:[
-        { fact:'強い口調で言い返した', emo:'最低だ' },
-        { fact:'返信が遅かった', emo:'怒ってるに違いない' },
-        { fact:'感謝を伝えられなかった', emo:'冷たい人間だ' }
-      ] }
+  const FACTS = [
+    '今日は客数がいつもより多かった','シフト中、レジ対応に入った','新人スタッフが2人入っていた','電話が閉店間際に3件鳴った','閉店作業が15分遅れた','後輩が1人で品出しをしていた',
+    '作業に3時間かけた','新しい技法を1つ試した','締め切りは金曜','色の調整が残っている','試作を2回作り直した','友達に途中経過を見せた',
+    '面接は20分だった','質問に3つ答えた','隣の人は留学の話をしていた','発表は8分で終わった','結果は来週わかる','準備に2日かけた',
+    '夕飯のときに母と話した','「別にいい」と返事をした','部屋のドアを閉めた','週末に会う約束がある','返信は2時間後に来た','ありがとうと言わなかった',
+    '朝7時に起きた','電車が5分遅れた','課題を半分まで書いた','傘を持って出なかった'
+  ];
+  const EMOS = [
+    '先輩なのに情けない','自分はダメな人間だ','みんなに嫌われたかも','なんで自分だけ要領が悪いんだろう','もう顔を合わせられない',
+    'この程度にしかできない','センスがない','時間をかけても意味がない','人に見せるのが恥ずかしい','いつも無計画だ',
+    '胸を張れる経験がない','みんな賢そうだった','自分には何もない','絶対落ちた','もっと頑張れたはずなのに',
+    '可愛げがない自分が嫌だ','嫌われたかもしれない','素直になれない自分が嫌い','私ってほんと子どもだ','全然成長してない',
+    'どうせうまくいかない','また失敗する気がする'
+  ];
+  const MIXES = [
+    ['後輩のフォローに入れなかった','最悪の先輩だ'],['店長に声をかけられた','きっと怒ってる'],['注文を1つ間違えた','いつもこうだ'],
+    ['思っていた形にならなかった','才能がない'],['友達が上手な作品を出した','私はだめだ'],['予定より進まなかった','また中途半端'],
+    ['最初の質問で言葉に詰まった','もう終わった'],['声が少し震えた','恥ずかしすぎる'],['面接官がメモを取らなかった','興味なかったんだ'],
+    ['強い口調で言い返した','最低だ'],['返信が遅かった','怒ってるに違いない'],['感謝を伝えられなかった','冷たい人間だ']
   ];
 
-  // 考え直しのヒント（「ミス」とは言わない）
-  const HINTS = {
-    factToEmo: ['ちょっと待って。これはカメラに映る「出来事」かも。手放さなくて大丈夫。','誰が見ても同じように言えること？それなら事実かも。'],
-    emoToFact: ['これはカメラには映らない、心の中の声かも。','ほかの人が見たら、別の言い方になりそう？それなら気持ちかも。'],
-    mixWhole:  ['出来事と気持ちが、くっついているみたい。✂ で切り分けてみて。','前半と後半で、性質がちがうかも。✂ を使ってみて。'],
-    pureSplit: ['これはもう切り分けられないみたい。事実と気持ち、どっちかな？']
+  // 結果画面のひとこと（プレイの様子だけに触れる）
+  const COMMENTS = {
+    great: ['手が勝手に動いてたね','その速さ、もう職人','仕分けの達人が来た','迷いがない…！'],
+    combo: ['コンボがつながると気持ちいいね','リズムに乗ってたね','連続仕分け、おみごと'],
+    cut:   ['✂ さばき、キレてた','切り分けがうまい','点線、見逃さなかったね'],
+    normal:['次はもっと積み上げよう','慣れるとどんどん速くなるよ','もう1回いけそう？','いい準備運動だったね']
   };
 
-  /* 累計（書いた内容は保存しない） */
-  const SAVE_KEY = 'factEmotion_v1';
+  /* 自己ベスト（この端末に保存） */
+  const SAVE_KEY = 'factEmotionArcade_v1';
   function loadSave(){
-    try{ return Object.assign({ plays:0, cards:0, splits:0, scenes:{}, own:0 }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
-    catch(e){ return { plays:0, cards:0, splits:0, scenes:{}, own:0 }; }
+    try{ return Object.assign({ best:0, plays:0 }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { best:0, plays:0 }; }
   }
   function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
   let save = loadSave();
 
-  function shuffle(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  }
+  function rand(a,b){ return a + Math.random()*(b-a); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  const field = document.getElementById('field');
+  const scoreEl = document.getElementById('score');
+  const comboBox = document.getElementById('comboBox');
+  const comboEl = document.getElementById('combo');
+  const livesEl = document.getElementById('lives');
+  const speedUp = document.getElementById('speedUp');
+  const startScreen = document.getElementById('startScreen');
+  const resultScreen = document.getElementById('resultScreen');
+
+  const MAX_LIVES = 3;
 
   /* =========================================================
      状態
      ========================================================= */
-  let mode = 'scene';      // 'scene' | 'own'
-  let scene = null;
-  let deck = [];
-  let index = 0;
-  let acceptedFacts = [];
-  let releasedEmos = [];
-  let rethinks = 0;
-  let splits = 0;
-  let currentCardEl = null;
-  let dragging = false;
-  let startX = 0, startY = 0, curX = 0, curY = 0;
-  let locked = false;
+  let cards = [];
+  let running = false;
+  let score = 0, combo = 0, maxCombo = 0, lives = MAX_LIVES;
+  let sorted = 0, cuts = 0;
+  let elapsed = 0, spawnTimer = 0, level = 1;
+  let lastTs = null, rafId = null;
+  let recent = [];
 
-  const stage = document.getElementById('cardStage');
-  const progressBar = document.getElementById('progressBar');
-  const counterEl = document.getElementById('counter');
-  const controls = document.getElementById('controls');
-  const hintBox = document.getElementById('hintBox');
-  const startScreen = document.getElementById('startScreen');
-  const clearScreen = document.getElementById('clearScreen');
+  function fallSpeed(){ return 46 + elapsed * 1.6; }               // px/秒（だんだん速く）
+  function spawnInterval(){ return Math.max(0.85, 2.3 - elapsed * 0.025); }
 
-  function vibrate(pattern){ if(navigator.vibrate) navigator.vibrate(pattern); }
+  function renderLives(){
+    livesEl.innerHTML = '';
+    for(let i=0;i<MAX_LIVES;i++){
+      const s = document.createElement('span');
+      s.textContent = '❤';
+      s.style.color = '#ff5a7a';
+      if(i >= lives) s.className = 'lost';
+      livesEl.appendChild(s);
+    }
+  }
+  function renderScore(){ scoreEl.textContent = score.toLocaleString(); }
+  function renderCombo(){
+    comboEl.textContent = combo;
+    comboBox.classList.toggle('on', combo >= 2);
+    comboBox.classList.remove('pop'); void comboBox.offsetWidth; comboBox.classList.add('pop');
+  }
 
-  /* ===== はじまり画面 ===== */
-  function renderSceneGrid(){
-    const grid = document.getElementById('sceneGrid');
-    grid.innerHTML = '';
-    SCENES.forEach(s => {
-      const b = document.createElement('button');
-      b.className = 'sceneBtn';
-      b.textContent = s.name;
-      if(save.scenes[s.id]){
-        const st = document.createElement('span');
-        st.className = 'stamp';
-        st.textContent = '✓' + (save.scenes[s.id] > 1 ? save.scenes[s.id] : '');
-        b.appendChild(st);
+  /* ===== カード生成 ===== */
+  function nextData(){
+    // 混ざりカードは時間とともに少しずつ増える
+    const mixRate = Math.min(0.32, 0.12 + elapsed * 0.004);
+    for(let tries=0; tries<10; tries++){
+      const r = Math.random();
+      let d;
+      if(r < mixRate){ const m = pick(MIXES); d = { type:'mix', fact:m[0], emo:m[1], key:m[0] }; }
+      else if(r < mixRate + (1 - mixRate)/2){ const t = pick(FACTS); d = { type:'fact', text:t, key:t }; }
+      else { const t = pick(EMOS); d = { type:'emo', text:t, key:t }; }
+      if(!recent.includes(d.key)){
+        recent.push(d.key);
+        if(recent.length > 12) recent.shift();
+        return d;
       }
-      b.addEventListener('click', () => startScene(s));
-      grid.appendChild(b);
-    });
-    const r = document.createElement('button');
-    r.className = 'sceneBtn wide';
-    r.textContent = '🎲 おまかせ';
-    r.addEventListener('click', () => startScene(pick(SCENES)));
-    grid.appendChild(r);
-    const own = document.createElement('button');
-    own.className = 'sceneBtn wide own';
-    own.textContent = '✍️ 自分の今日で仕分ける';
-    own.addEventListener('click', () => {
-      document.getElementById('sceneArea').style.display = 'none';
-      document.getElementById('ownArea').classList.add('show');
-      document.getElementById('ownInput').focus();
-    });
-    grid.appendChild(own);
-  }
-
-  function showStart(){
-    clearScreen.classList.remove('show');
-    document.getElementById('sceneArea').style.display = '';
-    document.getElementById('ownArea').classList.remove('show');
-    renderSceneGrid();
-    startScreen.classList.add('show');
-  }
-
-  function resetRun(){
-    index = 0;
-    acceptedFacts = [];
-    releasedEmos = [];
-    rethinks = 0;
-    splits = 0;
-    if(currentCardEl){ currentCardEl.remove(); currentCardEl = null; }
-    stage.querySelectorAll('.piece, .floatText, .snip').forEach(e => e.remove());
-    hideHint();
-  }
-
-  function startScene(s){
-    mode = 'scene';
-    scene = s;
-    resetRun();
-    // 毎回ちがうカードの組み合わせ：事実4・気持ち4・混ざり3
-    deck = shuffle([
-      ...shuffle(s.fact).slice(0,4).map(t => ({ type:'fact', text:t })),
-      ...shuffle(s.emo).slice(0,4).map(t => ({ type:'emo', text:t })),
-      ...shuffle(s.mix).slice(0,3).map(m => ({ type:'mix', fact:m.fact, emo:m.emo, text:`${m.fact}。${m.emo}` }))
-    ]);
-    document.getElementById('sceneTitle').textContent = s.name;
-    controls.classList.remove('noSplit');
-    startScreen.classList.remove('show');
-    updateProgress();
-    renderCard();
-    showTutorialOnce('カードをスワイプ、またはボタンで仕分けよう。混ざっていたら ✂');
-  }
-
-  function startOwn(){
-    const lines = document.getElementById('ownInput').value
-      .split('\n').map(s => s.trim()).filter(Boolean).slice(0, 10);
-    if(lines.length === 0){ document.getElementById('ownInput').focus(); return; }
-    mode = 'own';
-    scene = null;
-    resetRun();
-    deck = lines.map(t => ({ type:'own', text:t }));
-    document.getElementById('sceneTitle').textContent = '自分の今日';
-    controls.classList.add('noSplit');
-    startScreen.classList.remove('show');
-    updateProgress();
-    renderCard();
-    showTutorialOnce('ここに正解はありません。自分で仕分けてみよう');
-  }
-
-  /* ===== カード ===== */
-  function updateProgress(){
-    const total = deck.length;
-    progressBar.style.width = (total ? index/total*100 : 0) + '%';
-    counterEl.textContent = `${index} / ${total}`;
-  }
-
-  function renderCard(){
-    if(index >= deck.length){ setTimeout(finishGame, 500); return; }
-    if(currentCardEl) currentCardEl.remove();
-    const data = deck[index];
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<div class="hint emoHint">気持ち</div><div class="hint factHint">事実</div><div class="cardText"></div>`;
-    card.querySelector('.cardText').textContent = data.text;
-    stage.appendChild(card);
-    currentCardEl = card;
-    attachDrag(card);
-    locked = false;
-  }
-
-  function attachDrag(card){
-    card.addEventListener('pointerdown', onDown);
-    function onDown(e){
-      if(locked) return;
-      dragging = true;
-      card.classList.add('grabbing');
-      startX = e.clientX; startY = e.clientY;
-      card.setPointerCapture(e.pointerId);
-      card.addEventListener('pointermove', onMove);
-      card.addEventListener('pointerup', onUp);
-      card.addEventListener('pointercancel', onUp);
     }
-    function onMove(e){
-      if(!dragging) return;
-      curX = e.clientX - startX;
-      curY = e.clientY - startY;
-      card.style.transform = `translate(${curX}px, ${curY}px) rotate(${curX * 0.05}deg)`;
-      const factHint = card.querySelector('.factHint');
-      const emoHint = card.querySelector('.emoHint');
-      const th = 40;
-      factHint.style.opacity = curX > th ? Math.min(1, (curX-th)/60) : 0;
-      emoHint.style.opacity = curX < -th ? Math.min(1, (-curX-th)/60) : 0;
-    }
-    function onUp(){
-      if(!dragging) return;
-      dragging = false;
-      card.classList.remove('grabbing');
-      card.removeEventListener('pointermove', onMove);
-      card.removeEventListener('pointerup', onUp);
-      card.removeEventListener('pointercancel', onUp);
-      const SW = 110;
-      if(curX > SW) judge('fact');
-      else if(curX < -SW) judge('emo');
-      else if(curY > SW && mode === 'scene') judge('split'); // 下にスワイプでも切り分け
-      else resetCardPos(card);
-      curX = 0; curY = 0;
-    }
+    return { type:'fact', text:pick(FACTS), key:'' };
   }
 
-  function resetCardPos(card){
-    card.style.transform = 'translate(0,0) rotate(0)';
-    card.querySelector('.factHint').style.opacity = 0;
-    card.querySelector('.emoHint').style.opacity = 0;
-  }
-
-  function showHint(text){
-    hintBox.textContent = text;
-    hintBox.classList.add('show');
-  }
-  function hideHint(){ hintBox.classList.remove('show'); }
-
-  function judge(choice){
-    if(locked || !currentCardEl) return;
-    const card = currentCardEl;
-    const data = deck[index];
-    locked = true;
-
-    // 自分の今日モード：正解はないので、選んだとおりに受け取る
-    if(data.type === 'own'){
-      if(choice === 'fact'){ acceptedFacts.push(data.text); flyOut(card, 1); }
-      else { releasedEmos.push(data.text); flyOut(card, -1); }
-      return next();
-    }
-
-    let hint = null;
-    if(data.type === 'fact' && choice !== 'fact') hint = choice === 'split' ? pick(HINTS.pureSplit) : pick(HINTS.factToEmo);
-    else if(data.type === 'emo' && choice !== 'emo') hint = choice === 'split' ? pick(HINTS.pureSplit) : pick(HINTS.emoToFact);
-    else if(data.type === 'mix' && choice !== 'split') hint = pick(HINTS.mixWhole);
-
-    if(hint){
-      // ちがう方に入れたときは、ヒントを出して考え直してもらう（減点はしない）
-      rethinks++;
-      vibrate([20,30,20]);
-      card.classList.add('wrong');
-      showHint(hint);
-      setTimeout(() => {
-        card.classList.remove('wrong');
-        resetCardPos(card);
-        locked = false;
-      }, 420);
-      return;
-    }
-
-    hideHint();
-    vibrate(15);
-    if(data.type === 'mix'){
-      splits++;
-      splitCard(card, data);
-      acceptedFacts.push(data.fact);
-      releasedEmos.push(data.emo);
-      setTimeout(next, 900);
-      return;
-    }
-    if(choice === 'fact'){
-      acceptedFacts.push(data.text);
-      card.classList.add('correct-fact');
-      flyOut(card, 1);
-      showFloatText('受け止めた', 'var(--fact-color)', true);
+  function spawnCard(){
+    const d = nextData();
+    const el = document.createElement('div');
+    el.className = 'fcard' + (d.type === 'mix' ? ' mix' : '');
+    if(d.type === 'mix'){
+      el.innerHTML = '<span class="half"></span><span class="cut"></span><span class="half"></span>';
+      const halves = el.querySelectorAll('.half');
+      // 事実が上とは限らない
+      const factFirst = Math.random() < 0.75;
+      halves[0].textContent = factFirst ? d.fact : d.emo;
+      halves[1].textContent = factFirst ? d.emo : d.fact;
+      d.factFirst = factFirst;
     } else {
-      releasedEmos.push(data.text);
-      card.classList.add('correct-emotion');
-      flyOut(card, -1);
-      showFloatText('手放した', 'var(--emotion-color)', false);
+      el.textContent = d.text;
     }
-    next();
+    field.appendChild(el);
+    const c = { data:d, el, y: -el.offsetHeight - 10, h: el.offsetHeight, done:false };
+    el.style.top = c.y + 'px';
+    cards.push(c);
+    updateActive();
   }
 
-  function next(){
-    setTimeout(() => {
-      index++;
-      updateProgress();
-      renderCard();
-    }, 380);
+  // いちばん下まで来ているカードが操作対象
+  function activeCard(){
+    let best = null;
+    cards.forEach(c => { if(!c.done && (!best || c.y > best.y)) best = c; });
+    return best;
+  }
+  function updateActive(){
+    const a = activeCard();
+    cards.forEach(c => c.el.classList.toggle('active', c === a));
   }
 
-  // ✂ 事実と気持ちを、2枚に切り離す
-  function splitCard(card, data){
-    const r = card.getBoundingClientRect();
-    const s = stage.getBoundingClientRect();
-    card.remove();
-    currentCardEl = null;
-    const snip = document.createElement('div');
-    snip.className = 'snip';
-    snip.textContent = '✂';
-    stage.appendChild(snip);
-    setTimeout(() => snip.remove(), 520);
+  /* ===== 操作 ===== */
+  function act(choice){
+    if(!running) return;
+    const c = activeCard();
+    if(!c) return;
+    const t = c.data.type;
+    const ok = (choice === 'fact' && t === 'fact') || (choice === 'emo' && t === 'emo') || (choice === 'cut' && t === 'mix');
 
-    const mk = (cls, text, dx) => {
+    if(!ok){
+      // 外したらコンボが切れるだけ。カードはそのまま落ち続ける
+      combo = 0;
+      renderCombo();
+      c.el.classList.remove('wrong'); void c.el.offsetWidth; c.el.classList.add('wrong');
+      showPts(c, 'COMBO BREAK', '#ff7a8a');
+      if(navigator.vibrate) navigator.vibrate([20,30,20]);
+      return;
+    }
+
+    c.done = true;
+    combo++;
+    maxCombo = Math.max(maxCombo, combo);
+    sorted++;
+    const mult = 1 + Math.floor(combo / 5);
+    const base = t === 'mix' ? 250 : 100;
+    // 下に近いほど少しだけボーナス（ギリギリまで待つ楽しさ）
+    const edge = Math.max(0, Math.round((c.y / field.clientHeight) * 20) * 5);
+    const gained = (base + edge) * mult;
+    score += gained;
+    renderScore();
+    renderCombo();
+    showPts(c, `+${gained}${mult > 1 ? ' ×' + mult : ''}`, t === 'fact' ? 'var(--fact-color)' : t === 'emo' ? 'var(--emotion-color)' : 'var(--accent)');
+    if(navigator.vibrate) navigator.vibrate(12);
+
+    if(t === 'mix'){
+      cuts++;
+      sliceCard(c);
+    } else {
+      const dir = t === 'fact' ? 1 : -1;
+      c.el.classList.add('fly');
+      c.el.style.transform = `translateX(-50%) translateX(${dir * 420}px) rotate(${dir * 25}deg)`;
+      setTimeout(() => c.el.remove(), 380);
+    }
+    cards = cards.filter(x => x !== c);
+    updateActive();
+  }
+
+  // ✂ 事実は右へ、気持ちは左へ
+  function sliceCard(c){
+    const cx = field.clientWidth / 2;
+    const cy = c.y + c.h / 2;
+    c.el.remove();
+    const mk = (cls, text, dy) => {
       const p = document.createElement('div');
       p.className = 'piece ' + cls;
       p.textContent = text;
-      p.style.left = (r.left - s.left + r.width/2 + dx) + 'px';
-      p.style.top = (r.top - s.top + r.height/2) + 'px';
-      p.style.transform = 'translate(-50%,-50%)';
-      stage.appendChild(p);
+      p.style.left = cx + 'px';
+      p.style.top = (cy + dy) + 'px';
+      field.appendChild(p);
       return p;
     };
-    const fp = mk('fact', data.fact, r.width * 0.24);
-    const ep = mk('emo', data.emo, -r.width * 0.24);
-    setTimeout(() => {
-      fp.style.transform = 'translate(-50%,-50%) translateX(40px) rotate(4deg)';
-      ep.style.transform = 'translate(-50%,-50%) translateX(-40px) rotate(-4deg)';
-    }, 120);
-    setTimeout(() => {
-      fp.style.transform = 'translate(-50%,-50%) translateX(700px) rotate(20deg)';
-      fp.style.opacity = '0';
-      ep.style.transform = 'translate(-50%,-50%) translateX(-700px) rotate(-20deg)';
-      ep.style.opacity = '0';
-      showFloatText('切り分けた', 'var(--accent)', true);
-    }, 520);
-    setTimeout(() => { fp.remove(); ep.remove(); }, 1200);
+    const f = mk('f', c.data.fact, c.data.factFirst ? -18 : 18);
+    const e = mk('e', c.data.emo, c.data.factFirst ? 18 : -18);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      f.style.transform = 'translate(-50%,-50%) translateX(260px) rotate(18deg)';
+      e.style.transform = 'translate(-50%,-50%) translateX(-260px) rotate(-18deg)';
+      f.style.opacity = '0';
+      e.style.opacity = '0';
+    }));
+    setTimeout(() => { f.remove(); e.remove(); }, 520);
   }
 
-  function flyOut(card, dir){
-    card.style.transition = 'transform .38s ease, opacity .38s ease';
-    card.style.transform = `translate(${dir * 700}px, -40px) rotate(${dir*30}deg)`;
-    card.style.opacity = '0';
+  function showPts(c, text, color){
+    const p = document.createElement('div');
+    p.className = 'pts';
+    p.textContent = text;
+    p.style.color = color;
+    p.style.left = (field.clientWidth / 2) + 'px';
+    p.style.top = Math.max(20, c.y) + 'px';
+    field.appendChild(p);
+    setTimeout(() => p.remove(), 700);
   }
 
-  function showFloatText(text, color, isFact){
-    const el = document.createElement('div');
-    el.className = 'floatText';
-    el.textContent = text;
-    el.style.color = color;
-    el.style.background = 'rgba(0,0,0,.35)';
-    el.style.border = `1px solid ${color}`;
-    el.style.left = isFact ? '58%' : '10%';
-    stage.appendChild(el);
-    requestAnimationFrame(() => {
-      el.style.transition = 'opacity .5s ease, transform .5s ease';
-      el.style.opacity = '1';
-      el.style.transform = 'translateY(-20px)';
-    });
-    setTimeout(() => {
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 400);
-    }, 500);
-  }
-
-  document.getElementById('trashBtn').addEventListener('click', () => judge('emo'));
-  document.getElementById('factBtn').addEventListener('click', () => judge('fact'));
-  document.getElementById('splitBtn').addEventListener('click', () => { if(mode === 'scene') judge('split'); });
-  window.addEventListener('keydown', (e) => {
-    if(startScreen.classList.contains('show') || clearScreen.classList.contains('show')) return;
-    if(e.key === 'ArrowLeft') judge('emo');
-    else if(e.key === 'ArrowRight') judge('fact');
-    else if(e.key === 'ArrowDown' && mode === 'scene') judge('split');
+  // 画面のどこでもスワイプ
+  let sx = 0, sy = 0, swiping = false;
+  field.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; swiping = true; });
+  window.addEventListener('pointerup', e => {
+    if(!swiping) return;
+    swiping = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if(Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+    if(Math.abs(dx) > Math.abs(dy)) act(dx > 0 ? 'fact' : 'emo');
+    else if(dy > 0) act('cut');
+  });
+  document.getElementById('emoBtn').addEventListener('click', () => act('emo'));
+  document.getElementById('factBtn').addEventListener('click', () => act('fact'));
+  document.getElementById('cutBtn').addEventListener('click', () => act('cut'));
+  window.addEventListener('keydown', e => {
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); act('emo'); }
+    else if(e.key === 'ArrowRight'){ e.preventDefault(); act('fact'); }
+    else if(e.key === 'ArrowDown'){ e.preventDefault(); act('cut'); }
   });
 
-  /* ===== 結果 ===== */
-  function finishGame(){
+  /* ===== ループ ===== */
+  function loop(ts){
+    if(!running) return;
+    if(lastTs === null) lastTs = ts;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+    elapsed += dt;
+
+    // 20秒ごとにスピードアップの合図
+    const lv = 1 + Math.floor(elapsed / 20);
+    if(lv > level){
+      level = lv;
+      speedUp.classList.remove('show'); void speedUp.offsetWidth; speedUp.classList.add('show');
+    }
+
+    spawnTimer -= dt;
+    if(spawnTimer <= 0){
+      spawnCard();
+      spawnTimer = spawnInterval() * rand(0.85, 1.15);
+    }
+
+    const v = fallSpeed();
+    const floor = field.clientHeight;
+    cards.forEach(c => {
+      if(c.done) return;
+      c.y += v * dt;
+      c.el.style.top = c.y + 'px';
+      if(c.y + c.h >= floor){
+        // 下に着いてしまった
+        c.done = true;
+        lives--;
+        combo = 0;
+        renderCombo();
+        renderLives();
+        c.el.classList.add('dropped');
+        setTimeout(() => c.el.remove(), 420);
+        field.animate([{ background:'rgba(255,59,59,.25)' }, { background:'transparent' }], { duration:400 });
+      }
+    });
+    cards = cards.filter(c => !c.done);
+    updateActive();
+
+    if(lives <= 0){ gameOver(); return; }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startGame(){
+    startScreen.classList.remove('show');
+    resultScreen.classList.remove('show');
+    cards.forEach(c => c.el.remove());
+    field.querySelectorAll('.piece, .pts, .fcard').forEach(e => e.remove());
+    cards = []; recent = [];
+    score = 0; combo = 0; maxCombo = 0; lives = MAX_LIVES;
+    sorted = 0; cuts = 0; elapsed = 0; spawnTimer = 0; level = 1;
+    renderScore(); renderCombo(); renderLives();
+
+    // 3・2・1
+    const cd = document.createElement('div');
+    cd.id = 'countdown';
+    document.getElementById('app').appendChild(cd);
+    let n = 3;
+    cd.textContent = n;
+    const iv = setInterval(() => {
+      n--;
+      if(n > 0){ cd.textContent = n; return; }
+      clearInterval(iv);
+      cd.remove();
+      running = true;
+      lastTs = null;
+      rafId = requestAnimationFrame(loop);
+    }, 600);
+  }
+
+  function gameOver(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    const isBest = score > save.best;
     save.plays++;
-    save.cards += deck.length;
-    save.splits += splits;
-    if(mode === 'scene') save.scenes[scene.id] = (save.scenes[scene.id] || 0) + 1;
-    else save.own++;
+    if(isBest) save.best = score;
     writeSave();
 
-    document.getElementById('flatReport').textContent = `${deck.length}枚を仕分けた（事実）`;
-    const intro = document.getElementById('introLine');
-    if(save.plays === 1){
-      intro.textContent = '気持ちを否定しなくていい。ただ、それが「事実」とは別だと知っておくだけでいい。';
-      intro.style.display = 'block';
-    } else {
-      intro.style.display = 'none';
-    }
+    document.getElementById('finalScore').textContent = score.toLocaleString();
+    document.getElementById('newBest').style.display = isBest && score > 0 ? 'inline-block' : 'none';
+    document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()}`;
+    document.getElementById('stSorted').textContent = sorted;
+    document.getElementById('stCombo').textContent = maxCombo;
+    document.getElementById('stCut').textContent = cuts;
+    let pool = COMMENTS.normal;
+    if(sorted >= 40) pool = COMMENTS.great;
+    else if(maxCombo >= 12) pool = COMMENTS.combo;
+    else if(cuts >= 5) pool = COMMENTS.cut;
+    document.getElementById('comment').textContent = pick(pool);
 
-    const fill = (id, list) => {
-      const ul = document.getElementById(id);
-      ul.innerHTML = '';
-      if(list.length === 0){
-        const li = document.createElement('li');
-        li.textContent = '（なし）';
-        ul.appendChild(li);
-      }
-      list.forEach(t => {
-        const li = document.createElement('li');
-        li.textContent = t;
-        ul.appendChild(li);
-      });
-    };
-    fill('factList', acceptedFacts);
-    fill('emoList', releasedEmos);
-
-    const n = v => `<b>${v}</b>`;
-    const rows = [];
-    if(mode === 'scene'){
-      if(splits > 0) rows.push({ icon:'✂', text:`${n(splits)} 枚を、事実と気持ちに切り分けた` });
-      rows.push(rethinks > 0
-        ? { icon:'🤔', text:`${n(rethinks)} 回、立ち止まって考え直した` }
-        : { icon:'🤔', text:`迷わずに、全部仕分けた` });
-      const done = SCENES.filter(s => save.scenes[s.id]).length;
-      if(save.scenes[scene.id] === 1){
-        rows.push({ icon:'📗', text:`「${scene.name}」をはじめて振り返った（${done} / ${SCENES.length} シーン）`, event:true });
-      }
-    } else {
-      rows.push({ icon:'✍️', text:`自分の言葉で ${n(deck.length)} 枚、書き出した` });
-      rows.push({ icon:'📥', text:`そのうち ${n(acceptedFacts.length)} 枚を、事実として受け止めた` });
-    }
-    const box = document.getElementById('factRows');
-    box.innerHTML = '';
-    rows.forEach(r => {
-      const row = document.createElement('div');
-      row.className = 'factRow' + (r.event ? ' event' : '');
-      row.innerHTML = `<div class="icon"></div><div class="txt"></div>`;
-      row.querySelector('.icon').textContent = r.icon;
-      row.querySelector('.txt').innerHTML = r.text; // 数値と固定文・シーン名だけ（自分で書いた内容はここに入れない）
-      box.appendChild(row);
-    });
-    document.getElementById('totalLine').textContent = `これまで ${save.plays} 回 ・ ${save.cards} 枚を仕分けて、${save.splits} 枚を切り分けた`;
-
-    clearScreen.classList.add('show');
+    setTimeout(() => resultScreen.classList.add('show'), 500);
     sendResultToPortal();
   }
 
-  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（自分で書いた内容は送らない）
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score はランキング用）
   function sendResultToPortal(){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'fact-emotion',
-        summary: mode === 'scene'
-          ? `「${scene.name}」の${deck.length}枚を仕分け、${splits}枚を切り分けた`
-          : `自分の今日を${deck.length}枚、仕分けた`,
-        detail: { mode, scene: scene ? scene.id : null, total: deck.length, facts: acceptedFacts.length, emotions: releasedEmos.length, splits, rethinks, plays: save.plays }
+        summary: `スコア ${score.toLocaleString()}（${sorted}枚・最大${maxCombo}コンボ）`,
+        detail: { score, sorted, maxCombo, cuts, seconds: Math.round(elapsed) }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
-  function showTutorialOnce(text){
-    const tip = document.createElement('div');
-    tip.id = 'tutorial';
-    tip.textContent = text;
-    document.getElementById('app').appendChild(tip);
-    setTimeout(() => tip.remove(), 4500);
-  }
-
-  document.getElementById('retryBtn').addEventListener('click', showStart);
-  document.getElementById('ownStart').addEventListener('click', startOwn);
-  document.getElementById('ownBack').addEventListener('click', showStart);
-
-  showStart();
+  document.getElementById('startBest').textContent = save.best > 0 ? `自己ベスト ${save.best.toLocaleString()}` : '';
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+  renderLives();
 })();
 </script>
 </body>

@@ -234,6 +234,11 @@
   }
   .resultCard .rName{ font-weight:800; color:var(--text-main); }
   .resultCard .rSummary{ font-size:13.5px; font-weight:700; color:var(--neon-yellow); }
+  .resultCard .rRank{
+    width:28px; flex-shrink:0; text-align:center;
+    font-size:16px; font-weight:900; color:var(--text-sub);
+  }
+  .resultCard.mine{ border-color:var(--neon-cyan); box-shadow:0 0 0 2px rgba(79,240,255,.25); }
 
   /* ===================== コメント ===================== */
   #commentsSection{ margin-top:24px; }
@@ -838,6 +843,15 @@
       return;
     }
 
+    // スコアのあるゲームは、1人1行（その人のベスト）のランキングにする
+    const scored = results
+      .map(r => ({ ...r, score: scoreOf(r) }))
+      .filter(r => r.score !== null);
+    if(scored.length > 0){
+      renderRanking(scored);
+      return;
+    }
+
     results.forEach(r => {
       const el = document.createElement('div');
       el.className = 'resultCard';
@@ -849,6 +863,48 @@
             <span>${formatDate(r.createdAt)}</span>
           </div>
           <div class="rSummary">${escapeHtml(r.summary || '')}</div>
+        </div>
+      `;
+      resultList.appendChild(el);
+    });
+  }
+
+  // detail はスプレッドシート経由だと JSON 文字列、localStorage だとオブジェクトで返ってくる
+  function scoreOf(r){
+    let d = r.detail;
+    if(typeof d === 'string'){
+      try{ d = JSON.parse(d); }catch(e){ return null; }
+    }
+    return d && typeof d.score === 'number' ? d.score : null;
+  }
+
+  const RANK_LIMIT = 10;
+  function renderRanking(scored){
+    const bestByUser = {};
+    scored.forEach(r => {
+      const cur = bestByUser[r.userUuid];
+      if(!cur || r.score > cur.score) bestByUser[r.userUuid] = r;
+    });
+    const ranking = Object.values(bestByUser).sort((a,b) => b.score - a.score);
+    const myUuid = currentUser ? currentUser.uuid : null;
+    const myIndex = ranking.findIndex(r => r.userUuid === myUuid);
+    const medals = ['🥇','🥈','🥉'];
+
+    const rows = ranking.slice(0, RANK_LIMIT).map((r, i) => ({ r, i }));
+    if(myIndex >= RANK_LIMIT) rows.push({ r: ranking[myIndex], i: myIndex });
+
+    rows.forEach(({ r, i }) => {
+      const el = document.createElement('div');
+      el.className = 'resultCard' + (r.userUuid === myUuid ? ' mine' : '');
+      el.innerHTML = `
+        <div class="rRank">${medals[i] || (i + 1)}</div>
+        <div class="rAvatar">${r.userAvatar || '🙂'}</div>
+        <div class="rBody">
+          <div class="rHead">
+            <span class="rName">${escapeHtml(r.userName || 'ゲスト')} <span class="cTag">${shortTag(r.userUuid)}</span></span>
+            <span>${formatDate(r.createdAt)}</span>
+          </div>
+          <div class="rSummary">${r.score.toLocaleString()} 点</div>
         </div>
       `;
       resultList.appendChild(el);
