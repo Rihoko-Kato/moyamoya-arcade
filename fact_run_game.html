@@ -36,6 +36,7 @@
     width:100%; height:100%;
     background:linear-gradient(180deg, var(--sky1), var(--sky2) 70%);
     overflow:hidden;
+    transition:background 1.2s ease;
   }
   #stage.shake{ animation:shake .35s ease; }
   @keyframes shake{
@@ -45,6 +46,24 @@
     60%{ transform:translate(-6px,3px); }
     80%{ transform:translate(6px,-2px); }
   }
+
+  /* ===== 景色（累計距離で変化） ===== */
+  #stage.scene-morning{ --sky1:#ffd6c2; --sky2:#fff3d9; --sun:#ffd07a; }
+  #stage.scene-day{ --sky1:#8ed1f0; --sky2:#cdeeff; --sun:#ffe066; }
+  #stage.scene-evening{ --sky1:#ff9a76; --sky2:#ffd59e; --sun:#ff7b54; --ground1:#8fb850; --ground2:#6f9a3b; }
+  #stage.scene-night{ --sky1:#1d2557; --sky2:#3d4a8a; --sun:#fff8d6; --ground1:#4a7a3a; --ground2:#3a6230; --dirt1:#7a5f3d; --dirt2:#6a5030; }
+  #stage.scene-space{ --sky1:#05051a; --sky2:#1a1040; --sun:#fff8d6; --ground1:#b8b8c8; --ground2:#9a9ab0; --dirt1:#8a8aa0; --dirt2:#7a7a90; }
+  #stage.scene-night #sun, #stage.scene-space #sun{
+    box-shadow:0 0 0 8px rgba(255,248,214,.15), 0 0 30px rgba(255,248,214,.4);
+    background:radial-gradient(circle at 65% 35%, transparent 38%, var(--sun) 40%);
+  }
+  #stage.scene-night .cloud{ opacity:.25; }
+  #stage.scene-space .cloud{ display:none; }
+
+  #nightStars{ position:absolute; inset:0; z-index:0; opacity:0; transition:opacity 1.2s ease; pointer-events:none; }
+  #stage.scene-night #nightStars, #stage.scene-space #nightStars{ opacity:1; }
+  .nstar{ position:absolute; background:#fff; border-radius:50%; animation:twinkle 2.4s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{opacity:.3;} 50%{opacity:1;} }
 
   /* 太陽 */
   #sun{
@@ -124,10 +143,24 @@
     position:absolute; left:12px; top:24px; width:16px; height:8px;
     border-bottom:3px solid var(--ink); border-radius:0 0 10px 10px;
   }
+  /* 頭の芽（挑戦回数で育つ） */
+  #sprout{
+    position:absolute; left:50%; top:-24px;
+    transform:translateX(-50%);
+    font-size:20px; line-height:1;
+    pointer-events:none;
+  }
   #player.running{ animation:runBob .3s ease-in-out infinite; }
   @keyframes runBob{
     0%,100%{ transform:translateY(0) rotate(0deg); }
     50%{ transform:translateY(-3px) rotate(-2deg); }
+  }
+  #player.stumble{ animation:stumble .5s ease; }
+  @keyframes stumble{
+    0%{ transform:rotate(0deg); }
+    30%{ transform:rotate(28deg) translateY(-4px); }
+    70%{ transform:rotate(-8deg); }
+    100%{ transform:rotate(0deg); }
   }
   #player.crashed{
     animation:none;
@@ -182,6 +215,44 @@
   #player.airborne .eye{ height:9px; top:11px; }
   #player.airborne .mouth{ width:12px; height:10px; border-radius:50%; border:3px solid var(--ink); border-bottom:none; top:23px; }
 
+  /* ===== 道中のもの（小石・☆） ===== */
+  .rock{
+    position:absolute;
+    bottom:92px;
+    z-index:4;
+    background:linear-gradient(160deg,#b9b1a6,#8c8378);
+    border:2px solid #6f675d;
+    border-radius:50% 50% 30% 30% / 70% 70% 30% 30%;
+    pointer-events:none;
+  }
+  .rock.kicked{ transition:transform .6s ease-out, opacity .6s ease-out; opacity:0; }
+  .star{
+    position:absolute;
+    z-index:4;
+    width:28px; height:28px;
+    font-size:26px; line-height:28px; text-align:center;
+    color:#ffd23f;
+    text-shadow:0 0 8px rgba(255,210,63,.8), 0 2px 0 #e0a800;
+    animation:starFloat 1.2s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes starFloat{ 0%,100%{ margin-bottom:0; } 50%{ margin-bottom:5px; } }
+  .star.got{ animation:starGot .45s ease-out forwards; }
+  @keyframes starGot{ to{ transform:translateY(-40px) scale(1.6); opacity:0; } }
+
+  .floatMsg{
+    position:absolute;
+    z-index:12;
+    font-size:13px; font-weight:800;
+    color:#4a4a4a;
+    background:#ffffffd0;
+    padding:3px 10px; border-radius:12px;
+    pointer-events:none;
+    white-space:nowrap;
+    animation:floatUp .9s ease-out forwards;
+  }
+  @keyframes floatUp{ 0%{ opacity:0; transform:translateY(0); } 20%{ opacity:1; } 100%{ opacity:0; transform:translateY(-34px); } }
+
   #wall{
     position:absolute;
     bottom:92px;
@@ -199,6 +270,23 @@
     border-right:4px solid #0002;
     border-radius:6px;
     box-shadow:0 0 0 3px #ffffffaa inset;
+  }
+  #wall.rare{
+    background:linear-gradient(180deg,#ffe9a8,#ffd0f0,#c8e7ff,#d6ffd0,#ffe9a8);
+    background-size:100% 300px;
+    animation:rareShine 2s linear infinite;
+    box-shadow:0 0 0 3px #ffffffcc inset, 0 0 24px rgba(255,220,120,.9);
+  }
+  @keyframes rareShine{ to{ background-position:0 300px; } }
+  #wallLabel{
+    position:absolute;
+    left:50%; bottom:16px;
+    transform:translateX(-50%);
+    writing-mode:vertical-rl;
+    font-size:17px; font-weight:900; letter-spacing:3px;
+    color:#ffffff;
+    text-shadow:0 1px 0 rgba(0,0,0,.25), 0 0 6px rgba(0,0,0,.2);
+    white-space:nowrap;
   }
 
   /* FACTテキスト */
@@ -265,6 +353,12 @@
     background:#ffffffaa; padding:8px 14px; border-radius:16px;
     font-size:13px; font-weight:700; color:#4a4a4a;
   }
+  #hudTotal{
+    position:absolute; top:14px; right:14px; z-index:10;
+    background:#ffffff88; padding:6px 12px; border-radius:14px;
+    font-size:11px; font-weight:700; color:#5a5a5a;
+  }
+  #hudTotal:empty{ display:none; }
 
   /* タップ案内 */
   #tapHint{
@@ -273,6 +367,7 @@
     background:#ffffffb0; padding:6px 14px; border-radius:14px;
     animation:hintFade 2.2s ease forwards;
     pointer-events:none;
+    white-space:nowrap;
   }
   @keyframes hintFade{ 0%{opacity:1;} 80%{opacity:1;} 100%{opacity:0;} }
 
@@ -283,15 +378,18 @@
     backdrop-filter:blur(2px);
     display:none;
     align-items:center; justify-content:center; flex-direction:column;
-    z-index:50; text-align:center; padding:26px;
+    z-index:50; text-align:center; padding:14px;
+    overflow-y:auto;
   }
   #resultScreen.show{ display:flex; }
   #resultCard{
     background:#fffdf6;
     border:3px solid #ffe08a;
-    border-radius:26px;
-    padding:30px 28px 26px;
-    max-width:340px;
+    border-radius:24px;
+    padding:20px 22px 18px;
+    width:100%;
+    max-width:360px;
+    margin:auto;
     box-shadow:0 20px 40px rgba(0,0,0,.15);
     animation:cardPop .5s cubic-bezier(.3,1.6,.4,1);
   }
@@ -300,30 +398,53 @@
     100%{ transform:scale(1) translateY(0); opacity:1; }
   }
   #resultCard .flatReport{
-    font-size:13px; color:#8a8a8a; font-weight:700;
-    background:#f0f0f0; border-radius:12px; padding:8px 14px;
-    display:inline-block; margin-bottom:16px;
+    font-size:12.5px; color:#8a8a8a; font-weight:700;
+    background:#f0f0f0; border-radius:12px; padding:7px 14px;
+    display:inline-block; margin-bottom:12px;
   }
   #resultCard h2{
-    font-size:19px; margin:0 0 16px; color:#4a4a4a;
+    font-size:17px; margin:0 0 10px; color:#4a4a4a;
+  }
+  #introLine{
+    font-size:12.5px; color:#6a6a6a; font-weight:700;
+    margin:-2px 0 12px; line-height:1.6;
   }
   .factRow{
     display:flex; align-items:center; gap:10px;
     background:linear-gradient(135deg,#fff3d6,#e8f7ff);
     border-radius:14px;
-    padding:12px 16px;
-    margin-bottom:10px;
+    padding:9px 14px;
+    margin-bottom:8px;
     text-align:left;
   }
-  .factRow .icon{ font-size:22px; }
-  .factRow .txt{ font-size:14px; font-weight:700; color:#4a4a4a; }
-  .factRow .txt b{ color:var(--accent); font-size:16px; }
+  .factRow.event{ background:#f3f0ff; }
+  .factRow .icon{ font-size:20px; }
+  .factRow .txt{ font-size:13.5px; font-weight:700; color:#4a4a4a; line-height:1.5; }
+  .factRow .txt b{ color:var(--accent); font-size:15px; }
+
+  /* 累計・あしあと */
+  #totalBox{
+    margin-top:12px;
+    padding-top:10px;
+    border-top:2px dashed #f0e2b8;
+  }
+  #totalLine{ font-size:12px; color:#6a6a6a; font-weight:700; }
+  #totalLine b{ color:#4a4a4a; }
+  #footprints{
+    display:flex; align-items:flex-end; justify-content:center; gap:3px;
+    height:40px; margin:8px 0 2px;
+  }
+  .fp{ width:8px; min-height:3px; border-radius:3px 3px 1px 1px; background:#e8dcc0; }
+  .fp.now{ background:var(--accent); }
+  #footprintsLabel{ font-size:10.5px; color:#9a9a9a; }
+
   #retryBtn{
-    margin-top:14px;
-    padding:14px 34px; border:none; border-radius:28px;
+    margin-top:12px;
+    padding:12px 30px; border:none; border-radius:28px;
     background:linear-gradient(160deg,#ffb3c6,#ff8ba7);
     color:#fff; font-weight:800; font-size:15px; letter-spacing:1px;
     box-shadow:0 6px 0 #e0728f, 0 10px 16px rgba(0,0,0,.15);
+    cursor:pointer;
   }
   #retryBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #e0728f; }
 </style>
@@ -331,18 +452,21 @@
 <body>
 
 <div id="stage">
+  <div id="nightStars"></div>
   <div id="sun"></div>
   <div class="cloud" id="cloud1"></div>
   <div class="cloud" id="cloud2"></div>
   <div class="cloud" id="cloud3"></div>
 
-  <div id="hud">🏃 走行中…</div>
-  <div id="tapHint">画面をタップしてジャンプ！</div>
+  <div id="hud">🏃 0m</div>
+  <div id="hudTotal"></div>
+  <div id="tapHint">タップ（またはスペースキー）でジャンプ！</div>
 
-  <div id="wall"></div>
+  <div id="wall"><div id="wallLabel"></div></div>
 
   <div id="playerShadow"></div>
   <div id="player" class="running">
+    <div id="sprout"></div>
     <div class="face">
       <div class="eye l"></div>
       <div class="eye r"></div>
@@ -353,20 +477,19 @@
   <div id="ground"><div id="groundStripes"></div></div>
 
   <div id="factText" class="mincho"><span>FACT</span></div>
-  <div id="factSub">巨大な壁にぶつかりました（事実）</div>
+  <div id="factSub"></div>
 </div>
 
 <div id="resultScreen">
   <div id="resultCard">
-    <div class="flatReport">巨大な壁にぶつかりました（事実）</div>
+    <div class="flatReport" id="flatReport"></div>
     <h2>行動の記録</h2>
-    <div class="factRow">
-      <div class="icon">⏱️</div>
-      <div class="txt">でも <b id="statTime">0.0</b> 秒間走ったね！</div>
-    </div>
-    <div class="factRow">
-      <div class="icon">🦘</div>
-      <div class="txt">ジャンプボタンを <b id="statJump">0</b> 回押したね！</div>
+    <div id="introLine"></div>
+    <div id="factRows"></div>
+    <div id="totalBox">
+      <div id="totalLine"></div>
+      <div id="footprints"></div>
+      <div id="footprintsLabel"></div>
     </div>
     <button id="retryBtn">もう一度走る</button>
   </div>
@@ -377,16 +500,24 @@
   const stage = document.getElementById('stage');
   const player = document.getElementById('player');
   const playerShadow = document.getElementById('playerShadow');
+  const sprout = document.getElementById('sprout');
   const wall = document.getElementById('wall');
+  const wallLabel = document.getElementById('wallLabel');
   const groundStripes = document.getElementById('groundStripes');
   const factText = document.getElementById('factText');
   const factSub = document.getElementById('factSub');
   const resultScreen = document.getElementById('resultScreen');
-  const statTime = document.getElementById('statTime');
-  const statJump = document.getElementById('statJump');
+  const flatReport = document.getElementById('flatReport');
+  const introLine = document.getElementById('introLine');
+  const factRows = document.getElementById('factRows');
+  const totalLine = document.getElementById('totalLine');
+  const footprints = document.getElementById('footprints');
+  const footprintsLabel = document.getElementById('footprintsLabel');
   const retryBtn = document.getElementById('retryBtn');
   const tapHint = document.getElementById('tapHint');
   const hud = document.getElementById('hud');
+  const hudTotal = document.getElementById('hudTotal');
+  const nightStars = document.getElementById('nightStars');
 
   const SPEED = 230;          // px/秒（ワールドのスクロール速度）
   const GRAVITY = 1900;       // px/秒^2（少し低くして滞空時間を伸ばす）
@@ -394,52 +525,201 @@
   const MAX_HEIGHT_REF = 240; // 影の縮小・伸縮演出の基準高さ
   const PLAYER_X = 70;
   const PLAYER_W = 44;
+  const PLAYER_H = 44;
+  const PX_PER_M = 23;        // 23px = 1m として距離を表示
 
+  /* =========================================================
+     壁に書かれる言葉（壁図鑑）
+     ========================================================= */
+  const WALL_LABELS = ['理想','完璧','あの人の実力','締め切り','みんなの期待','昨日の後悔','正解','いつもの自分','向いてない気がする','もっと早くやれば'];
+  const RARE_WALL_LABELS = ['月曜日','おふとん','宇宙の果て','なんかでかい'];
+  const RARE_RATE = 0.07;
+
+  /* =========================================================
+     累計記録（この端末に保存）
+     ========================================================= */
+  const STATS_KEY = 'factRun_stats_v1';
+  function defaultStats(){
+    return { runs:0, dist:0, time:0, jumps:0, stars:0, stumbles:0, walls:{}, history:[] };
+  }
+  function loadStats(){
+    try{
+      const raw = localStorage.getItem(STATS_KEY);
+      return raw ? Object.assign(defaultStats(), JSON.parse(raw)) : defaultStats();
+    }catch(e){ return defaultStats(); }
+  }
+  function saveStats(s){
+    try{ localStorage.setItem(STATS_KEY, JSON.stringify(s)); }catch(e){ /* 保存できない環境では今回分だけ */ }
+  }
+  let stats = loadStats();
+
+  // 景色：累計距離（m）で変わる
+  const SCENES = [
+    { id:'morning', name:'朝',   from:0 },
+    { id:'day',     name:'昼',   from:300 },
+    { id:'evening', name:'夕方', from:900 },
+    { id:'night',   name:'夜',   from:1800 },
+    { id:'space',   name:'宇宙', from:3500 }
+  ];
+  function sceneFor(dist){
+    let s = SCENES[0];
+    SCENES.forEach(sc => { if(dist >= sc.from) s = sc; });
+    return s;
+  }
+
+  // 頭の芽：挑戦回数で育つ
+  const SPROUTS = [
+    { from:3,  icon:'🌱', name:'芽が出た' },
+    { from:8,  icon:'🌿', name:'葉っぱが増えた' },
+    { from:15, icon:'🌷', name:'つぼみがついた' },
+    { from:30, icon:'🌻', name:'花が咲いた' }
+  ];
+  function sproutFor(runs){
+    let s = null;
+    SPROUTS.forEach(sp => { if(runs >= sp.from) s = sp; });
+    return s;
+  }
+
+  function applyProgressLook(){
+    const sc = sceneFor(stats.dist);
+    SCENES.forEach(x => stage.classList.remove('scene-' + x.id));
+    stage.classList.add('scene-' + sc.id);
+    const sp = sproutFor(stats.runs);
+    sprout.textContent = sp ? sp.icon : '';
+    hudTotal.textContent = stats.runs > 0 ? `これまで ${Math.round(stats.dist)}m` : '';
+  }
+
+  function createNightStars(){
+    for(let i=0;i<40;i++){
+      const s = document.createElement('div');
+      s.className = 'nstar';
+      const size = rand(1,2.4);
+      s.style.width = size+'px';
+      s.style.height = size+'px';
+      s.style.left = rand(0,100) + '%';
+      s.style.top = rand(0,65) + '%';
+      s.style.animationDelay = rand(0,2.4) + 's';
+      nightStars.appendChild(s);
+    }
+  }
+
+  /* =========================================================
+     ラン状態
+     ========================================================= */
   let cameraX = 0;
   let wallWorldX = 0;
+  let wallText = '';
+  let wallIsRare = false;
   let playerOffsetY = 0; // 地面からの高さ（正の値＝上）
   let vy = 0;
   let grounded = true;
   let jumpCount = 0;
+  let starCount = 0;
+  let stumbleCount = 0;
+  let elapsed = 0;
+  let airStart = 0;
+  let maxAir = 0;
+  let speedFactor = 1;
   let crashed = false;
   let lastTs = null;
   let rafId = null;
   let trailTimer = 0;
-  let wasGrounded = true;
+  let objects = [];
 
   function rand(min,max){ return min + Math.random()*(max-min); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  // 道中の小石と☆を配置する（壁の手前まで）
+  function placeObjects(){
+    objects.forEach(o => o.el.remove());
+    objects = [];
+    let x = Math.max(stage.clientWidth, SPEED * 2.5);
+    const end = wallWorldX - SPEED * 1.4;
+    while(x < end){
+      const roll = Math.random();
+      if(roll < 0.5){
+        addRock(x);
+      } else if(roll < 0.75){
+        addStar(x, rand(90, 160)); // ジャンプしないと届かない☆
+      } else if(roll < 0.9){
+        addStar(x, 6);             // 走っていれば拾える☆
+      } else {
+        addRock(x);                // 小石の上に☆
+        addStar(x - 4, rand(100, 150));
+      }
+      x += rand(SPEED * 1.2, SPEED * 2.4);
+    }
+  }
+  function addRock(x){
+    const w = rand(24, 34), h = rand(18, 28);
+    const el = document.createElement('div');
+    el.className = 'rock';
+    el.style.width = w + 'px';
+    el.style.height = h + 'px';
+    el.style.left = x + 'px';
+    stage.appendChild(el);
+    objects.push({ type:'rock', x, y:0, w, h, el, done:false });
+  }
+  function addStar(x, y){
+    const el = document.createElement('div');
+    el.className = 'star';
+    el.textContent = '★';
+    el.style.bottom = (92 + y) + 'px';
+    el.style.left = x + 'px';
+    stage.appendChild(el);
+    objects.push({ type:'star', x, y, w:28, h:28, el, done:false });
+  }
 
   function initRun(){
     cameraX = 0;
-    wallWorldX = SPEED * rand(4.0, 5.0); // 開始数秒後、必ず出現する壁
+    wallWorldX = SPEED * rand(8, 20); // 毎回ちがう距離で、必ず出現する壁
+    wallIsRare = Math.random() < RARE_RATE;
+    wallText = wallIsRare ? pick(RARE_WALL_LABELS) : pick(WALL_LABELS);
+    wallLabel.textContent = wallText;
+    wall.classList.toggle('rare', wallIsRare);
+    wall.style.left = (wallWorldX) + 'px';
+
     playerOffsetY = 0;
     vy = 0;
     grounded = true;
     jumpCount = 0;
+    starCount = 0;
+    stumbleCount = 0;
+    elapsed = 0;
+    maxAir = 0;
+    speedFactor = 1;
     crashed = false;
     lastTs = null;
+    trailTimer = 0;
 
     stage.classList.remove('crashed');
-    player.classList.remove('crashed');
-    player.classList.remove('airborne');
+    player.classList.remove('crashed','airborne','stumble');
     player.classList.add('running');
     player.style.transition = '';
+    player.style.transform = '';
     playerShadow.style.transform = 'scale(1,1)';
     playerShadow.style.opacity = '0.35';
-    trailTimer = 0;
-    wasGrounded = true;
-    player.style.transform = '';
     factText.classList.remove('pop');
     factText.style.transform = 'translate(-50%,-50%) scale(0)';
     factSub.classList.remove('show');
     factSub.style.opacity = '0';
     resultScreen.classList.remove('show');
-    hud.textContent = '🏃 走行中…';
+    hud.textContent = '🏃 0m';
     tapHint.style.animation = 'none';
     void tapHint.offsetWidth;
     tapHint.style.animation = '';
 
-    document.querySelectorAll('.confetti').forEach(c => c.remove());
+    document.querySelectorAll('.confetti, .floatMsg').forEach(c => c.remove());
+    applyProgressLook();
+    placeObjects();
 
     if(rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(loop);
@@ -474,15 +754,69 @@
     setTimeout(() => t.remove(), 420);
   }
 
+  function spawnFloatMsg(text){
+    const rect = player.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const m = document.createElement('div');
+    m.className = 'floatMsg';
+    m.textContent = text;
+    m.style.left = (rect.left - stageRect.left) + 'px';
+    m.style.top = (rect.top - stageRect.top - 30) + 'px';
+    stage.appendChild(m);
+    setTimeout(() => m.remove(), 900);
+  }
+
   function doJump(){
     if(crashed) return;
     if(grounded){
       vy = JUMP_VELOCITY;
       grounded = false;
       jumpCount++;
+      airStart = elapsed;
       spawnDust(9);
-      player.classList.remove('running');
+      player.classList.remove('running','stumble');
     }
+  }
+
+  // 小石につまずく：ゲームは終わらず、少しだけ遅くなる
+  function stumble(rock){
+    rock.done = true;
+    stumbleCount++;
+    speedFactor = 0.35;
+    rock.el.classList.add('kicked');
+    rock.el.style.transform = `translate(${rand(60,120)}px, -20px) rotate(${rand(120,300)}deg)`;
+    player.classList.remove('running','stumble');
+    void player.offsetWidth;
+    player.classList.add('stumble');
+    setTimeout(() => {
+      player.classList.remove('stumble');
+      if(grounded && !crashed) player.classList.add('running');
+    }, 500);
+    spawnDust(6);
+    spawnFloatMsg(pick(['つまずいた','おっと','ころん']));
+  }
+
+  function collectStar(star){
+    star.done = true;
+    starCount++;
+    star.el.classList.add('got');
+    setTimeout(() => star.el.remove(), 450);
+  }
+
+  function updateObjects(){
+    objects.forEach(o => {
+      const sx = o.x - cameraX;
+      if(!o.el.classList.contains('kicked')) o.el.style.left = sx + 'px';
+      if(o.done) return;
+      const overlapX = sx < PLAYER_X + PLAYER_W - 6 && sx + o.w > PLAYER_X + 6;
+      if(!overlapX) return;
+      if(o.type === 'rock'){
+        if(playerOffsetY < o.h - 4) stumble(o);
+      } else {
+        const overlapY = playerOffsetY < o.y + o.h && playerOffsetY + PLAYER_H > o.y;
+        if(overlapY) collectStar(o);
+      }
+    });
   }
 
   function loop(ts){
@@ -491,17 +825,19 @@
     lastTs = ts;
 
     if(!crashed){
-      cameraX += SPEED * dt;
+      elapsed += dt;
+      speedFactor = Math.min(1, speedFactor + dt * 0.8);
+      cameraX += SPEED * speedFactor * dt;
 
       // プレイヤーの上下運動
       vy += GRAVITY * dt;
       playerOffsetY -= vy * dt;
-      wasGrounded = grounded;
       if(playerOffsetY <= 0){
         playerOffsetY = 0;
         vy = 0;
         if(!grounded){
           grounded = true;
+          maxAir = Math.max(maxAir, elapsed - airStart);
           spawnDust(10);
           player.classList.remove('airborne');
           player.style.transform = 'translateY(0) scale(1.28, 0.72)';
@@ -511,7 +847,7 @@
             setTimeout(() => {
               player.style.transition = '';
               player.style.transform = '';
-              player.classList.add('running');
+              if(!crashed) player.classList.add('running');
             }, 170);
           });
         }
@@ -545,12 +881,16 @@
         playerShadow.style.opacity = '0.35';
       }
 
+      updateObjects();
+
       // 壁の位置更新
       const wallScreenX = wallWorldX - cameraX;
       wall.style.left = wallScreenX + 'px';
 
       // 地面の縞模様スクロール
       groundStripes.style.backgroundPositionX = (-cameraX) + 'px';
+
+      hud.textContent = `🏃 ${Math.round(cameraX / PX_PER_M)}m`;
 
       // 衝突判定（縦位置に関わらず、横に重なったら必ずヒット＝絶対回避不能）
       if(wallScreenX <= PLAYER_X + PLAYER_W){
@@ -584,36 +924,191 @@
   function triggerCrash(){
     if(crashed) return;
     crashed = true;
-    const elapsed = cameraX / SPEED;
 
-    player.classList.remove('running');
+    player.classList.remove('running','stumble');
     player.classList.add('crashed');
     stage.classList.add('crashed');
 
     stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake');
-    hud.textContent = '💥 到達！';
+    hud.textContent = '💥 到達';
 
     spawnConfetti();
 
+    // 結果は徹底してフラットに（グレースケール）
+    factSub.textContent = `「${wallText}」の壁にぶつかった（事実）`;
     factText.classList.add('pop');
     factSub.classList.add('show');
 
+    const run = recordRun();
+
     setTimeout(() => {
-      statTime.textContent = elapsed.toFixed(1);
-      statJump.textContent = jumpCount;
+      renderResult(run);
       resultScreen.classList.add('show');
-      sendResultToPortal(elapsed);
+      sendResultToPortal(run);
     }, 1300);
   }
 
+  /* =========================================================
+     記録の保存
+     ========================================================= */
+  function recordRun(){
+    const run = {
+      time: elapsed,
+      dist: cameraX / PX_PER_M,
+      jumps: jumpCount,
+      stars: starCount,
+      stumbles: stumbleCount,
+      rocks: objects.filter(o => o.type === 'rock').length,
+      maxAir: maxAir,
+      wall: wallText,
+      rare: wallIsRare
+    };
+    const before = {
+      scene: sceneFor(stats.dist),
+      sprout: sproutFor(stats.runs),
+      newWall: !stats.walls[wallText]
+    };
+
+    stats.runs += 1;
+    stats.dist += run.dist;
+    stats.time += run.time;
+    stats.jumps += run.jumps;
+    stats.stars += run.stars;
+    stats.stumbles += run.stumbles;
+    stats.walls[wallText] = true;
+    stats.history.push(Math.round(run.dist));
+    if(stats.history.length > 20) stats.history = stats.history.slice(-20);
+    saveStats(stats);
+
+    const afterScene = sceneFor(stats.dist);
+    const afterSprout = sproutFor(stats.runs);
+    run.events = [];
+    if(afterScene.id !== before.scene.id){
+      run.events.push({ icon:'🌄', text:`景色が「${afterScene.name}」に変わった` });
+    }
+    if(afterSprout && afterSprout !== before.sprout){
+      run.events.push({ icon:afterSprout.icon, text:`頭に${afterSprout.name}` });
+    }
+    if(before.newWall){
+      const seen = Object.keys(stats.walls).length;
+      const total = WALL_LABELS.length + RARE_WALL_LABELS.length;
+      run.events.push({ icon: wallIsRare ? '🌈' : '🧱', text:`はじめて見る壁だった（壁図鑑 ${seen} / ${total}）` });
+    }
+    return run;
+  }
+
+  /* =========================================================
+     結果画面：その回のデータから「見てたよ」の言葉を組み立てる
+     （評価語は使わず、具体的な行動の事実だけを言う）
+     ========================================================= */
+  function buildLines(run){
+    const t = run.time.toFixed(1);
+    const d = Math.round(run.dist);
+    const n = (v) => `<b>${v}</b>`;
+
+    const main = pick([
+      { icon:'⏱️', text:`${n(t)} 秒、走り続けてたね` },
+      { icon:'👣', text:`${n(d)} m、前に進んでた` },
+      { icon:'⏱️', text:`${n(t)} 秒間、足を止めなかった` },
+      { icon:'👣', text:`壁のところまで ${n(d)} m 走ってきたね` }
+    ]);
+
+    const extras = [];
+    if(run.stumbles > 0){
+      extras.push(pick([
+        { icon:'🪨', text:`${n(run.stumbles)} 回つまずいて、${n(run.stumbles)} 回とも走り続けてた` },
+        { icon:'🪨', text:`小石に ${n(run.stumbles)} 回つまずいても、そのまま前を向いてた` }
+      ]));
+    } else if(run.rocks > 0){
+      extras.push(pick([
+        { icon:'🪨', text:`小石を全部よけて走ってた` },
+        { icon:'🪨', text:`一度もつまずかずに走ってた` }
+      ]));
+    }
+    if(run.stars > 0){
+      extras.push(pick([
+        { icon:'⭐', text:`道ばたの☆に ${n(run.stars)} 回気づいてた` },
+        { icon:'⭐', text:`☆を ${n(run.stars)} 個拾ってた` }
+      ]));
+    }
+    if(run.jumps > 0){
+      extras.push(pick([
+        { icon:'🦘', text:`${n(run.jumps)} 回、跳んでみてたね` },
+        { icon:'🦘', text:`ジャンプを ${n(run.jumps)} 回ためしてた` }
+      ]));
+    } else {
+      extras.push({ icon:'🦘', text:`一度も跳ばずに、まっすぐ走ってたね` });
+    }
+    if(run.maxAir >= 0.8){
+      extras.push({ icon:'☁️', text:`いちばん長く浮いてたのは ${n(run.maxAir.toFixed(1))} 秒` });
+    }
+
+    // 毎回ちがう組み合わせになるよう、行動の行は2つだけランダムに選ぶ
+    return [main].concat(shuffle(extras).slice(0, 2));
+  }
+
+  function renderResult(run){
+    flatReport.textContent = `「${run.wall}」の壁にぶつかった（事実）`;
+
+    // 意図が伝わるよう、最初の1回だけ一言そえる。2回目以降は事実だけ
+    if(stats.runs === 1){
+      introLine.textContent = '壁は越えられない。でも、走った分は消えない。';
+      introLine.style.display = 'block';
+    } else {
+      introLine.textContent = '';
+      introLine.style.display = 'none';
+    }
+
+    factRows.innerHTML = '';
+    buildLines(run).forEach(line => factRows.appendChild(makeRow(line, false)));
+    run.events.slice(0, 2).forEach(ev => factRows.appendChild(makeRow(ev, true)));
+
+    totalLine.innerHTML = `これまで <b>${stats.runs}</b> 回走って、合計 <b>${Math.round(stats.dist)}</b> m`;
+
+    footprints.innerHTML = '';
+    const hist = stats.history;
+    const maxD = Math.max(1, ...hist);
+    hist.forEach((d, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'fp' + (i === hist.length - 1 ? ' now' : '');
+      bar.style.height = Math.max(3, d / maxD * 40) + 'px';
+      bar.title = d + 'm';
+      footprints.appendChild(bar);
+    });
+    footprintsLabel.textContent = `あしあと（最近 ${hist.length} 回）`;
+  }
+
+  function makeRow(line, isEvent){
+    const row = document.createElement('div');
+    row.className = 'factRow' + (isEvent ? ' event' : '');
+    const icon = document.createElement('div');
+    icon.className = 'icon';
+    icon.textContent = line.icon;
+    const txt = document.createElement('div');
+    txt.className = 'txt';
+    txt.innerHTML = line.text; // 数値以外はすべて固定文なので安全
+    row.appendChild(icon);
+    row.appendChild(txt);
+    return row;
+  }
+
   // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
-  function sendResultToPortal(elapsed){
+  function sendResultToPortal(run){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'fact-run',
-        summary: `${elapsed.toFixed(1)}秒間走った！（ジャンプ${jumpCount}回）`,
-        detail: { time: Number(elapsed.toFixed(1)), jumps: jumpCount }
+        summary: `${run.time.toFixed(1)}秒・${Math.round(run.dist)}m走った（累計${Math.round(stats.dist)}m／${stats.runs}回目）`,
+        detail: {
+          time: Number(run.time.toFixed(1)),
+          dist: Math.round(run.dist),
+          jumps: run.jumps,
+          stars: run.stars,
+          stumbles: run.stumbles,
+          wall: run.wall,
+          totalDist: Math.round(stats.dist),
+          runs: stats.runs
+        }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
@@ -624,11 +1119,19 @@
   }
 
   stage.addEventListener('pointerdown', onTap);
+  window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space' || e.code === 'ArrowUp'){
+      e.preventDefault();
+      if(resultScreen.classList.contains('show')) return;
+      doJump();
+    }
+  });
   retryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     initRun();
   });
 
+  createNightStars();
   initRun();
 })();
 </script>
