@@ -252,12 +252,97 @@
     display:flex; align-items:center; justify-content:center;
   }
   #sendBtn:active{ transform:translateY(3px); box-shadow:0 1px 0 #c96e8e; }
+  #sendBtn{ cursor:pointer; }
+
+  /* うなずきの深さ（話の長さで変わる） */
+  #robotIcon.nodSmall{ animation:nodSmall .5s ease; }
+  @keyframes nodSmall{
+    0%,100%{ transform:rotate(0deg) translateY(0); }
+    40%{ transform:rotate(-9deg) translateY(-3px); }
+    70%{ transform:rotate(4deg) translateY(1px); }
+  }
+  #robotIcon.nodDeep{ animation:nodDeep 1.6s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes nodDeep{
+    0%{ transform:rotate(0deg) translateY(0); }
+    15%{ transform:rotate(-28deg) translateY(-10px); }
+    35%{ transform:rotate(-28deg) translateY(-10px); }
+    50%{ transform:rotate(14deg) translateY(4px); }
+    65%{ transform:rotate(-10deg) translateY(-4px); }
+    80%{ transform:rotate(5deg) translateY(2px); }
+    100%{ transform:rotate(0deg) translateY(0); }
+  }
+
+  #doneBtn{
+    position:absolute; right:12px; top:12px;
+    border:1.5px solid #c9dfe9; background:#ffffffcc; color:#6a8797;
+    border-radius:14px; padding:5px 11px; font-size:11.5px; font-weight:700;
+    font-family:inherit; cursor:pointer;
+    display:none;
+  }
+  #doneBtn.show{ display:block; }
+  #nodTotal{
+    display:block; margin-top:2px;
+    font-size:10.5px; color:#9ab3c0; font-weight:700;
+  }
+
+  .typing .bubble{ color:#b8a87a; letter-spacing:3px; }
+
+  /* まとめカード */
+  #summaryScreen{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(90,90,110,.35);
+    backdrop-filter:blur(2px);
+    display:none; flex-direction:column; align-items:center;
+    padding:16px; overflow-y:auto;
+  }
+  #summaryScreen.show{ display:flex; }
+  #summaryCard{
+    margin:auto 0; width:100%; max-width:360px;
+    background:#fffdf9; border-radius:22px;
+    padding:20px 18px 18px;
+    box-shadow:0 20px 40px rgba(0,0,0,.15);
+    text-align:center;
+    animation:cardPop .45s cubic-bezier(.3,1.6,.4,1);
+  }
+  @keyframes cardPop{ 0%{ transform:scale(.8); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  #summaryCard h2{ font-size:16px; color:#5a6a7a; margin:0 0 8px; }
+  .flatReport{
+    display:inline-block;
+    font-size:12px; color:#8a8a8a; font-weight:700;
+    background:#f0f0f0; border-radius:12px; padding:6px 12px; margin-bottom:10px;
+  }
+  #introLine{ font-size:12.5px; color:#c97a95; font-weight:700; margin:0 0 10px; line-height:1.6; }
+  #heardList{
+    list-style:none; margin:0 0 10px; padding:10px 12px;
+    background:#f6fbfd; border:1px solid #e0eef5; border-radius:12px;
+    text-align:left; max-height:150px; overflow-y:auto;
+  }
+  #heardList li{ font-size:12.5px; color:#4a5a66; line-height:1.6; padding:3px 0; border-bottom:1px dashed #e0eef5; }
+  #heardList li:last-child{ border-bottom:none; }
+  #heardList li::before{ content:"・"; color:#9cccdf; }
+  .factRow{
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(135deg,#fff6e8,#eef7fb);
+    border-radius:12px; padding:8px 12px; margin-bottom:6px; text-align:left;
+  }
+  .factRow.event{ background:#f6eefb; }
+  .factRow .icon{ font-size:17px; }
+  .factRow .txt{ font-size:12.5px; font-weight:700; color:#5a5a6a; line-height:1.5; }
+  .factRow .txt b{ color:#e0708a; font-size:14px; }
+  #privacyNote{ font-size:10.5px; color:#a8a3b8; margin-top:8px; }
+  #againBtn{
+    margin-top:12px; padding:11px 30px; border:none; border-radius:24px;
+    background:linear-gradient(160deg, var(--send-btn), var(--send-btn-dark));
+    color:#fff; font-weight:800; font-size:14px; font-family:inherit;
+    box-shadow:0 4px 0 #c96e8e; cursor:pointer;
+  }
 </style>
 </head>
 <body>
 
 <div id="app">
   <header>
+    <button id="doneBtn">話し終わった</button>
     <h1>そうかそうか、うなずきロボ</h1>
     <div id="robotWrap">
       <div id="robotIcon" class="idle">
@@ -275,7 +360,8 @@
         </div>
       </div>
     </div>
-    <div id="statusLabel">今日はどんな一日だった？</div>
+    <div id="statusLabel"></div>
+    <span id="nodTotal"></span>
   </header>
 
   <div id="chatArea"></div>
@@ -286,6 +372,18 @@
   </div>
 </div>
 
+<div id="summaryScreen">
+  <div id="summaryCard">
+    <h2>きょう、きいたこと</h2>
+    <div class="flatReport" id="flatReport"></div>
+    <div id="introLine"></div>
+    <ul id="heardList"></ul>
+    <div id="factRows"></div>
+    <div id="privacyNote">話した内容は、この画面を閉じると消えます。どこにも保存・送信されません。</div>
+    <button id="againBtn">また話す</button>
+  </div>
+</div>
+
 <script>
 (function(){
   const robotIcon = document.getElementById('robotIcon');
@@ -293,77 +391,276 @@
   const chatArea = document.getElementById('chatArea');
   const chatInput = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
+  const doneBtn = document.getElementById('doneBtn');
+  const nodTotal = document.getElementById('nodTotal');
+  const summaryScreen = document.getElementById('summaryScreen');
+  const flatReport = document.getElementById('flatReport');
+  const introLine = document.getElementById('introLine');
+  const heardList = document.getElementById('heardList');
+  const factRows = document.getElementById('factRows');
 
-  // 絶対にアドバイス・評価を含まない、事実だけを受け止める返答
-  const replies = [
-    "なるほど",
-    "確かに",
-    "そういう事実があったんだね",
-    "受け止めました",
-    "（ただ黙って頷く）"
+  /* =========================================================
+     返答のパーツ（評価・アドバイスはしない。受け取って、ときどき問いかけるだけ）
+     ========================================================= */
+  const REACTIONS = ['なるほど','うんうん','そっか','そうなんだ','ふむふむ','確かに','うん','そっかそっか','なるほどね'];
+  const SILENT = ['（ただ黙って頷く）','（こくこく）','（ゆっくり頷く）','（じっと聞いている）'];
+
+  // 入力の一部を引用して返す。引用の形にすることで、どんな文でも文法が崩れない
+  const REFLECT = [
+    q => `「${q}」、か。`,
+    q => `「${q}」…そっか。`,
+    q => `「${q}」、受け取ったよ。`,
+    q => `「${q}」、ちゃんと聞いたよ。`,
+    q => `「${q}」…うんうん。`
   ];
 
-  const statusIdle = "今日はどんな一日だった？";
-  const statusAfter = [
-    "うんうん、聞いてるよ",
-    "ちゃんと受け取った",
-    "そっか、そっか",
-    "話してくれてありがとう"
+  // キーワードで、話の種類を受け止める一言を変える
+  const TOPICS = [
+    { re:/疲|つかれ|しんど|だる|眠|ねむ|寝不足|へとへと/, say:['からだを使った日だったんだね','疲れたって感じてるんだね','エネルギーを使った一日だったんだね'] },
+    { re:/失敗|ミス|やらか|間違|遅刻|忘れ|できなかった|だめだった|ダメだった|うまくいかな/, say:['うまくいかなかったことがあったんだね','そういう出来事があったんだね','起きたこととして、受け取ったよ'] },
+    { re:/むかつ|イライラ|いらいら|腹立|怒/, say:['モヤっとする出来事だったんだね','イライラしたんだね','引っかかることがあったんだね'] },
+    { re:/悲し|つら|辛|泣|さみし|寂し|落ち込|へこ/, say:['しんどい気持ちになったんだね','つらいって感じたんだね','気持ちが沈んだんだね'] },
+    { re:/嬉し|うれし|楽し|たのし|よかった|良かった|美味し|おいし|好き|笑/, say:['そういう時間があったんだね','嬉しかったんだね','その話、聞けてよかった'] },
+    { re:/バイト|仕事|シフト|店長|職場|お客/, say:['働いている時間のことなんだね','バイトでのことなんだね'] },
+    { re:/課題|授業|レポート|ゼミ|テスト|発表|卒論|研究|講義|先生/, say:['学校のことなんだね','課題や授業のことなんだね'] },
+    { re:/友達|友だち|先輩|後輩|家族|親|母|父|兄|姉|弟|妹|彼氏|彼女|恋人/, say:['人とのことなんだね','誰かとのことなんだね'] },
+    { re:/ご飯|ごはん|食べ|飲ん|ラーメン|カフェ|お菓子/, say:['食べもののことなんだね','ごはんの時間のことなんだね'] }
   ];
+
+  const GENERIC = ['そういうことがあったんだね','そんな日だったんだね','話してくれてありがとう','そういうこと、あるよね'];
+  const SHORT_PROMPTS = ['もう少し聞かせて。','うん、続けて大丈夫だよ。'];
+  const QUESTIONS = ['それで、どうなったの？','そのとき、どんな感じだった？','ほかには、何かあった？','そのあと、どうしてた？','もう少し聞かせて。','うん、続けて大丈夫だよ。','それは、いつのこと？'];
+
+  const STATUS_AFTER = ['うんうん、聞いてるよ','ちゃんと受け取った','そっか、そっか','話してくれてありがとう','ここにいるよ','ゆっくりでいいよ'];
+
+  function greeting(){
+    const h = new Date().getHours();
+    if(h >= 5 && h < 11) return pick(['おはよう。きょうは何か考えてることある？','おはよう。なんでも話していいよ。ここでは何も評価しないから。']);
+    if(h >= 11 && h < 17) return pick(['こんにちは。きょうはどんな感じ？','いまどんなことがあった？ここでは何も評価しないから。']);
+    return pick(['おつかれさま。きょうはどんな一日だった？','なんでも話していいよ。ここでは何も評価しないから。','きょうあったこと、よかったら聞かせて。']);
+  }
+
+  /* =========================================================
+     累計（うなずいた回数だけ。話した内容は保存しない）
+     ========================================================= */
+  const SAVE_KEY = 'unazukiRobo_v1';
+  function loadSave(){
+    try{ return Object.assign({ nods:0, talks:0 }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { nods:0, talks:0 }; }
+  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+  let save = loadSave();
+  const MILESTONES = [10, 50, 100, 200, 500, 1000];
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-  function addMessage(text, who){
+  /* =========================================================
+     会話の状態
+     ========================================================= */
+  let heard = [];
+  let nodsThisTime = 0;
+  let turn = 0;
+  let lastQuestionTurn = -10;
+  let recentBot = [];
+  let busy = false;
+
+  function updateNodTotal(){
+    nodTotal.textContent = save.nods > 0 ? `これまで ${save.nods} 回うなずいた` : '';
+  }
+
+  function addMessage(text, who, extraClass){
     const row = document.createElement('div');
-    row.className = 'msgRow ' + who;
+    row.className = 'msgRow ' + who + (extraClass ? ' ' + extraClass : '');
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.textContent = text;
     row.appendChild(bubble);
     chatArea.appendChild(row);
     chatArea.scrollTop = chatArea.scrollHeight;
+    return row;
   }
 
-  function nodRobot(){
-    robotIcon.classList.remove('idle');
-    robotIcon.classList.remove('nodding');
-    void robotIcon.offsetWidth; // 強制リフロー：アニメーションを再スタートさせる
-    robotIcon.classList.add('nodding');
+  function nodRobot(len){
+    const cls = len < 10 ? 'nodSmall' : len < 40 ? 'nodding' : 'nodDeep';
+    robotIcon.classList.remove('idle','nodding','nodSmall','nodDeep');
+    void robotIcon.offsetWidth; // アニメーションを再スタートさせる
+    robotIcon.classList.add(cls);
+    nodsThisTime++;
+    save.nods++;
+    writeSave();
+    updateNodTotal();
   }
-
-  function onNodEnd(e){
-    if(e.animationName === 'akabekoNod'){
-      robotIcon.classList.remove('nodding');
+  robotIcon.addEventListener('animationend', (e) => {
+    if(['akabekoNod','nodSmall','nodDeep'].includes(e.animationName)){
+      robotIcon.classList.remove('nodding','nodSmall','nodDeep');
       robotIcon.classList.add('idle');
     }
+  });
+
+  // 引用する部分を取り出す（長いときは最後のまとまりだけ）
+  function quoteOf(text){
+    let t = text.replace(/[。．.！!？?…〜ー～wｗ笑]+$/,'').trim();
+    if(!t) return null;
+    if(Array.from(t).length <= 18) return t;
+    const segs = t.split(/[、。，,！!？?\n]/).map(s => s.trim()).filter(Boolean);
+    let last = segs[segs.length - 1] || t;
+    const chars = Array.from(last);
+    if(chars.length > 18) last = '…' + chars.slice(-16).join('');
+    return last;
   }
-  robotIcon.addEventListener('animationend', onNodEnd);
+
+  function notRecent(list){
+    const fresh = list.filter(x => !recentBot.includes(typeof x === 'function' ? x('') : x));
+    return fresh.length ? fresh : list;
+  }
+
+  function composeReply(text){
+    const len = Array.from(text).length;
+    turn++;
+    // たまに、黙って頷くだけ
+    if(len >= 4 && Math.random() < 0.1) return pick(notRecent(SILENT));
+
+    const parts = [];
+    const topic = TOPICS.find(t => t.re.test(text));
+    const q = quoteOf(text);
+
+    if(len < 6){
+      parts.push(pick(notRecent(REACTIONS)) + '。');
+      if(topic && Math.random() < 0.6) parts.push(pick(notRecent(topic.say)) + '。');
+    } else {
+      const useReflect = q && Math.random() < 0.55;
+      if(useReflect) parts.push(pick(REFLECT)(q));
+      else parts.push(pick(notRecent(REACTIONS)) + '。');
+      if(topic && Math.random() < 0.65) parts.push(pick(notRecent(topic.say)) + '。');
+      else if(!useReflect && Math.random() < 0.6) parts.push(pick(notRecent(GENERIC)) + '。');
+    }
+    // 問いかけは3ターンに1回くらい（続けてはしない）
+    if(turn - lastQuestionTurn >= 3 && Math.random() < 0.5){
+      // 短いひとこと（「眠い」など）には、出来事を前提にした問いかけはしない
+      parts.push(pick(notRecent(len < 8 ? SHORT_PROMPTS : QUESTIONS)));
+      lastQuestionTurn = turn;
+    }
+    return parts.slice(0, 3).join('').replace(/。。/g,'。');
+  }
 
   function sendMessage(){
     const text = chatInput.value.trim();
-    if(!text) return;
+    if(!text || busy) return;
     chatInput.value = '';
+    busy = true;
 
     addMessage(text, 'user');
-    nodRobot();
-    statusLabel.textContent = pick(statusAfter);
+    heard.push(text);
+    doneBtn.classList.add('show');
+    nodRobot(Array.from(text).length);
+    statusLabel.textContent = Array.from(text).length >= 40 ? '（ふかく頷いた）' : pick(STATUS_AFTER);
 
-    // 少し間を置いてから、評価もアドバイスもしない一言だけ返す
+    // 少し考えるような間をおいてから返す
+    const typing = addMessage('・・・', 'bot', 'typing');
+    const wait = 500 + Math.min(1200, Array.from(text).length * 20);
     setTimeout(() => {
-      addMessage(pick(replies), 'bot');
-      setTimeout(() => { statusLabel.textContent = statusIdle; }, 1800);
-    }, 480);
+      typing.remove();
+      const reply = composeReply(text);
+      recentBot.push(reply);
+      if(recentBot.length > 4) recentBot.shift();
+      addMessage(reply, 'bot');
+      busy = false;
+      setTimeout(() => { if(!busy) statusLabel.textContent = ''; }, 2200);
+    }, wait);
+  }
+
+  /* =========================================================
+     まとめ（話した内容を、評価せずに並べる）
+     ========================================================= */
+  function openSummary(){
+    if(heard.length === 0) return;
+    const beforeNods = save.nods - nodsThisTime;
+    save.talks++;
+    writeSave();
+
+    flatReport.textContent = `${heard.length}個の話を受け取った（事実）`;
+    if(save.talks === 1){
+      introLine.textContent = '話したことは、いいも悪いもなく、ただ起きたこと。';
+      introLine.style.display = 'block';
+    } else {
+      introLine.style.display = 'none';
+    }
+
+    heardList.innerHTML = '';
+    heard.forEach(h => {
+      const li = document.createElement('li');
+      const chars = Array.from(h);
+      li.textContent = chars.length > 40 ? chars.slice(0, 40).join('') + '…' : h;
+      heardList.appendChild(li);
+    });
+
+    const n = v => `<b>${v}</b>`;
+    const chars = heard.reduce((s,h) => s + Array.from(h).length, 0);
+    factRows.innerHTML = '';
+    const rows = [
+      { icon:'💬', text:`${n(heard.length)} 回、言葉にしてた` },
+      { icon:'🤖', text:`ロボは ${n(nodsThisTime)} 回うなずいた` },
+      { icon:'✍️', text:`ぜんぶで ${n(chars)} 文字、話してた` }
+    ];
+    rows.forEach(r => factRows.appendChild(makeRow(r, false)));
+    const reached = MILESTONES.filter(m => beforeNods < m && save.nods >= m);
+    if(reached.length){
+      factRows.appendChild(makeRow({ icon:'🎉', text:`うなずき、通算 ${n(reached[reached.length-1])} 回目に届いた` }, true));
+    }
+
+    summaryScreen.classList.add('show');
+    sendResultToPortal(chars);
+  }
+
+  function makeRow(line, isEvent){
+    const row = document.createElement('div');
+    row.className = 'factRow' + (isEvent ? ' event' : '');
+    const icon = document.createElement('div');
+    icon.className = 'icon';
+    icon.textContent = line.icon;
+    const txt = document.createElement('div');
+    txt.className = 'txt';
+    txt.innerHTML = line.text; // 数値と固定文だけ（話した内容はここに入れない）
+    row.appendChild(icon);
+    row.appendChild(txt);
+    return row;
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（話した内容は送らない）
+  function sendResultToPortal(chars){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'nod-bot',
+        summary: `${heard.length}回話して、${nodsThisTime}回うなずいてもらった`,
+        detail: { messages: heard.length, nods: nodsThisTime, chars, totalNods: save.nods }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function startTalk(){
+    summaryScreen.classList.remove('show');
+    chatArea.innerHTML = '';
+    heard = [];
+    nodsThisTime = 0;
+    turn = 0;
+    lastQuestionTurn = -10;
+    recentBot = [];
+    busy = false;
+    doneBtn.classList.remove('show');
+    statusLabel.textContent = '';
+    updateNodTotal();
+    setTimeout(() => { addMessage(greeting(), 'bot'); }, 400);
   }
 
   sendBtn.addEventListener('click', sendMessage);
   chatInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') sendMessage();
+    if(e.key === 'Enter' && !e.isComposing) sendMessage();
   });
+  doneBtn.addEventListener('click', openSummary);
+  document.getElementById('againBtn').addEventListener('click', startTalk);
 
-  // 最初のひとこと
-  setTimeout(() => {
-    addMessage('なんでも話していいよ。ここでは何も評価しないから。', 'bot');
-  }, 400);
+  startTalk();
 })();
 </script>
 </body>
