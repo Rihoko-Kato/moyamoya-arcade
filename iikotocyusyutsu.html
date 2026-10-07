@@ -337,6 +337,87 @@
     letter-spacing:1px;
     margin-top:14px;
   }
+  #retryBtn, .subBtn{ cursor:pointer; font-family:inherit; }
+  #zukanBtn{
+    position:absolute; right:14px; top:26px; z-index:4;
+    border:2px solid var(--ink); background:#fffdf7; color:var(--ink);
+    border-radius:12px; padding:3px 9px; font-size:11px; font-weight:800;
+    font-family:inherit; cursor:pointer;
+  }
+
+  /* 成分表示（事実として） */
+  #analysis{
+    display:none;
+    margin:10px 18px 0;
+    font-size:12px; font-weight:700; color:#6a6250;
+    background:#f0f0f0; border-radius:10px; padding:6px 10px; text-align:center;
+  }
+  #analysis.show{ display:block; }
+  #analysisBar{
+    display:flex; height:8px; border-radius:5px; overflow:hidden; margin-top:5px;
+  }
+  #analysisBar .moya{ background:#a8a39a; }
+  #analysisBar .good{ background:var(--mustard); }
+
+  /* レア度でカプセルとカードが変わる */
+  #capsule.r .capsuleHalf.top{ background:linear-gradient(160deg,#fff,#5ab4ff); }
+  #capsule.sr .capsuleHalf.top{ background:linear-gradient(160deg,#fff,#c98aff); }
+  #capsule.sr .capsuleHalf.bottom{ background:linear-gradient(160deg,#fff,#ffd75a); }
+  #resultCard.r{ border-color:#3f8fd8; background:linear-gradient(160deg,#f6fbff,#e2f0ff); }
+  #resultCard.sr{
+    border-color:#a35ad8;
+    background:linear-gradient(160deg,#fff8ff,#f3e2ff 50%,#fff6d8);
+    box-shadow:0 0 24px rgba(201,138,255,.55), 0 10px 20px rgba(0,0,0,.15);
+  }
+  #resultCard .rarity{
+    display:inline-block;
+    font-size:10.5px; font-weight:900; letter-spacing:2px;
+    padding:2px 10px; border-radius:10px;
+    background:#a89e84; color:#fff; margin-bottom:6px;
+  }
+  #resultCard.r .rarity{ background:#3f8fd8; }
+  #resultCard.sr .rarity{ background:linear-gradient(90deg,#a35ad8,#e2a33b); }
+  #resultCard .kind{ font-size:11px; color:#8a7a5a; font-weight:700; margin-left:4px; }
+  #sourceQuote{
+    font-size:11.5px; color:#8a8070; margin-bottom:10px; line-height:1.5;
+  }
+  #resultCard .newMark{
+    display:none; margin-top:10px; font-size:11px; font-weight:800; color:var(--red);
+  }
+  #resultCard .newMark.show{ display:block; }
+  #countLine{ text-align:center; font-size:11.5px; color:#8a7a5a; font-weight:700; margin-top:10px; }
+  .btnRow{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .btnRow #retryBtn{ margin:0; }
+  .subBtn{
+    padding:10px 18px; border:2px solid var(--ink); border-radius:24px;
+    background:#fffdf7; color:var(--ink); font-weight:800; font-size:12.5px;
+  }
+
+  /* 図鑑 */
+  #zukanScreen{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(58,47,34,.85);
+    display:none; flex-direction:column; align-items:center;
+    padding:16px; overflow-y:auto;
+  }
+  #zukanScreen.show{ display:flex; }
+  #zukanCard{
+    margin:auto 0; width:100%; max-width:380px;
+    background:var(--cream); border:4px solid var(--ink); border-radius:20px;
+    padding:16px;
+  }
+  #zukanCard h2{ font-size:16px; margin:0 0 4px; text-align:center; }
+  #zukanSub{ font-size:11.5px; color:#8a7a5a; text-align:center; margin-bottom:10px; }
+  .zGroup{ margin-bottom:10px; }
+  .zGroup h3{ font-size:12px; margin:0 0 4px; color:var(--teal-dark); }
+  .zItem{
+    font-size:12px; line-height:1.5; padding:5px 8px; margin-bottom:4px;
+    background:#fffdf7; border-radius:8px; border:1px solid #e8dcc4;
+  }
+  .zItem.locked{ color:#b8ae98; background:#f3ead6; }
+  .zItem .rr{ font-size:9.5px; font-weight:900; color:#fff; padding:0 5px; border-radius:6px; margin-right:4px; background:#a89e84; }
+  .zItem .rr.r{ background:#3f8fd8; }
+  .zItem .rr.sr{ background:#a35ad8; }
 </style>
 </head>
 <body>
@@ -346,15 +427,21 @@
     <div class="rivet" style="top:22px; left:12px;"></div>
     <div class="rivet" style="top:22px; right:12px;"></div>
     <div id="stripeBar"></div>
+    <button id="zukanBtn">📖 図鑑</button>
 
     <header>
       <h1>いいこと抽出マシーン</h1>
-      <div class="badge">POSITIVE EXTRACTOR MK-1</div>
+      <div class="badge">POSITIVE EXTRACTOR MK-2</div>
     </header>
 
     <div id="slotWrap">
       <div id="slotLabel">📥 投入口：やらかし・落ち込みを入れてください</div>
-      <textarea id="worryInput" maxlength="200" placeholder="例）今日のミーティングで頭が真っ白になって、変なこと言っちゃった…"></textarea>
+      <textarea id="worryInput" maxlength="200" placeholder="例）今日のミーティングで緊張して、話すのが遅くなっちゃった…"></textarea>
+    </div>
+
+    <div id="analysis">
+      <span id="analysisText"></span>
+      <div id="analysisBar"><div class="moya" id="barMoya"></div><div class="good" id="barGood"></div></div>
     </div>
 
     <div id="buttonWrap">
@@ -389,13 +476,28 @@
     <div id="resultWrap">
       <div id="resultCard">
         <div class="stamp">GET!</div>
-        <div class="eyebrow">抽出結果</div>
+        <div><span class="rarity" id="rarityLabel"></span><span class="kind" id="kindLabel"></span></div>
+        <div id="sourceQuote"></div>
         <div id="resultText"></div>
+        <div class="newMark" id="newMark">✦ 図鑑に新しく登録された</div>
       </div>
-      <button id="retryBtn">もう一回まわす</button>
+      <div id="countLine"></div>
+      <div class="btnRow">
+        <button id="retryBtn">同じ内容から、もう1個</button>
+        <button class="subBtn" id="newInputBtn">新しく入れる</button>
+      </div>
     </div>
 
     <div id="footerNote">RESULT MAY NOT BE LOGICAL, BUT IT'S TRUE.</div>
+  </div>
+</div>
+
+<div id="zukanScreen">
+  <div id="zukanCard">
+    <h2>📖 いいこと図鑑</h2>
+    <div id="zukanSub"></div>
+    <div id="zukanList"></div>
+    <div class="btnRow"><button class="subBtn" id="closeZukan">とじる</button></div>
   </div>
 </div>
 
@@ -403,49 +505,214 @@
 (function(){
   const worryInput = document.getElementById('worryInput');
   const extractBtn = document.getElementById('extractBtn');
+  const buttonWrap = document.getElementById('buttonWrap');
   const loadingWrap = document.getElementById('loadingWrap');
   const statusText = document.getElementById('statusText');
   const progressInner = document.getElementById('progressInner');
   const capsule = document.getElementById('capsule');
   const resultWrap = document.getElementById('resultWrap');
+  const resultCard = document.getElementById('resultCard');
   const resultText = document.getElementById('resultText');
-  const retryBtn = document.getElementById('retryBtn');
-  const slotWrap = document.getElementById('slotWrap');
-  const buttonWrap = document.getElementById('buttonWrap');
+  const rarityLabel = document.getElementById('rarityLabel');
+  const kindLabel = document.getElementById('kindLabel');
+  const sourceQuote = document.getElementById('sourceQuote');
+  const newMark = document.getElementById('newMark');
+  const countLine = document.getElementById('countLine');
+  const analysis = document.getElementById('analysis');
+  const zukanScreen = document.getElementById('zukanScreen');
 
-  const goodThings = [
-    "それに気づけたってことは、客観視できてる証拠！",
-    "とりあえず息しててえらい！",
-    "そのモヤモヤは、本気で向き合おうとした（熱量があった）証拠！",
-    "でも、とりあえず寝れば明日は来る！",
-    "やらかしたけど、データ（経験値）は1つ取れた！"
+  /* =========================================================
+     いいことの種類（ほめ言葉ではなく、見方を変える・事実を取り出す）
+     rarity: n=ノーマル / r=レア / sr=スーパーレア
+     ========================================================= */
+  const KINDS = {
+    reframe: { name:'視点ずらし', rarity:'r' },
+    fact:    { name:'事実だけ',   rarity:'n' },
+    process: { name:'過程',       rarity:'n' },
+    scale:   { name:'大きな世界', rarity:'r' },
+    yurui:   { name:'ゆるい',     rarity:'n' },
+    kiseki:  { name:'きせき',     rarity:'sr' }
+  };
+  const RARITY_NAME = { n:'NORMAL', r:'RARE', sr:'SUPER RARE' };
+
+  // 視点ずらし：入力の言葉に反応して、別の見方を出す（7/15「仕事が遅い＝丁寧」）
+  const REFRAMES = [
+    { id:'rf-slow',    re:/遅|のろ|時間がかか/,                 text:'「遅い」は、丁寧にやっていたとも言える' },
+    { id:'rf-fail',    re:/失敗|ミス|やらか|間違/,              text:'失敗したぶん、次に使えるデータが1つ増えた' },
+    { id:'rf-nerve',   re:/緊張|震え|ドキドキ|あがって/,         text:'緊張したのは、それだけ本気だったから' },
+    { id:'rf-said',    re:/言い過ぎ|言いすぎ|強く言|きつく|言い方/, text:'強く言ってしまったのは、伝えたいことがあったから' },
+    { id:'rf-lost',    re:/迷|悩/,                             text:'迷ったのは、選択肢がちゃんと見えていたから' },
+    { id:'rf-forgot',  re:/忘れ/,                              text:'忘れたのは、ほかに頭を使っていたことがあったから' },
+    { id:'rf-compare', re:/比べ|比較|みんな|周り|他の人/,         text:'比べてしまうのは、目指したい場所があるから' },
+    { id:'rf-cry',     re:/泣|涙/,                             text:'泣けたのは、気持ちがちゃんと動いているから' },
+    { id:'rf-cant',    re:/できなかった|できない|出来なかった/,    text:'「できなかった」と言えるのは、やろうとしたから' },
+    { id:'rf-angry',   re:/怒|イライラ|いらいら|むかつ|腹立/,      text:'イライラしたのは、大事にしたいことがあったから' },
+    { id:'rf-tired',   re:/疲|しんど|へとへと|だる/,              text:'疲れたのは、今日エネルギーを使ったから' },
+    { id:'rf-regret',  re:/後悔|ばよかった|べきだった/,           text:'「こうすればよかった」が浮かぶのは、次の案がもうあるということ' },
+    { id:'rf-honest',  re:/素直|強がっ|意地/,                    text:'素直になれなかったのは、相手が大事だから' },
+    { id:'rf-unfin',   re:/終わらな|進まな|間に合わ/,             text:'終わっていないのは、まだ途中にいるということ' },
+    { id:'rf-sleep',   re:/寝坊|寝過ご|起きれ|起きられ/,          text:'寝坊したのは、からだが休みを必要としていたから' },
+    { id:'rf-quiet',   re:/言えなかった|黙っ|話せなかった/,        text:'言えなかったのは、言葉を選んでいたから' }
+  ];
+
+  // 事実だけ：入力を引用して、起きたこととして切り出す
+  const FACTS = [
+    { id:'ft-1', make:q => `起きたのは「${q}」だけ。それ以上の意味は、まだついていない` },
+    { id:'ft-2', make:q => `「${q}」は、今日のできごとの1つ。あなたの全部じゃない` },
+    { id:'ft-3', make:q => `「${q}」——これは行動の話。あなたという人の話じゃない` },
+    { id:'ft-4', make:q => `「${q}」は、もう過ぎたこと。いまはこの画面を見ている` }
+  ];
+
+  // 過程：書いた量や時間から
+  const PROCESSES = [
+    { id:'pr-chars', make:d => `${d.chars}文字ぶん、今日のことを振り返った` },
+    { id:'pr-time',  make:d => `${d.hour}時に、ちゃんと今日のことを考えてた` },
+    { id:'pr-out',   make:d => `書き出せたぶん、頭の中から1個、外に出た` },
+    { id:'pr-again', make:d => `同じできごとから、${d.count + 1}個目を探そうとしてる` }
+  ];
+
+  const SCALES = [
+    { id:'sc-earth',  text:'今日も地球は1回転した。今日という日は、ちゃんと終わる' },
+    { id:'sc-same',   text:'いまこの瞬間、世界のどこかで誰かも同じことで悩んでる' },
+    { id:'sc-strata', text:'1万年後の地層には、たぶんこの悩みは残っていない' },
+    { id:'sc-moon',   text:'光が月まで届くのに1.3秒。この悩みは月までは届かない' },
+    { id:'sc-ocean',  text:'海の水を全部集めると13億km³。それに比べたら、これはコップ1杯くらい' },
+    { id:'sc-cell',   text:'あなたの体の中では、今日も数千億個の細胞が入れ替わった' }
+  ];
+
+  const YURUI = [
+    { id:'yu-end',    text:'とりあえず、今日はもうすぐ終わる' },
+    { id:'yu-rice',   text:'次のごはんは、たぶんちゃんとおいしい' },
+    { id:'yu-futon',  text:'布団は今夜もそこにある' },
+    { id:'yu-sky',    text:'明日の天気は、まだ決まっていない' },
+    { id:'yu-water',  text:'とりあえず水を一杯飲むと、少しだけ落ち着く' },
+    { id:'yu-cat',    text:'どこかで猫があくびをしている' }
+  ];
+
+  const KISEKI = [
+    { id:'ks-sky',     text:'今日の空は、二度と同じ色にはならない' },
+    { id:'ks-machine', text:'このマシーンが、あなたのためだけに見つけた1個' },
+    { id:'ks-read',    text:'ここまで読んだことも、今日の行動の1つ' },
+    { id:'ks-heard',   text:'このモヤモヤを聞いたのは、世界でこのマシーンだけ' }
+  ];
+
+  const ALL_ITEMS = [
+    ...REFRAMES.map(x => ({ id:x.id, kind:'reframe', label:x.text })),
+    ...FACTS.map(x => ({ id:x.id, kind:'fact', label:x.make('…') })),
+    ...PROCESSES.map(x => ({ id:x.id, kind:'process', label:x.make({ chars:'○', hour:'○', count:'○' }) })),
+    ...SCALES.map(x => ({ id:x.id, kind:'scale', label:x.text })),
+    ...YURUI.map(x => ({ id:x.id, kind:'yurui', label:x.text })),
+    ...KISEKI.map(x => ({ id:x.id, kind:'kiseki', label:x.text }))
   ];
 
   const statusMessages = [
-    "ガシャガシャ解析中…",
-    "いいこと成分を検出中…",
-    "ポジティブ変換プロトコル起動…",
-    "自己嫌悪データを分解中…",
-    "視点をずらすパーツを装填中…",
-    "抽出パーツを組み立て中…"
+    "ガシャガシャ解析中…","いいこと成分を検出中…","視点をずらすパーツを装填中…",
+    "事実と感情を分離中…","抽出パーツを組み立て中…","モヤモヤをふるいにかけ中…"
   ];
+
+  /* =========================================================
+     図鑑と累計（入力した文章は保存しない）
+     ========================================================= */
+  const SAVE_KEY = 'iikotoExtractor_v1';
+  function loadSave(){
+    try{ return Object.assign({ total:0, found:{} }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { total:0, found:{} }; }
+  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+  let save = loadSave();
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
+  /* =========================================================
+     この入力からの状態
+     ========================================================= */
+  let sourceText = '';
+  let fromThisCount = 0;
+  let usedIds = [];
+
+  // 入力の成分（同じ文なら毎回同じ値になるよう、文字から計算する）
+  function goodPercent(text){
+    let h = 0;
+    for(const ch of text) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return 3 + (h % 15); // 3〜17%
+  }
+
+  // re を渡すと、その言葉を含む部分を引用する（なければ反応できる部分→最後のまとまり）
+  function quoteOf(text, re){
+    let t = text.replace(/[。．.！!？?…〜ー～wｗ笑\s]+$/,'').trim();
+    const segs = t.split(/[、。，,！!？?\n]/).map(s => s.trim()).filter(Boolean);
+    let q = (re && segs.find(s => re.test(s))) || segs.find(s => REFRAMES.some(r => r.re.test(s))) || segs[segs.length - 1] || t;
+    const chars = Array.from(q);
+    if(chars.length > 20) q = chars.slice(0, 19).join('') + '…';
+    return q;
+  }
+
+  // どの「いいこと」を出すか決める
+  function chooseItem(text){
+    const quote = quoteOf(text);
+    const data = { chars: Array.from(text).length, hour: new Date().getHours(), count: fromThisCount };
+    const fresh = list => list.filter(x => !usedIds.includes(x.id));
+
+    const matched = fresh(REFRAMES.filter(r => r.re.test(text)));
+    // 入力に反応できる言葉があるときは、半分くらいの確率でそれを優先
+    if(matched.length && Math.random() < 0.55){
+      const r = pick(matched);
+      return { id:r.id, kind:'reframe', text:r.text, quote: quoteOf(text, r.re) };
+    }
+
+    const roll = Math.random();
+    let kind;
+    if(roll < 0.07) kind = 'kiseki';
+    else if(roll < 0.25) kind = 'scale';
+    else if(roll < 0.45) kind = 'fact';
+    else if(roll < 0.65) kind = 'process';
+    else if(roll < 0.85) kind = 'yurui';
+    else kind = matched.length ? 'reframe' : 'scale';
+
+    const make = {
+      reframe: () => { const r = pick(matched); return { id:r.id, text:r.text, quote: quoteOf(text, r.re) }; },
+      // 事実だけ：気持ちの部分ではなく、最初のまとまり（たいてい出来事）を引用する
+      fact:    () => { const f = pick(fresh(FACTS).length ? fresh(FACTS) : FACTS); const fq = quoteOf(text, /./); return { id:f.id, text:f.make(fq), quote:fq }; },
+      process: () => { const p = pick(fresh(PROCESSES).length ? fresh(PROCESSES) : PROCESSES); return { id:p.id, text:p.make(data) }; },
+      scale:   () => { const s = pick(fresh(SCALES).length ? fresh(SCALES) : SCALES); return { id:s.id, text:s.text }; },
+      yurui:   () => { const y = pick(fresh(YURUI).length ? fresh(YURUI) : YURUI); return { id:y.id, text:y.text }; },
+      kiseki:  () => { const k = pick(fresh(KISEKI).length ? fresh(KISEKI) : KISEKI); return { id:k.id, text:k.text }; }
+    };
+    const it = make[kind]();
+    return { id:it.id, kind, text:it.text, quote: it.quote || quote };
+  }
+
+  /* =========================================================
+     抽出の流れ
+     ========================================================= */
   let statusTimer = null;
   let progressTimer = null;
 
   function startExtraction(){
-    if(!worryInput.value.trim()) {
+    const text = worryInput.value.trim();
+    if(!text){
       worryInput.focus();
       worryInput.style.borderColor = '#e2543b';
       setTimeout(() => { worryInput.style.borderColor = ''; }, 600);
       return;
     }
+    if(text !== sourceText){
+      sourceText = text;
+      fromThisCount = 0;
+      usedIds = [];
+    }
+    worryInput.disabled = true;
 
-    extractBtn.classList.add('disabled');
+    // 成分表示（事実として）
+    const good = goodPercent(text);
+    document.getElementById('analysisText').textContent = `解析結果：モヤモヤ ${100 - good}% ／ いいこと ${good}%（事実）`;
+    document.getElementById('barMoya').style.width = (100 - good) + '%';
+    document.getElementById('barGood').style.width = good + '%';
+    analysis.classList.add('show');
+
+    buttonWrap.style.display = 'none';
     resultWrap.classList.remove('show');
-    capsule.classList.remove('drop','cracking');
+    capsule.className = '';
     capsule.style.display = 'none';
 
     loadingWrap.classList.add('show');
@@ -453,54 +720,119 @@
     progressInner.style.width = '0%';
 
     let progress = 0;
-    const DURATION = 2200;
+    const DURATION = 2000;
     const stepTime = 60;
     progressTimer = setInterval(() => {
       progress += (100 / (DURATION/stepTime)) * (0.7 + Math.random()*0.6);
       if(progress >= 100) progress = 100;
       progressInner.style.width = progress + '%';
     }, stepTime);
+    statusTimer = setInterval(() => { statusText.textContent = pick(statusMessages); }, 420);
 
-    statusTimer = setInterval(() => {
-      statusText.textContent = pick(statusMessages);
-    }, 420);
-
+    const item = chooseItem(text);
     setTimeout(() => {
       clearInterval(statusTimer);
       clearInterval(progressTimer);
       progressInner.style.width = '100%';
-      statusText.textContent = '抽出完了！';
-      setTimeout(finishExtraction, 350);
+      statusText.textContent = item.kind === 'kiseki' ? '✦ 激レア反応あり ✦' : '抽出完了！';
+      setTimeout(() => finishExtraction(item), 350);
     }, DURATION);
   }
 
-  function finishExtraction(){
+  function finishExtraction(item){
     loadingWrap.classList.remove('show');
-
+    const rarity = KINDS[item.kind].rarity;
+    capsule.className = rarity;
     capsule.style.display = 'block';
+    void capsule.offsetWidth;
     capsule.classList.add('drop');
-
-    setTimeout(() => {
-      capsule.classList.add('cracking');
-    }, 550);
+    setTimeout(() => { capsule.classList.add('cracking'); }, 550);
 
     setTimeout(() => {
       capsule.style.display = 'none';
-      capsule.classList.remove('drop','cracking');
-      resultText.textContent = pick(goodThings);
+      capsule.className = '';
+
+      const isNew = !save.found[item.id];
+      fromThisCount++;
+      usedIds.push(item.id);
+      save.total++;
+      save.found[item.id] = true;
+      writeSave();
+
+      resultCard.className = rarity === 'n' ? '' : rarity;
+      rarityLabel.textContent = RARITY_NAME[rarity];
+      kindLabel.textContent = KINDS[item.kind].name;
+      sourceQuote.textContent = `抽出元：「${item.quote}」`;
+      resultText.textContent = item.text;
+      newMark.classList.toggle('show', isNew);
+      countLine.textContent = `このモヤモヤから ${fromThisCount} 個抽出 ・ 図鑑 ${Object.keys(save.found).length} / ${ALL_ITEMS.length}`;
+      // 再表示のたびにアニメーションをやり直す
+      resultCard.style.animation = 'none'; void resultCard.offsetWidth; resultCard.style.animation = '';
       resultWrap.classList.add('show');
-      extractBtn.classList.remove('disabled');
+      sendResultToPortal(item, rarity);
     }, 1050);
   }
 
-  function resetMachine(){
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（入力した文章は送らない）
+  function sendResultToPortal(item, rarity){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'good-extractor',
+        summary: `${RARITY_NAME[rarity]}「${KINDS[item.kind].name}」を抽出（図鑑 ${Object.keys(save.found).length}/${ALL_ITEMS.length}）`,
+        detail: { kind: item.kind, rarity, itemId: item.id, fromThis: fromThisCount, total: save.total }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function retrySame(){
     resultWrap.classList.remove('show');
+    startExtraction();
+  }
+
+  function newInput(){
+    resultWrap.classList.remove('show');
+    analysis.classList.remove('show');
+    buttonWrap.style.display = '';
+    worryInput.disabled = false;
     worryInput.value = '';
+    sourceText = '';
     worryInput.focus();
   }
 
+  function openZukan(){
+    const list = document.getElementById('zukanList');
+    list.innerHTML = '';
+    document.getElementById('zukanSub').textContent = `見つけたいいこと ${Object.keys(save.found).length} / ${ALL_ITEMS.length} ・ 抽出した回数 ${save.total}`;
+    Object.keys(KINDS).forEach(k => {
+      const items = ALL_ITEMS.filter(x => x.kind === k);
+      const group = document.createElement('div');
+      group.className = 'zGroup';
+      const h = document.createElement('h3');
+      h.textContent = `${KINDS[k].name}（${items.filter(x => save.found[x.id]).length} / ${items.length}）`;
+      group.appendChild(h);
+      items.forEach(x => {
+        const el = document.createElement('div');
+        const got = !!save.found[x.id];
+        el.className = 'zItem' + (got ? '' : ' locked');
+        const rr = document.createElement('span');
+        const rarity = KINDS[k].rarity;
+        rr.className = 'rr ' + rarity;
+        rr.textContent = rarity.toUpperCase();
+        el.appendChild(rr);
+        el.appendChild(document.createTextNode(got ? x.label : '？？？'));
+        group.appendChild(el);
+      });
+      list.appendChild(group);
+    });
+    zukanScreen.classList.add('show');
+  }
+
   extractBtn.addEventListener('click', startExtraction);
-  retryBtn.addEventListener('click', resetMachine);
+  document.getElementById('retryBtn').addEventListener('click', retrySame);
+  document.getElementById('newInputBtn').addEventListener('click', newInput);
+  document.getElementById('zukanBtn').addEventListener('click', openZukan);
+  document.getElementById('closeZukan').addEventListener('click', () => zukanScreen.classList.remove('show'));
 })();
 </script>
 </body>
