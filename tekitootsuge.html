@@ -250,6 +250,91 @@
   }
   #sendBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #5a3fb0; }
   #sendBtn:disabled{ opacity:.5; }
+  #sendBtn{ cursor:pointer; font-family:inherit; }
+  #bookBtn{
+    position:absolute; right:14px; top:14px; z-index:6;
+    border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.08); color:var(--text-sub);
+    border-radius:12px; padding:4px 10px; font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  #countLabel{ font-size:11px; color:var(--text-sub); margin-top:4px; opacity:.8; }
+
+  /* ===== おみくじ ===== */
+  .overlay{
+    position:fixed; inset:0; z-index:40;
+    background:rgba(11,10,31,.7);
+    backdrop-filter:blur(3px);
+    display:none; flex-direction:column; align-items:center;
+    padding:16px; overflow-y:auto;
+  }
+  .overlay.show{ display:flex; }
+  .overlayInner{ margin:auto 0; width:100%; max-width:360px; }
+
+  #slip{
+    background:linear-gradient(180deg,#fffdf6,#f6efe0);
+    color:#3a2f4a;
+    border-radius:6px;
+    padding:18px 18px 16px;
+    box-shadow:0 0 30px rgba(157,184,255,.35), 0 20px 40px rgba(0,0,0,.4);
+    border-top:6px solid #b23a2f;
+    animation:slipIn .6s cubic-bezier(.3,1.5,.4,1);
+    text-align:center;
+  }
+  @keyframes slipIn{
+    0%{ transform:translateY(-40px) scaleY(.2); opacity:0; }
+    100%{ transform:translateY(0) scaleY(1); opacity:1; }
+  }
+  #slip.rare{
+    background:linear-gradient(180deg,#1a1640,#2a1f52);
+    color:#fdfaff;
+    border-top-color:var(--gold);
+    box-shadow:0 0 40px rgba(255,217,119,.6), 0 20px 40px rgba(0,0,0,.4);
+  }
+  #slipTitle{ font-size:11px; letter-spacing:6px; color:#8a7a9a; }
+  #slip.rare #slipTitle{ color:var(--gold); }
+  #fortune{ font-size:40px; font-weight:900; letter-spacing:8px; margin:2px 0 8px; color:#b23a2f; }
+  #slip.rare #fortune{ color:var(--gold); text-shadow:0 0 14px rgba(255,217,119,.8); }
+  #consultQuote{ font-size:11.5px; color:#8a7a9a; margin-bottom:10px; }
+  #slip.rare #consultQuote{ color:var(--text-sub); }
+  #oracleText{
+    font-size:15px; font-weight:700; line-height:1.85;
+    color:inherit; text-align:left;
+    padding:10px 12px; border-radius:10px;
+    background:rgba(157,184,255,.12);
+    margin-bottom:10px;
+  }
+  .slipRow{
+    display:flex; justify-content:space-between; gap:10px;
+    font-size:12.5px; padding:6px 2px;
+    border-bottom:1px dashed rgba(138,122,154,.4);
+    text-align:left;
+  }
+  .slipRow .k{ color:#8a7a9a; flex-shrink:0; }
+  #slip.rare .slipRow .k{ color:var(--text-sub); }
+  .slipRow .v{ font-weight:700; text-align:right; }
+  .newMark{ font-size:10px; color:#b23a2f; font-weight:800; margin-left:4px; }
+  #slip.rare .newMark{ color:var(--gold); }
+  .btnRow{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+  .btn{
+    padding:11px 22px; border:none; border-radius:20px;
+    background:linear-gradient(160deg, #cdb0ff, #8a6cf0);
+    color:#20143a; font-weight:800; font-size:13.5px; font-family:inherit; cursor:pointer;
+    box-shadow:0 4px 0 #5a3fb0;
+  }
+  .btn.ghost{ background:transparent; color:var(--text-main); border:1px solid rgba(255,255,255,.35); box-shadow:none; }
+
+  /* お告げ帳 */
+  #bookCard{
+    background:#1a1640; border:1px solid rgba(255,255,255,.2); border-radius:18px;
+    padding:16px; color:var(--text-main);
+  }
+  #bookCard h2{ font-size:16px; margin:0 0 4px; text-align:center; }
+  #bookSub{ font-size:11.5px; color:var(--text-sub); text-align:center; margin-bottom:10px; }
+  .bookGroup h3{ font-size:12px; color:var(--gold); margin:10px 0 6px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:5px; }
+  .chip{ font-size:11.5px; padding:3px 9px; border-radius:10px; background:rgba(255,255,255,.1); }
+  .chip.locked{ color:#6a6490; background:rgba(255,255,255,.04); }
+  .bookLine{ font-size:11.5px; line-height:1.6; padding:5px 8px; margin-bottom:4px; border-radius:8px; background:rgba(255,255,255,.07); }
+  .bookLine.locked{ color:#6a6490; }
 </style>
 </head>
 <body>
@@ -260,7 +345,11 @@
   <div class="nebula" id="neb2"></div>
   <div class="nebula" id="neb3"></div>
 
-  <header><h1>適当お告げボット</h1></header>
+  <button id="bookBtn">📜 お告げ帳</button>
+  <header>
+    <h1>適当お告げボット</h1>
+    <div id="countLabel"></div>
+  </header>
 
   <div id="crystalStage">
     <div id="glowRing"></div>
@@ -271,14 +360,41 @@
 
   <div id="messageArea">
     <div id="thinkingLabel">水晶が覗いています…</div>
-    <div id="oracleCard">
-      <div id="oracleText"></div>
-    </div>
   </div>
 
   <div id="inputBar">
     <input id="moyaInput" type="text" maxlength="80" placeholder="今モヤモヤしていることを書いてみる…" />
     <button id="sendBtn">相談する</button>
+  </div>
+</div>
+
+<div id="slipScreen" class="overlay">
+  <div class="overlayInner">
+    <div id="slip">
+      <div id="slipTitle">お 告 げ</div>
+      <div id="fortune"></div>
+      <div id="consultQuote"></div>
+      <div id="oracleText"></div>
+      <div class="slipRow"><span class="k">モヤモヤの大きさ</span><span class="v" id="sizeVal"></span></div>
+      <div class="slipRow"><span class="k">ラッキーアイテム</span><span class="v" id="itemVal"></span></div>
+      <div class="slipRow"><span class="k">ラッキー方角</span><span class="v" id="dirVal"></span></div>
+      <div class="slipRow"><span class="k">今夜のおすすめ</span><span class="v" id="todoVal"></span></div>
+    </div>
+    <div class="btnRow">
+      <button class="btn" id="againBtn">もう一度相談する</button>
+      <button class="btn ghost" id="slipBookBtn">📜 お告げ帳</button>
+    </div>
+  </div>
+</div>
+
+<div id="bookScreen" class="overlay">
+  <div class="overlayInner">
+    <div id="bookCard">
+      <h2>📜 お告げ帳</h2>
+      <div id="bookSub"></div>
+      <div id="bookBody"></div>
+      <div class="btnRow"><button class="btn ghost" id="closeBook">とじる</button></div>
+    </div>
   </div>
 </div>
 
@@ -288,28 +404,82 @@
   const starsLayer = document.getElementById('stars');
   const crystalBall = document.getElementById('crystalBall');
   const glowRing = document.getElementById('glowRing');
-  const crystalStage = document.getElementById('crystalStage');
   const thinkingLabel = document.getElementById('thinkingLabel');
-  const oracleCard = document.getElementById('oracleCard');
   const oracleText = document.getElementById('oracleText');
   const moyaInput = document.getElementById('moyaInput');
   const sendBtn = document.getElementById('sendBtn');
+  const slipScreen = document.getElementById('slipScreen');
+  const slip = document.getElementById('slip');
+  const bookScreen = document.getElementById('bookScreen');
+  const countLabel = document.getElementById('countLabel');
 
-  const oracles = [
-    "まあ、宇宙の膨張速度に比べたら些細なことだよ。大丈夫。",
-    "地球の裏側では今、アルパカがくしゃみをした。だから気にしなくていいよ。",
-    "80年後にはみんな土に還るから、今は美味しいものを食べれば大丈夫。",
-    "人類の歴史から見れば誤差の範囲。とりあえず温かいお茶飲もう。",
-    "金星の自転とは逆方向の出来事だから仕方ない。あなたは悪くない。"
+  /* =========================================================
+     お告げのパーツ（組み合わせで毎回ちがうお告げになる）
+     ========================================================= */
+  const PREFIX = ['水晶によると……','星々がこう言っています。','宇宙の声を受信しました。','水晶のもやが晴れてきました……','古代の石板にこう書いてあります。','水晶がうっすら光っています。'];
+  const SCALES = [
+    '宇宙は今この瞬間も、秒速70kmずつ広がっている。',
+    '地球の裏側では今、アルパカがくしゃみをした。',
+    '80年後には、今日のことを覚えている人はたぶんいない。',
+    '人類の歴史20万年から見れば、今日は誤差の範囲。',
+    '金星では、1日が1年より長い。',
+    'あなたが見ている太陽の光は、8分前のもの。',
+    'マンボウは一度に3億個の卵を産む。',
+    '恐竜は1億6千万年も地球にいた。',
+    '月は毎年3.8cmずつ地球から離れている。',
+    'ミツバチは一生かけて、スプーン1杯のはちみつを作る。',
+    '冥王星は惑星をやめさせられたけど、今日も元気に回っている。',
+    'タコには心臓が3つある。'
   ];
+  // 相談の言葉に反応する、特別なお告げ
+  const SPECIALS = [
+    { id:'sp-miss',    re:/失敗|ミス|やらか|間違/,          text:'宇宙の誕生も、ちょっとしたゆらぎから始まった。' },
+    { id:'sp-late',    re:/遅|間に合わ|寝坊/,               text:'光でさえ、遠くの星には何万年も遅れて届く。' },
+    { id:'sp-people',  re:/友達|友だち|先輩|後輩|家族|親|彼氏|彼女|恋人|人間関係/, text:'地球と月も、ちょうどいい距離をさがして毎年少しずつ動いている。' },
+    { id:'sp-tired',   re:/疲|しんど|眠|だる/,              text:'地球も46億年ずっと回っている。たぶん少し疲れている。' },
+    { id:'sp-study',   re:/課題|レポート|勉強|テスト|卒論|研究|ゼミ/, text:'宇宙の謎も、まだ95%解けていない。' },
+    { id:'sp-compare', re:/比べ|比較|みんな|周り/,           text:'星はそれぞれ違う距離で光っている。並んで見えるのは、地球から見ているからだけ。' },
+    { id:'sp-money',   re:/お金|金欠|バイト代|給料/,          text:'宇宙全体のお金の量は、たぶんゼロ。' },
+    { id:'sp-word',    re:/言い方|言い過ぎ|言いすぎ|言えなかった/, text:'宇宙では音が伝わらない。言葉がうまく届かない日があっても不思議じゃない。' }
+  ];
+  const CONNECT = ['だから、','つまり、','ということは、','なので、'];
+  const VERDICT = ['それはわりと些細なこと。大丈夫。','あなたは悪くない。たぶん。','今日はもう、それでいい。','気にしなくても、宇宙は回る。','なんとかなる確率が高い。','その悩みは、明日の分まで持たなくていい。'];
+  const TODO = ['温かいお茶を飲む','5分だけ空を見る','好きな曲を1曲だけ聴く','早めに布団に入る','靴下を脱いで足をのばす','おいしいものを1口食べる','深呼吸を3回する','窓を少しだけ開ける','スマホを置いて目を閉じる','明日の服だけ決めておく'];
+  const ITEMS = ['ゆでたまご','青いペン','靴下（片方だけ）','冷えた麦茶','輪ゴム','ちくわ','付箋','温かい毛布','のど飴','観葉植物','丸い石','ラムネ','ハンカチ','月見だんご','ペンギンのシール','三色ボールペン','焼き芋','わりばし','傘','あめ玉'];
+  const DIRS = ['北北東','南','布団のある方','冷蔵庫のある方','窓のある方','東','西南西','宇宙の方','いま向いている方'];
+  const FORTUNES = [
+    { name:'大吉', w:18 }, { name:'中吉', w:22 }, { name:'小吉', w:20 },
+    { name:'吉', w:20 }, { name:'末吉', w:14 }, { name:'宇宙吉', w:6, rare:true }
+  ];
+
+  /* =========================================================
+     お告げ帳（相談した内容は保存しない）
+     ========================================================= */
+  const SAVE_KEY = 'tekitoOtsuge_v1';
+  function defaultSave(){ return { count:0, items:{}, fortunes:{}, specials:{} }; }
+  function loadSave(){
+    try{ return Object.assign(defaultSave(), JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return defaultSave(); }
+  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+  let save = loadSave();
 
   function rand(min,max){ return min + Math.random()*(max-min); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function weighted(list){
+    const total = list.reduce((s,x) => s + x.w, 0);
+    let r = Math.random() * total;
+    for(const x of list){ if((r -= x.w) < 0) return x; }
+    return list[0];
+  }
+
+  function updateCount(){
+    countLabel.textContent = save.count > 0 ? `これまで ${save.count} 回、相談した` : '';
+  }
 
   // ===== 星の生成 =====
   function createStars(){
-    const count = 60;
-    for(let i=0;i<count;i++){
+    for(let i=0;i<60;i++){
       const s = document.createElement('div');
       s.className = 'star';
       s.style.left = rand(0,100) + '%';
@@ -343,16 +513,30 @@
 
   function renderOracleText(text){
     oracleText.innerHTML = '';
-    const chars = Array.from(text);
-    chars.forEach((ch, i) => {
+    Array.from(text).forEach((ch, i) => {
       const span = document.createElement('span');
       span.className = 'ch';
-      span.textContent = ch === ' ' ? '\u00A0' : ch;
-      span.style.animationDelay = (i * 0.035) + 's';
+      span.textContent = ch === ' ' ? ' ' : ch;
+      span.style.animationDelay = (0.3 + i * 0.03) + 's';
       oracleText.appendChild(span);
     });
   }
 
+  function quoteOf(text){
+    const chars = Array.from(text.trim());
+    return chars.length > 20 ? chars.slice(0, 19).join('') + '…' : chars.join('');
+  }
+
+  // モヤモヤの大きさ（宇宙と比べた割合。長く書くほど、ほんの少しだけ大きくなる）
+  function sizeOf(text){
+    const n = Math.min(80, Array.from(text).length);
+    const zeros = Math.max(6, 14 - Math.floor(n / 6)); // 狭い画面でもはみ出さない桁数
+    return `宇宙の 0.${'0'.repeat(zeros)}${1 + (n % 9)}%`;
+  }
+
+  /* =========================================================
+     相談 → お告げ
+     ========================================================= */
   let busy = false;
 
   function consult(){
@@ -362,38 +546,144 @@
     sendBtn.disabled = true;
     moyaInput.value = '';
 
-    oracleCard.classList.remove('show');
     thinkingLabel.classList.add('show');
-    thinkingLabel.textContent = '水晶が覗いています…';
-
+    thinkingLabel.textContent = pick(['水晶が覗いています…','星の位置を確認しています…','宇宙と交信しています…']);
     glowRing.classList.add('active');
     crystalBall.classList.add('thinking');
     spawnSparkles();
 
     const thinkDuration = rand(1800, 2600);
-
-    setTimeout(() => {
-      spawnSparkles();
-    }, thinkDuration * 0.5);
-
+    setTimeout(spawnSparkles, thinkDuration * 0.5);
     setTimeout(() => {
       glowRing.classList.remove('active');
       crystalBall.classList.remove('thinking');
       thinkingLabel.classList.remove('show');
-
-      const oracle = pick(oracles);
-      renderOracleText(oracle);
-      oracleCard.classList.add('show');
-
+      showSlip(text);
       busy = false;
       sendBtn.disabled = false;
     }, thinkDuration);
   }
 
+  function showSlip(text){
+    const fortune = weighted(FORTUNES);
+    const specials = SPECIALS.filter(s => s.re.test(text));
+    const special = specials.length && Math.random() < 0.7 ? pick(specials) : null;
+    const middle = special ? special.text : pick(SCALES);
+    const oracle = `${pick(PREFIX)}${middle}${pick(CONNECT)}${pick(VERDICT)}`;
+    const item = pick(ITEMS);
+
+    const isNewItem = !save.items[item];
+    const isNewFortune = !save.fortunes[fortune.name];
+    save.count++;
+    save.items[item] = true;
+    save.fortunes[fortune.name] = true;
+    if(special) save.specials[special.id] = true;
+    writeSave();
+    updateCount();
+
+    slip.classList.toggle('rare', !!fortune.rare);
+    document.getElementById('fortune').textContent = fortune.name;
+    document.getElementById('consultQuote').textContent = `ご相談：「${quoteOf(text)}」`;
+    renderOracleText(oracle);
+    document.getElementById('sizeVal').textContent = sizeOf(text);
+    setValue('itemVal', item, isNewItem);
+    document.getElementById('dirVal').textContent = pick(DIRS);
+    document.getElementById('todoVal').textContent = pick(TODO);
+    if(isNewFortune && fortune.rare){
+      document.getElementById('fortune').textContent = fortune.name + '✦';
+    }
+
+    slip.style.animation = 'none'; void slip.offsetWidth; slip.style.animation = '';
+    slipScreen.classList.add('show');
+    sendResultToPortal(fortune, item, !!special);
+  }
+
+  function setValue(id, text, isNew){
+    const el = document.getElementById(id);
+    el.textContent = text;
+    if(isNew){
+      const m = document.createElement('span');
+      m.className = 'newMark';
+      m.textContent = 'NEW';
+      el.appendChild(m);
+    }
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（相談内容は送らない）
+  function sendResultToPortal(fortune, item, special){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'oracle-bot',
+        summary: `${fortune.name}／ラッキーアイテムは「${item}」（${save.count}回目の相談）`,
+        detail: { fortune: fortune.name, item, special, count: save.count, items: Object.keys(save.items).length }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function openBook(){
+    const body = document.getElementById('bookBody');
+    body.innerHTML = '';
+    const itemCount = Object.keys(save.items).length;
+    const spCount = Object.keys(save.specials).length;
+    document.getElementById('bookSub').textContent = `相談 ${save.count} 回 ・ アイテム ${itemCount}/${ITEMS.length} ・ 特別なお告げ ${spCount}/${SPECIALS.length}`;
+
+    const addGroup = (title, fill) => {
+      const g = document.createElement('div');
+      g.className = 'bookGroup';
+      const h = document.createElement('h3');
+      h.textContent = title;
+      g.appendChild(h);
+      fill(g);
+      body.appendChild(g);
+    };
+    addGroup('運勢', g => {
+      const c = document.createElement('div'); c.className = 'chips';
+      FORTUNES.forEach(f => {
+        const chip = document.createElement('span');
+        const got = !!save.fortunes[f.name];
+        chip.className = 'chip' + (got ? '' : ' locked');
+        chip.textContent = got ? f.name : '？？';
+        c.appendChild(chip);
+      });
+      g.appendChild(c);
+    });
+    addGroup('ラッキーアイテム', g => {
+      const c = document.createElement('div'); c.className = 'chips';
+      ITEMS.forEach(it => {
+        const chip = document.createElement('span');
+        const got = !!save.items[it];
+        chip.className = 'chip' + (got ? '' : ' locked');
+        chip.textContent = got ? it : '？？？';
+        c.appendChild(chip);
+      });
+      g.appendChild(c);
+    });
+    addGroup('特別なお告げ（相談の内容で出ることがある）', g => {
+      SPECIALS.forEach(sp => {
+        const line = document.createElement('div');
+        const got = !!save.specials[sp.id];
+        line.className = 'bookLine' + (got ? '' : ' locked');
+        line.textContent = got ? sp.text : '？？？';
+        g.appendChild(line);
+      });
+    });
+    bookScreen.classList.add('show');
+  }
+
   sendBtn.addEventListener('click', consult);
   moyaInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') consult();
+    if(e.key === 'Enter' && !e.isComposing) consult();
   });
+  document.getElementById('againBtn').addEventListener('click', () => {
+    slipScreen.classList.remove('show');
+    moyaInput.focus();
+  });
+  document.getElementById('bookBtn').addEventListener('click', openBook);
+  document.getElementById('slipBookBtn').addEventListener('click', openBook);
+  document.getElementById('closeBook').addEventListener('click', () => bookScreen.classList.remove('show'));
+
+  updateCount();
 })();
 </script>
 </body>
