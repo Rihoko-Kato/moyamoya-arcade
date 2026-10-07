@@ -66,8 +66,8 @@
   /* ===== キャラクターステージ ===== */
   #charStage{
     position:absolute;
-    left:50%; top:34%;
-    transform:translate(-50%,-50%);
+    left:50%; top:60%;
+    transform:translate(-50%,-50%) scale(.8); /* 吹き出しが長くなっても顔が隠れないよう、下寄せで少し小さく */
     z-index:3;
   }
 
@@ -335,6 +335,64 @@
     box-shadow:1px 1px 0 var(--ink);
   }
   #consultBtn:disabled{ opacity:.6; }
+  #consultBtn{ cursor:pointer; font-family:inherit; }
+
+  /* 返事ボタン */
+  #replyChips{ display:none; flex-wrap:wrap; gap:8px; justify-content:center; }
+  #replyChips.show{ display:flex; }
+  #inputBar.chatting #worryInput, #inputBar.chatting #consultBtn{ display:none; }
+  .chip{
+    padding:10px 16px;
+    border:3px solid var(--ink); border-radius:20px;
+    background:var(--cream); color:var(--ink);
+    font-weight:900; font-size:14px; font-family:inherit;
+    box-shadow:3px 3px 0 var(--ink);
+    cursor:pointer;
+  }
+  .chip:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+  .chip.thanks{ background:var(--pink); color:#fff; }
+  .chip.small{ font-size:12px; padding:8px 12px; background:#fff3; }
+
+  /* ヤバさ比べ */
+  .vs{
+    margin-top:8px;
+    font-size:11.5px; font-weight:800; text-align:left;
+  }
+  .vsRow{ display:flex; align-items:center; gap:6px; margin-top:3px; }
+  .vsRow .lbl{ width:66px; flex-shrink:0; }
+  .vsBar{ height:10px; border:2px solid var(--ink); border-radius:6px; background:#fff; flex:1; overflow:hidden; }
+  .vsBar span{ display:block; height:100%; }
+  .vsBar.you span{ background:var(--blue); }
+  .vsBar.fact span{ background:var(--pink); width:100%; }
+  .vsRow .num{ width:78px; text-align:right; flex-shrink:0; white-space:nowrap; }
+
+  #bookBtn{
+    position:absolute; right:12px; top:12px; z-index:15;
+    border:3px solid var(--ink); background:var(--cream); color:var(--ink);
+    border-radius:12px; padding:4px 10px; font-size:11.5px; font-weight:900;
+    font-family:inherit; cursor:pointer; box-shadow:3px 3px 0 var(--ink);
+  }
+  #bookScreen{
+    position:fixed; inset:0; z-index:40;
+    background:rgba(34,26,15,.6);
+    display:none; flex-direction:column; align-items:center;
+    padding:16px; overflow-y:auto;
+  }
+  #bookScreen.show{ display:flex; }
+  #bookCard{
+    margin:auto 0; width:100%; max-width:380px;
+    background:var(--cream); border:5px solid var(--ink); border-radius:20px;
+    box-shadow:7px 7px 0 var(--ink); padding:16px;
+  }
+  #bookCard h2{ font-size:16px; margin:0 0 4px; text-align:center; }
+  #bookSub{ font-size:11.5px; text-align:center; margin-bottom:10px; color:#7a5a2a; font-weight:700; }
+  .fCard{
+    font-size:12px; line-height:1.55; padding:7px 10px; margin-bottom:6px;
+    background:#fff; border:2px solid var(--ink); border-radius:10px;
+  }
+  .fCard.locked{ color:#b8a888; background:#f6ead0; border-style:dashed; }
+  .fCard .fTitle{ font-weight:900; display:block; }
+  #closeBook{ display:block; margin:10px auto 0; }
 </style>
 </head>
 <body>
@@ -345,6 +403,7 @@
   <div class="burst starBurst" id="b3"></div>
   <div class="burst starBurst" id="b4"></div>
 
+  <button id="bookBtn">📕 図鑑</button>
   <header><h1>ぶっとびポジティブ相棒</h1></header>
 
   <div id="speechWrap">
@@ -374,8 +433,23 @@
   </div>
 
   <div id="inputBar">
+    <div id="replyChips">
+      <button class="chip" data-reply="more">マジで？</button>
+      <button class="chip" data-reply="but">でもさ…</button>
+      <button class="chip thanks" data-reply="thanks">ありがと</button>
+      <button class="chip small" data-reply="new">別の悩みを話す</button>
+    </div>
     <textarea id="worryInput" maxlength="200" placeholder="今悩んでること・やらかしたことを書いてみて！"></textarea>
     <button id="consultBtn">相談する！</button>
+  </div>
+</div>
+
+<div id="bookScreen">
+  <div id="bookCard">
+    <h2>📕 ヤバい世界図鑑</h2>
+    <div id="bookSub"></div>
+    <div id="bookList"></div>
+    <button class="chip" id="closeBook">とじる</button>
   </div>
 </div>
 
@@ -386,77 +460,309 @@
   const speechText = document.getElementById('speechText');
   const worryInput = document.getElementById('worryInput');
   const consultBtn = document.getElementById('consultBtn');
+  const inputBar = document.getElementById('inputBar');
+  const replyChips = document.getElementById('replyChips');
+  const bookScreen = document.getElementById('bookScreen');
 
-  const reactionLine = "うわー！それは大変だったな！でも聞いてくれ！";
-
-  const bigFacts = [
-    "今この瞬間も、宇宙空間では毎秒ドデカい星が爆発して木っ端微塵になってるんだぜ！それに比べたら、君のやらかしなんてチリほどの誤差！",
-    "地球上のアリを全部集めると、人間の総重量と同じになるらしいぜ！足元にそんな数のアリがいるヤバい世界線に比べたら、君の悩みなんて可愛いもんさ！",
-    "深海には頭が透明で目が緑色に光るデメニギスって魚がいるんだぜ！そんなヤバい造形のヤツが泳いでるんだから、君の失敗なんて普通普通！",
-    "今南米では、カピバラが温泉に入って完全に『無』の表情をしてるよ！あのシュールさに比べたら、君の悩みなんてドラマチックで最高！",
-    "人間のDNAの50%はバナナと同じらしいぜ！半分バナナの生き物が少しくらい失敗したって、そりゃそうだろ！"
+  /* =========================================================
+     ヤバい世界の事実（more：「マジで？」と聞かれたときの続き）
+     ========================================================= */
+  const FACTS = [
+    { id:'supernova', title:'星の大爆発', yaba:99999,
+      text:'今この瞬間も、宇宙のどこかでドデカい星が爆発して木っ端微塵になってるんだぜ！',
+      more:'超新星爆発っていって、1回で太陽が100億年かけて出すエネルギーを一気に出すらしい！ヤバすぎる！' },
+    { id:'ants', title:'アリの総重量', yaba:3200,
+      text:'地球上のアリを全部集めると、人間の総重量に近いらしいぜ！',
+      more:'アリは2京匹くらいいるって説もある！2京だぜ！？数字の単位が追いつかねえ！' },
+    { id:'barreleye', title:'頭が透明な魚', yaba:5400,
+      text:'深海には、頭が透明で目が緑色に光るデメニギスって魚がいるんだぜ！',
+      more:'しかもその目、頭の中でぐるっと回るんだって！自分の頭の中を見上げられる魚！' },
+    { id:'capybara', title:'温泉カピバラ', yaba:800,
+      text:'今どこかで、カピバラが温泉に入って完全に「無」の表情をしてるよ！',
+      more:'カピバラは他の動物に乗られても気にしないらしい。ヤバいくらい心が広い！' },
+    { id:'banana', title:'半分バナナ', yaba:1200,
+      text:'人間のDNAは、けっこうな割合でバナナと同じらしいぜ！',
+      more:'つまり俺たちは、ちょっとバナナ。ちょっとバナナの生き物が少し失敗したって、そりゃそうだろ！' },
+    { id:'octopus', title:'タコの心臓', yaba:3000,
+      text:'タコには心臓が3つ、脳みそみたいなのが9つあるんだぜ！',
+      more:'腕の1本1本が勝手に考えて動けるらしい！会議しながら泳いでるようなもん！' },
+    { id:'venus', title:'金星の1日', yaba:7000,
+      text:'金星では、1日が1年より長いんだぜ！',
+      more:'しかも金星は逆回転！太陽が西からのぼるんだ！ヤバい星だぜ！' },
+    { id:'tardigrade', title:'クマムシ', yaba:20000,
+      text:'クマムシって生き物は、宇宙空間に放り出されても生き延びたんだぜ！',
+      more:'カラカラに乾いても、水をかけたら復活するらしい！最強のリセット能力！' },
+    { id:'jellyfish', title:'若返るクラゲ', yaba:15000,
+      text:'ベニクラゲっていう、年をとると若返るクラゲがいるんだぜ！',
+      more:'何回でもやり直せるらしい！人生リセットボタンを持ってるクラゲ！' },
+    { id:'sloth', title:'ナマケモノの週1', yaba:600,
+      text:'ナマケモノは、トイレのために週1回しか木から降りないんだぜ！',
+      more:'動くのがゆっくりすぎて、毛にコケが生えるらしい！それでもちゃんと生きてる！' },
+    { id:'moon', title:'逃げる月', yaba:4000,
+      text:'月は毎年3.8cmずつ、地球から離れていってるんだぜ！',
+      more:'昔は今よりずっと近くて、空にめちゃくちゃデカく見えてたらしい！' },
+    { id:'sunlight', title:'8分前の太陽', yaba:2500,
+      text:'君が今見てる太陽の光は、8分前のものなんだぜ！',
+      more:'夜空の星の光なんて、何千年も前のものだったりする！空は過去だらけ！' },
+    { id:'whale', title:'クジラの心臓', yaba:6000,
+      text:'シロナガスクジラの心臓は、軽自動車くらいの大きさなんだぜ！',
+      more:'その鼓動は3km先まで聞こえるとか言われてる！心臓の音、デカすぎ！' },
+    { id:'honey', title:'はちみつ1杯', yaba:400,
+      text:'ミツバチは一生かけて、スプーン1杯くらいのはちみつしか作らないんだぜ！',
+      more:'それでも毎日ちゃんと飛んでる。スプーン1杯でも、世界にとっては大事な仕事！' },
+    { id:'lightning', title:'1秒に50回の雷', yaba:9000,
+      text:'地球では、1秒に50回くらい雷が落ちてるんだぜ！',
+      more:'今この会話の間にも、何百回もピカッてる！地球、にぎやかすぎ！' },
+    { id:'pluto', title:'元・惑星', yaba:1500,
+      text:'冥王星は惑星をクビになったけど、今日も元気に回ってるんだぜ！',
+      more:'肩書きがなくなっても、冥王星は冥王星。ハート形の模様もあるらしい！' },
+    { id:'shark', title:'ニシオンデンザメ', yaba:12000,
+      text:'400年くらい生きるサメがいるんだぜ！',
+      more:'江戸時代から泳いでるかもしれない！のんびり泳いで1年に1cmしか大きくならない！' },
+    { id:'mantis', title:'シャコのパンチ', yaba:8000,
+      text:'シャコのパンチは、水槽のガラスを割るくらい強いんだぜ！',
+      more:'速すぎて、まわりの水が一瞬沸騰するらしい！エビの仲間なのに！' },
+    { id:'galaxy', title:'銀河の衝突', yaba:50000,
+      text:'俺たちの銀河は、40億年後にとなりの銀河とぶつかるんだぜ！',
+      more:'でも星と星の間がスカスカすぎて、星どうしはほとんどぶつからないらしい！' },
+    { id:'cells', title:'体の中の入れ替わり', yaba:2000,
+      text:'君の体の中では、毎秒数百万個の細胞が入れ替わってるんだぜ！',
+      more:'つまり、さっきの君と今の君は、ちょっと別人！昨日のやらかしも、半分くらい別人のしわざ！' }
   ];
+
+  // キーワードで変わる最初のリアクション
+  const REACTIONS = [
+    { re:/失敗|ミス|やらか|間違/, say:['やらかしたか〜！わかる、わかるぜ！','ミスか〜！それはドキッとしたよな！'] },
+    { re:/疲|しんど|眠|だる/,     say:['おつかれ！それはヘトヘトだな！','うわー、エネルギー使い切った日か！'] },
+    { re:/比べ|みんな|周り|劣/,   say:['あ〜、周りがまぶしく見える日か！','比べちゃうよな〜、わかる！'] },
+    { re:/言い方|言い過ぎ|言いすぎ|喧嘩|けんか/, say:['あ〜、言葉ってむずかしいよな！','言ったあとに気になるやつか〜！'] },
+    { re:/課題|レポート|テスト|卒論|研究|ゼミ|発表/, say:['うおー、学生の宿命！','それは頭パンパンになるやつ！'] },
+    { re:/バイト|仕事|シフト|店長/, say:['働いてる時のやつか！おつかれ！','バイトってドラマ起きがちだよな！'] }
+  ];
+  const GENERIC_REACTIONS = ['うわー！それは大変だったな！','マジか〜！話してくれてサンキュー！','おお、それはモヤるやつだ！','なるほど、聞いたぜ！'];
+  const OPENERS = ['でも聞いてくれ！','ところで知ってるか！？','ちょっと世界の話していい！？','ヤバい話があるんだ！'];
+  const PUNCHLINES = [
+    'それに比べたら、君の悩みはまだ地球サイズ！',
+    '世界ってヤバいだろ？君の悩みも、その世界のほんの一部！',
+    '宇宙から見たら、どっちもかわいい誤差！',
+    'そんな世界で今日を生きてる時点で、なかなかやるじゃん！',
+    'ヤバい世界の中の、ちょっとしたモヤモヤってことで！'
+  ];
+  const BUT_LINES = [
+    'そっか、まだモヤるよな！それでいい！じゃあもう1個いくぜ！',
+    'うんうん、すぐには軽くならないよな！もう1個聞いてくれ！',
+    'わかる！モヤモヤは急には消えない！ならこれはどうだ！'
+  ];
+  const THANKS_LINES = [
+    'こっちこそサンキュー！また世界のヤバい話、仕入れとくぜ！',
+    'いつでも来いよ！世界はまだまだヤバいからな！',
+    'おう！今日のモヤモヤも、ヤバい世界のひとつってことで！'
+  ];
+
+  /* =========================================================
+     図鑑と累計（相談した内容は保存しない）
+     ========================================================= */
+  const SAVE_KEY = 'buttobiAibou_v1';
+  function loadSave(){
+    try{ return Object.assign({ talks:0, facts:{} }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { talks:0, facts:{} }; }
+  }
+  function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+  let save = loadSave();
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-  function setSpeech(mainText, withHighlight){
-    speechText.innerHTML = '';
-    const p = document.createElement('div');
-    p.textContent = mainText;
-    speechText.appendChild(p);
-    if(withHighlight){
-      const h = document.createElement('div');
-      h.className = 'highlight';
-      h.textContent = 'それに比べたら、君の悩みなんて全然大丈夫！';
-      speechText.appendChild(h);
-    }
+  /* =========================================================
+     会話の状態
+     ========================================================= */
+  let worryText = '';
+  let currentFact = null;
+  let usedFacts = [];
+  let factsThisTime = 0;
+  let busy = false;
+
+  function nextFact(){
+    // まだ見ていない事実を優先し、この会話の中では同じものを出さない
+    let pool = FACTS.filter(f => !usedFacts.includes(f.id) && !save.facts[f.id]);
+    if(!pool.length) pool = FACTS.filter(f => !usedFacts.includes(f.id));
+    if(!pool.length){ usedFacts = []; pool = FACTS; }
+    const f = pick(pool);
+    usedFacts.push(f.id);
+    return f;
   }
 
-  let busy = false;
+  function showBubble(build, swap){
+    speechText.innerHTML = '';
+    build(speechText);
+    speechBubble.classList.remove('show','swap');
+    void speechBubble.offsetWidth;
+    speechBubble.classList.add('show');
+    if(swap) speechBubble.classList.add('swap');
+  }
+  function textLine(parent, text, cls){
+    const d = document.createElement('div');
+    if(cls) d.className = cls;
+    d.textContent = text;
+    parent.appendChild(d);
+    return d;
+  }
+  function react(){
+    dog.classList.remove('react');
+    void dog.offsetWidth;
+    dog.classList.add('react');
+    setTimeout(() => dog.classList.remove('react'), 950);
+  }
+
+  // ヤバさ比べ（君の悩みは書いた長さから。事実のほうは桁違い）
+  function vsBlock(parent, fact){
+    const you = Math.max(1, Math.min(99, Math.round(Array.from(worryText).length * 1.5)));
+    const box = document.createElement('div');
+    box.className = 'vs';
+    box.innerHTML = `
+      <div class="vsRow"><span class="lbl">君の悩み</span><span class="vsBar you"><span></span></span><span class="num"></span></div>
+      <div class="vsRow"><span class="lbl">この事実</span><span class="vsBar fact"><span></span></span><span class="num"></span></div>`;
+    const ratio = Math.max(2, Math.min(40, you / fact.yaba * 100 * 20));
+    box.querySelector('.you span').style.width = ratio + '%';
+    const nums = box.querySelectorAll('.num');
+    nums[0].textContent = `ヤバさ ${you}`;
+    nums[1].textContent = `ヤバさ ${fact.yaba.toLocaleString()}`;
+    parent.appendChild(box);
+  }
+
+  function deliverFact(prefix){
+    const f = nextFact();
+    currentFact = f;
+    const isNew = !save.facts[f.id];
+    save.facts[f.id] = true;
+    factsThisTime++;
+    writeSave();
+    react();
+    showBubble(p => {
+      if(prefix) textLine(p, prefix);
+      textLine(p, f.text);
+      textLine(p, pick(PUNCHLINES), 'highlight');
+      vsBlock(p, f);
+      if(isNew) textLine(p, `📕 図鑑に「${f.title}」が登録された！`).style.cssText = 'font-size:11px;margin-top:6px;color:#d43a76;';
+    }, true);
+    inputBar.classList.add('chatting');
+    replyChips.classList.add('show');
+    setChipsEnabled(true);
+  }
+
+  function setChipsEnabled(on){
+    replyChips.querySelectorAll('.chip').forEach(c => c.disabled = !on);
+  }
 
   function consult(){
     if(busy) return;
     const text = worryInput.value.trim();
-    if(!text){
-      worryInput.focus();
-      return;
-    }
+    if(!text){ worryInput.focus(); return; }
     busy = true;
     consultBtn.disabled = true;
     worryInput.value = '';
+    worryText = text;
+    usedFacts = [];
 
-    // 1. まずは大げさなリアクション
-    dog.classList.remove('react');
-    void dog.offsetWidth;
-    dog.classList.add('react');
+    // 1. 相談の内容に合わせたリアクション
+    const r = REACTIONS.find(x => x.re.test(text));
+    react();
+    showBubble(p => textLine(p, `${r ? pick(r.say) : pick(GENERIC_REACTIONS)}${pick(OPENERS)}`), false);
 
-    setSpeech(reactionLine, false);
-    speechBubble.classList.remove('show','swap');
-    void speechBubble.offsetWidth;
-    speechBubble.classList.add('show');
-
-    // 2. 少し間を置いて、文脈無視のヤバい事実＋全肯定オチ
+    // 2. 少し間を置いて、ヤバい事実
     setTimeout(() => {
-      setSpeech(pick(bigFacts), true);
-      speechBubble.classList.remove('show');
-      void speechBubble.offsetWidth;
-      speechBubble.classList.add('show','swap');
-    }, 1500);
-
-    setTimeout(() => {
-      dog.classList.remove('react');
+      deliverFact('');
       consultBtn.disabled = false;
       busy = false;
-    }, 1000);
+    }, 1500);
+  }
+
+  function onReply(kind){
+    if(busy) return;
+    if(kind === 'more' && currentFact){
+      react();
+      showBubble(p => {
+        textLine(p, 'マジだぜ！');
+        textLine(p, currentFact.more);
+      }, true);
+      // 続きを聞いたら「マジで？」は一度だけ
+      replyChips.querySelector('[data-reply="more"]').disabled = true;
+    } else if(kind === 'but'){
+      busy = true;
+      setChipsEnabled(false);
+      showBubble(p => textLine(p, pick(BUT_LINES)), true);
+      setTimeout(() => { busy = false; deliverFact(''); }, 1400);
+    } else if(kind === 'thanks'){
+      finish();
+    } else if(kind === 'new'){
+      endChat();
+      worryInput.focus();
+    }
+  }
+
+  function finish(){
+    save.talks++;
+    writeSave();
+    react();
+    const total = Object.keys(save.facts).length;
+    showBubble(p => {
+      textLine(p, pick(THANKS_LINES));
+      textLine(p, `今日教えたヤバい世界：${factsThisTime}個（図鑑 ${total} / ${FACTS.length}）`).style.cssText = 'font-size:12px;margin-top:6px;';
+    }, true);
+    sendResultToPortal(total);
+    endChat();
+  }
+
+  function endChat(){
+    inputBar.classList.remove('chatting');
+    replyChips.classList.remove('show');
+    factsThisTime = 0;
+    currentFact = null;
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（相談内容は送らない）
+  function sendResultToPortal(total){
+    try{
+      window.parent.postMessage({
+        type: 'moyamoyaGameResult',
+        gameId: 'positive-buddy',
+        summary: `ヤバい世界の話を聞いた（図鑑 ${total}/${FACTS.length}）`,
+        detail: { talks: save.talks, collected: total }
+      }, '*');
+    }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
+  }
+
+  function openBook(){
+    const list = document.getElementById('bookList');
+    list.innerHTML = '';
+    const total = Object.keys(save.facts).length;
+    document.getElementById('bookSub').textContent = `集めたヤバい世界 ${total} / ${FACTS.length}`;
+    FACTS.forEach(f => {
+      const got = !!save.facts[f.id];
+      const c = document.createElement('div');
+      c.className = 'fCard' + (got ? '' : ' locked');
+      const t = document.createElement('span');
+      t.className = 'fTitle';
+      t.textContent = got ? `${f.title}（ヤバさ ${f.yaba.toLocaleString()}）` : '？？？';
+      c.appendChild(t);
+      if(got) c.appendChild(document.createTextNode(f.text));
+      list.appendChild(c);
+    });
+    bookScreen.classList.add('show');
   }
 
   consultBtn.addEventListener('click', consult);
   worryInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.shiftKey){
+    if(e.key === 'Enter' && !e.shiftKey && !e.isComposing){
       e.preventDefault();
       consult();
     }
   });
+  replyChips.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => onReply(c.dataset.reply)));
+  document.getElementById('bookBtn').addEventListener('click', openBook);
+  document.getElementById('closeBook').addEventListener('click', () => bookScreen.classList.remove('show'));
+
+  // 最初のひとこと
+  showBubble(p => textLine(p, pick(['よう！今日はどうした？なんでも話してくれ！','おっす！モヤモヤしてること、聞かせてくれよ！'])), false);
 })();
 </script>
 </body>
