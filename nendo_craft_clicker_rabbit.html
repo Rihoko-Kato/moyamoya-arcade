@@ -19,12 +19,10 @@
     --text-sub:#8a6f5c;
     --heat-start:#f4c463;
     --heat-end:#d4623f;
-    --time-start:#8fd0e0;
-    --time-end:#3f8fc4;
     --match-rise-start:#a8d86a;
     --match-rise-end:#5fa83e;
-    --match-fall-start:#e8a05a;
-    --match-fall-end:#c9583c;
+    --match-fall-start:#c9a8f0;
+    --match-fall-end:#9a7ad8;
   }
   *{ box-sizing:border-box; }
   html,body{
@@ -47,7 +45,7 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:16px 18px 22px;
+    padding:12px 16px 16px;
   }
   #app.shake{ animation:appShake .35s ease; }
   @keyframes appShake{
@@ -58,18 +56,52 @@
     80%{ transform:translate(4px,-1px); }
   }
 
-  header{ width:100%; text-align:center; }
+  header{
+    width:100%;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    margin-bottom:8px;
+  }
   header h1{
-    font-size:16px;
-    letter-spacing:2px;
+    font-size:14px;
+    letter-spacing:1px;
     color:var(--text-sub);
     font-weight:700;
-    margin:2px 0 12px;
+    margin:0;
+    white-space:nowrap;
   }
   header h1::before{ content:"🐰 "; }
+  #headRight{ display:flex; align-items:center; gap:8px; }
+  #timeVal{
+    font-size:13px; font-weight:800; color:var(--text-main);
+    background:#ffffff80; padding:4px 10px; border-radius:12px;
+    font-variant-numeric:tabular-nums;
+  }
+  .smallBtn{
+    border:2px solid #d8bd94; background:#fff8ec; color:var(--text-main);
+    border-radius:14px; padding:4px 10px; font-size:12px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
 
-  /* 3軸ゲージ共通 */
-  #gaugesWrap{ width:100%; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  /* 粘土の色えらび */
+  #colorRow{
+    width:100%;
+    display:flex; align-items:center; gap:6px;
+    font-size:11px; color:var(--text-sub); font-weight:700;
+    margin-bottom:8px;
+    min-height:24px;
+  }
+  .swatch{
+    width:22px; height:22px; border-radius:50%;
+    border:2px solid #ffffffaa;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);
+    cursor:pointer;
+  }
+  .swatch.selected{ outline:3px solid var(--accent); outline-offset:1px; }
+  #colorRow.locked .swatch{ cursor:default; opacity:.6; }
+  #colorName{ margin-left:2px; }
+
+  /* ゲージ */
+  #gaugesWrap{ width:100%; display:flex; flex-direction:column; gap:6px; margin-bottom:6px; }
   .gaugeRow{ width:100%; }
   .gaugeLabel{
     display:flex; justify-content:space-between;
@@ -77,7 +109,7 @@
   }
   .gaugeLabel .val{ font-variant-numeric:tabular-nums; }
   .gaugeOuter{
-    width:100%; height:16px;
+    width:100%; height:14px;
     background:#00000014;
     border-radius:12px;
     overflow:hidden;
@@ -95,13 +127,12 @@
     background:repeating-linear-gradient(45deg, rgba(255,255,255,.22) 0 7px, transparent 7px 14px);
   }
   #heatBar{ background:linear-gradient(90deg,var(--heat-start),var(--heat-end)); }
-  #timeBar{ background:linear-gradient(90deg,var(--time-start),var(--time-end)); }
   #matchBar{ background:linear-gradient(90deg,var(--match-rise-start),var(--match-rise-end)); }
-  #matchBar.falling{ background:linear-gradient(90deg,var(--match-fall-start),var(--match-fall-end)); }
+  #matchBar.quirky{ background:linear-gradient(90deg,var(--match-fall-start),var(--match-fall-end)); }
   #matchCaption{
     font-size:10.5px; color:var(--text-sub); margin-top:2px; min-height:14px; text-align:right;
   }
-  #matchCaption.falling{ color:#c9583c; font-weight:700; }
+  #matchCaption.quirky{ color:#8a5fc8; font-weight:700; }
 
   /* 作品エリア */
   #boxArea{
@@ -111,9 +142,9 @@
     align-items:center;
     justify-content:space-around;
     gap:6px;
-    min-height:200px;
+    min-height:180px;
   }
-  .boxColumn{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .boxColumn{ display:flex; flex-direction:column; align-items:center; gap:4px; }
   .boxColumn .caption{ font-size:12px; color:var(--text-sub); font-weight:700; letter-spacing:1px; }
   .boxStage{ width:150px; height:170px; position:relative; }
   .boxStage::after{
@@ -139,7 +170,11 @@
   .body{ width:98px; height:78px; left:26px; top:86px; border-radius:50% 50% 46% 46%/58% 58% 42% 42%; z-index:2; }
   .footL{ width:26px; height:16px; left:30px; top:152px; border-radius:50%; z-index:1; }
   .footR{ width:26px; height:16px; left:94px; top:152px; border-radius:50%; z-index:1; }
-  .tail{ width:20px; height:20px; left:112px; top:120px; border-radius:50%; z-index:1; }
+  .tail{ width:22px; height:22px; left:117px; top:114px; border-radius:50%; z-index:1; }
+  .creature .part.earL, .creature .part.earR{ z-index:0; }
+  .creature .part.head{ z-index:3; }
+  .creature .part.body{ z-index:2; }
+  .creature .part.tail{ z-index:2; } /* からだより手前に出して、しっぽの個性が見えるように */
 
   .face{
     position:absolute; left:42px; top:42px; width:66px; height:60px;
@@ -150,39 +185,41 @@
   .eyeR{ left:42px; }
   .nose{ position:absolute; width:8px; height:6px; background:#e0708a; border-radius:50%; left:29px; top:33px; }
 
-  #realCreature.falling-wobble .part,
-  #realCreature.falling-wobble .face{
-    animation: crumbleWobble 1.6s ease-in-out infinite;
+  /* こねる場所ボタン */
+  #partBtns{
+    width:100%; max-width:400px;
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;
+    margin-top:8px;
   }
-  @keyframes crumbleWobble{
-    0%,100%{ filter:brightness(1); }
-    50%{ filter:brightness(.96); }
-  }
-
-  /* ボタン */
-  #actionBtn{
-    margin-top:12px;
-    width:100%; max-width:340px;
-    padding:19px 10px;
-    border:none; border-radius:20px;
+  .partBtn{
+    position:relative;
+    padding:12px 4px 10px;
+    border:none; border-radius:16px;
     background:linear-gradient(160deg,var(--accent),var(--accent-dark));
     color:#fff8ec;
-    font-size:17px; font-weight:700; letter-spacing:1px;
-    box-shadow:0 8px 0 #9c5019, 0 12px 18px rgba(0,0,0,.25);
+    font-size:15px; font-weight:800; letter-spacing:1px;
+    font-family:inherit;
+    box-shadow:0 6px 0 #9c5019, 0 9px 14px rgba(0,0,0,.22);
     transition:transform .07s ease, box-shadow .07s ease, opacity .3s ease;
     -webkit-tap-highlight-color:transparent;
-    line-height:1.5;
+    cursor:pointer;
+    line-height:1.3;
   }
-  #actionBtn:active{ transform:translateY(6px); box-shadow:0 2px 0 #9c5019, 0 4px 8px rgba(0,0,0,.25); }
-  #actionBtn:disabled{ opacity:.45; }
-  #btnSub{ display:block; font-size:11px; font-weight:400; opacity:.85; margin-top:2px; }
-  #btnSub.critical{ color:#fff1c9; font-weight:700; opacity:1; }
+  .partBtn .cnt{ display:block; font-size:10px; font-weight:600; opacity:.85; }
+  .partBtn:active{ transform:translateY(5px); box-shadow:0 1px 0 #9c5019, 0 3px 6px rgba(0,0,0,.25); }
+  .partBtn:disabled{ opacity:.45; }
+  #statusLine{
+    margin-top:8px; min-height:16px;
+    font-size:11.5px; color:var(--text-sub); font-weight:700; text-align:center;
+  }
+  #statusLine.critical{ color:#d4623f; }
 
   .pop{
     position:absolute; font-size:15px; font-weight:700; color:var(--accent-dark);
     pointer-events:none; animation:popUp .7s ease forwards; z-index:10; white-space:nowrap;
   }
-  .pop.critical{ color:#d4623f; font-size:19px; }
+  .pop.critical{ color:#d4623f; font-size:18px; }
+  .pop.quirk{ color:#8a5fc8; }
   @keyframes popUp{
     0%{ opacity:0; transform:translateY(0) scale(.7); }
     15%{ opacity:1; transform:translateY(-6px) scale(1.05); }
@@ -198,259 +235,429 @@
     100%{ opacity:0; transform:translate(var(--dx), 60px) rotate(180deg); }
   }
 
-  /* リザルト画面 */
-  #resultScreen{
+  /* リザルト画面・図鑑 共通 */
+  .overlay{
     position:fixed; inset:0;
-    background:rgba(60,40,25,.92);
-    display:none; align-items:center; justify-content:center; flex-direction:column;
-    z-index:50; text-align:center; padding:26px;
+    background:rgba(60,40,25,.94);
+    display:none; flex-direction:column; align-items:center;
+    z-index:50; text-align:center; padding:16px;
+    overflow-y:auto;
   }
-  #resultScreen.show{ display:flex; }
-  #rankBadge{
-    font-size:70px; font-weight:900; color:#ffd76a;
-    text-shadow:0 0 20px rgba(255,215,106,.6), 0 6px 0 #9c5019;
-    line-height:1; margin-bottom:6px;
-    animation:rankPop .5s cubic-bezier(.3,1.6,.4,1);
+  .overlay.show{ display:flex; }
+  .overlayInner{ margin:auto 0; width:100%; max-width:380px; }
+
+  #resultScreen .flatReport{
+    display:inline-block;
+    font-size:12px; color:#cbb499; font-weight:700;
+    background:#00000030; border-radius:12px; padding:6px 12px;
+    margin-bottom:6px;
   }
-  @keyframes rankPop{
-    0%{ transform:scale(0) rotate(-15deg); opacity:0; }
-    70%{ transform:scale(1.15) rotate(4deg); opacity:1; }
-    100%{ transform:scale(1) rotate(0); }
+  #resultStage{
+    width:150px; height:170px; position:relative;
+    margin:0 auto 4px;
+    animation:rabbitPop .5s cubic-bezier(.3,1.6,.4,1);
   }
-  #resultScreen h2{ font-size:22px; color:#fff3de; margin:4px 0 14px; }
-  #resultScreen p{ font-size:14px; line-height:2; color:#f0dcc0; max-width:340px; margin:0 0 20px; }
-  #resultScreen p strong{ color:#ffd76a; }
-  #statsRow{ display:flex; gap:14px; margin-bottom:24px; flex-wrap:wrap; justify-content:center; }
-  .statBox{
-    background:#00000030; border:1px solid #ffffff22; border-radius:14px;
-    padding:11px 16px; min-width:88px;
+  @keyframes rabbitPop{
+    0%{ transform:scale(.5); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
   }
-  .statBox .num{ font-size:20px; font-weight:700; color:#ffd76a; }
-  .statBox .label{ font-size:10.5px; color:#e8d3b5; margin-top:2px; }
-  .statBox.dim .num{ color:#cbb499; font-size:18px; }
-  .statBox.dim .label{ color:#b89e84; }
-  #retryBtn{
-    padding:14px 36px; border:none; border-radius:30px;
+  #resultStage::after{
+    content:"";
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    width:120px; height:16px;
+    background:var(--board); border-radius:50%;
+    box-shadow:0 3px 0 var(--board-dark);
+    z-index:0;
+  }
+  #rabbitNo{ font-size:11px; color:#cbb499; font-weight:700; letter-spacing:1px; }
+  #rabbitName{ font-size:17px; color:#fff3de; font-weight:800; margin:2px 0 8px; line-height:1.5; }
+  #introLine{ font-size:12.5px; color:#ffd76a; font-weight:700; margin:0 0 10px; }
+  .factRow{
+    display:flex; align-items:center; gap:10px;
+    background:#ffffff14; border:1px solid #ffffff1c;
+    border-radius:12px;
+    padding:8px 12px;
+    margin-bottom:6px;
+    text-align:left;
+  }
+  .factRow.event{ background:#c9a8f022; border-color:#c9a8f055; }
+  .factRow .icon{ font-size:18px; }
+  .factRow .txt{ font-size:13px; font-weight:700; color:#f0dcc0; line-height:1.5; }
+  .factRow .txt b{ color:#ffd76a; font-size:14.5px; }
+  #totalLine{ font-size:11.5px; color:#cbb499; margin:10px 0 0; font-weight:700; }
+  .btnRow{ display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+  .mainBtn{
+    padding:12px 26px; border:none; border-radius:30px;
     background:linear-gradient(160deg,#ffd76a,#e0a93a);
-    color:#4a2f10; font-weight:700; font-size:15px;
-    box-shadow:0 6px 0 #a97c1e, 0 10px 16px rgba(0,0,0,.35);
+    color:#4a2f10; font-weight:800; font-size:14.5px; font-family:inherit;
+    box-shadow:0 5px 0 #a97c1e, 0 8px 14px rgba(0,0,0,.35);
+    cursor:pointer;
   }
-  #retryBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #a97c1e; }
+  .mainBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #a97c1e; }
+  .subBtn{
+    padding:12px 20px; border:2px solid #ffffff44; border-radius:30px;
+    background:transparent; color:#f0dcc0; font-weight:700; font-size:13.5px; font-family:inherit;
+    cursor:pointer;
+  }
+
+  /* 図鑑 */
+  #zukanScreen{ background:#3a2718; }
+  #zukanScreen h2{ font-size:18px; color:#fff3de; margin:4px 0 2px; }
+  #zukanSub{ font-size:12px; color:#cbb499; margin-bottom:12px; }
+  #zukanGrid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;
+    width:100%;
+  }
+  .zCard{
+    background:#ffffff10; border:1px solid #ffffff1c; border-radius:14px;
+    padding:6px 6px 8px;
+  }
+  .zStageWrap{ width:84px; height:96px; margin:0 auto; position:relative; overflow:hidden; }
+  .zStage{
+    width:150px; height:170px; position:absolute; left:0; top:0;
+    transform:scale(.56); transform-origin:0 0;
+  }
+  .zNo{ font-size:10px; color:#cbb499; font-weight:700; }
+  .zName{ font-size:10.5px; color:#f0dcc0; font-weight:700; line-height:1.4; }
+  #zukanEmpty{ font-size:13px; color:#cbb499; padding:30px 0; }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <header><h1>粘土工作クリッカー</h1></header>
+  <header>
+    <h1>粘土工作クリッカー</h1>
+    <div id="headRight">
+      <span id="timeVal">⏱ 20秒</span>
+      <button class="smallBtn" id="zukanBtn">📖 図鑑</button>
+    </div>
+  </header>
+
+  <div id="colorRow"></div>
 
   <div id="gaugesWrap">
     <div class="gaugeRow">
-      <div class="gaugeLabel"><span>🔥 熱量ゲージ</span><span class="val" id="heatVal">0%</span></div>
+      <div class="gaugeLabel"><span>🔥 熱量</span><span class="val" id="heatVal">0%</span></div>
       <div class="gaugeOuter"><div class="gaugeInner" id="heatBar"></div></div>
-    </div>
-    <div class="gaugeRow">
-      <div class="gaugeLabel"><span>⏱ 制限時間</span><span class="val" id="timeVal">20秒</span></div>
-      <div class="gaugeOuter"><div class="gaugeInner" id="timeBar" style="width:100%"></div></div>
     </div>
     <div class="gaugeRow">
       <div class="gaugeLabel"><span>🎯 理想との一致度</span><span class="val" id="matchVal">20%</span></div>
       <div class="gaugeOuter"><div class="gaugeInner" id="matchBar"></div></div>
-      <div id="matchCaption">少しずつ理想に近づいている…</div>
+      <div id="matchCaption">好きなところから、こねてみよう</div>
     </div>
   </div>
 
   <div id="boxArea">
     <div class="boxColumn">
       <div class="caption">理想のうさぎ</div>
-      <div class="boxStage">
-        <div class="creature" id="idealCreature">
-          <div class="part earL"></div>
-          <div class="part earR"></div>
-          <div class="part body"></div>
-          <div class="part tail"></div>
-          <div class="part footL"></div>
-          <div class="part footR"></div>
-          <div class="part head"></div>
-          <div class="face">
-            <div class="eye eyeL"></div>
-            <div class="eye eyeR"></div>
-            <div class="nose"></div>
-          </div>
-        </div>
-      </div>
+      <div class="boxStage"><div class="creature" id="idealCreature"></div></div>
     </div>
     <div class="boxColumn">
-      <div class="caption">現実のうさぎ</div>
-      <div class="boxStage">
-        <div class="creature" id="realCreature">
-          <div class="part earL" data-part="earL"></div>
-          <div class="part earR" data-part="earR"></div>
-          <div class="part body" data-part="body"></div>
-          <div class="part tail" data-part="tail"></div>
-          <div class="part footL" data-part="footL"></div>
-          <div class="part footR" data-part="footR"></div>
-          <div class="part head" data-part="head"></div>
-          <div class="face" data-part="face">
-            <div class="eye eyeL"></div>
-            <div class="eye eyeR"></div>
-            <div class="nose"></div>
-          </div>
-        </div>
-      </div>
+      <div class="caption">いま作ってるうさぎ</div>
+      <div class="boxStage"><div class="creature" id="realCreature"></div></div>
     </div>
   </div>
 
-  <button id="actionBtn">
-    作業を進める
-    <span id="btnSub">粘土をこねている…</span>
-  </button>
+  <div id="partBtns">
+    <button class="partBtn" data-group="ears">耳<span class="cnt" id="cnt-ears">0</span></button>
+    <button class="partBtn" data-group="head">顔<span class="cnt" id="cnt-head">0</span></button>
+    <button class="partBtn" data-group="body">からだ<span class="cnt" id="cnt-body">0</span></button>
+    <button class="partBtn" data-group="tail">しっぽ<span class="cnt" id="cnt-tail">0</span></button>
+  </div>
+  <div id="statusLine">こねた瞬間から20秒スタート</div>
 </div>
 
-<div id="resultScreen">
-  <div id="rankBadge">S</div>
-  <h2>Sランク認定！</h2>
-  <p>
-    出来上がりの形なんて、誰も見ていない。<br>
-    <strong>最後まで試行錯誤したその熱量</strong>こそが、<br>
-    この制作でいちばん価値のあるものだ。<br>
-    諦めずに手を動かし続けた、その事実が偉い。
-  </p>
-  <div id="statsRow">
-    <div class="statBox">
-      <div class="num" id="heatResult">0%</div>
-      <div class="label">最終熱量</div>
-    </div>
-    <div class="statBox">
-      <div class="num" id="clickNum">0</div>
-      <div class="label">作業回数</div>
-    </div>
-    <div class="statBox dim">
-      <div class="num" id="matchResult">0%</div>
-      <div class="label">一致度（気にしない）</div>
+<div id="resultScreen" class="overlay">
+  <div class="overlayInner">
+    <div class="flatReport" id="flatReport"></div>
+    <div id="resultStage"><div class="creature" id="resultCreature"></div></div>
+    <div id="rabbitNo"></div>
+    <div id="rabbitName"></div>
+    <div id="introLine"></div>
+    <div id="factRows"></div>
+    <div id="totalLine"></div>
+    <div class="btnRow">
+      <button class="mainBtn" id="retryBtn">また作る</button>
+      <button class="subBtn" id="openZukanBtn">📖 図鑑を見る</button>
     </div>
   </div>
-  <button id="retryBtn">また作る</button>
+</div>
+
+<div id="zukanScreen" class="overlay">
+  <div class="overlayInner" style="max-width:480px;">
+    <h2>📖 うさぎ図鑑</h2>
+    <div id="zukanSub"></div>
+    <div id="zukanGrid"></div>
+    <div class="btnRow">
+      <button class="subBtn" id="closeZukanBtn">とじる</button>
+    </div>
+  </div>
 </div>
 
 <script>
 (function(){
+  const app = document.getElementById('app');
   const heatBar = document.getElementById('heatBar');
   const heatVal = document.getElementById('heatVal');
-  const timeBar = document.getElementById('timeBar');
   const timeVal = document.getElementById('timeVal');
   const matchBar = document.getElementById('matchBar');
   const matchVal = document.getElementById('matchVal');
   const matchCaption = document.getElementById('matchCaption');
+  const idealCreature = document.getElementById('idealCreature');
   const realCreature = document.getElementById('realCreature');
-  const actionBtn = document.getElementById('actionBtn');
-  const btnSub = document.getElementById('btnSub');
+  const resultCreature = document.getElementById('resultCreature');
+  const partBtns = document.querySelectorAll('.partBtn');
+  const statusLine = document.getElementById('statusLine');
+  const colorRow = document.getElementById('colorRow');
   const resultScreen = document.getElementById('resultScreen');
-  const heatResultEl = document.getElementById('heatResult');
-  const clickNumEl = document.getElementById('clickNum');
-  const matchResultEl = document.getElementById('matchResult');
+  const flatReport = document.getElementById('flatReport');
+  const rabbitNo = document.getElementById('rabbitNo');
+  const rabbitName = document.getElementById('rabbitName');
+  const introLine = document.getElementById('introLine');
+  const factRows = document.getElementById('factRows');
+  const totalLine = document.getElementById('totalLine');
   const retryBtn = document.getElementById('retryBtn');
-  const app = document.getElementById('app');
+  const zukanScreen = document.getElementById('zukanScreen');
+  const zukanSub = document.getElementById('zukanSub');
+  const zukanGrid = document.getElementById('zukanGrid');
 
   const TIME_LIMIT = 20; // 秒
-  const MATCH_FLOOR = 20; // 一致度の下限（ここより下にはいかない）
 
-  const processTexts = [
-    "粘土をこねくり回した！","3時間やり続けた！","水加減を調整した！","指の力加減を変えてみた！",
-    "ヘラを新調した！","表面のなめらかさを研究した！","先輩の作業を見学した！","崩れた部分を作り直した！",
-    "耳の角度を微調整した！","乾燥時間を見直した！","同じ工程を10回繰り返した！","参考動画を見返した！",
-    "深呼吸してもう一度挑戦した！","手が疲れても続けた！","諦めずにこね直した！","気合を入れ直した！",
-    "勢い余って押しすぎた！","利き手を変えてみた！","作業リズムを変えてみた！","無心になって手を動かした！"
+  const PARTS = ['earL','earR','head','body','tail','footL','footR','face'];
+  const PART_GROUP = { earL:'ears', earR:'ears', head:'head', face:'head', body:'body', footL:'body', footR:'body', tail:'tail' };
+  const GROUPS = ['ears','head','body','tail'];
+  const GROUP_NAME = { ears:'耳', head:'顔', body:'からだ', tail:'しっぽ' };
+  const GROUP_WEIGHT = { ears:.2, head:.3, body:.35, tail:.15 };
+
+  /* =========================================================
+     粘土の色（作った数で増えていく）
+     ========================================================= */
+  const COLORS = [
+    { id:'terracotta', name:'テラコッタ', from:0,  light:'#e6a880', base:'#c97b56', dark:'#a15a3a' },
+    { id:'white',      name:'しろ粘土',   from:3,  light:'#ffffff', base:'#eee6dc', dark:'#c4b8a8' },
+    { id:'pink',       name:'さくら',     from:8,  light:'#ffdbe4', base:'#f0a6b8', dark:'#c97a8e' },
+    { id:'matcha',     name:'抹茶',       from:15, light:'#d8eab4', base:'#a3c27a', dark:'#74924d' },
+    { id:'night',      name:'よぞら',     from:25, light:'#9fb0ee', base:'#5566b8', dark:'#323d80' }
   ];
-  const criticalTexts = ["会心の一撃！！","謎のゾーンに入った！！","手が止まらない！！","限界突破の集中力！！"];
+  function colorById(id){ return COLORS.find(c => c.id === id) || COLORS[0]; }
+  function unlockedColors(made){ return COLORS.filter(c => made >= c.from); }
+  function applyColor(el, color){
+    el.style.setProperty('--clay-light', color.light);
+    el.style.setProperty('--clay', color.base);
+    el.style.setProperty('--clay-dark', color.dark);
+  }
 
-  const parts = ['earL','earR','head','body','tail','footL','footR','face'];
+  /* =========================================================
+     保存データ（この端末だけ）
+     ========================================================= */
+  const SAVE_KEY = 'clayRabbit_v1';
+  const ZUKAN_MAX = 60;
+  function defaultSave(){ return { made:0, kneads:0, color:'terracotta', zukan:[] }; }
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      return raw ? Object.assign(defaultSave(), JSON.parse(raw)) : defaultSave();
+    }catch(e){ return defaultSave(); }
+  }
+  function writeSave(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){ /* 保存できない環境では今回分だけ */ }
+  }
+  let save = loadSave();
+  let currentColor = colorById(save.color);
 
+  /* =========================================================
+     道具
+     ========================================================= */
   function rand(min, max){ return min + Math.random() * (max - min); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
   function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
   function lerp(a,b,t){ return a + (b-a) * t; }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
 
-  // ===== 「まだ形のない粘土の塊」としての初期状態（ゲーム開始ごとに少しブレる） =====
+  // うさぎのDOMを組み立てる（理想・制作中・結果・図鑑で共通）
+  function buildCreature(container){
+    container.innerHTML = `
+      <div class="part earL" data-part="earL"></div>
+      <div class="part earR" data-part="earR"></div>
+      <div class="part body" data-part="body"></div>
+      <div class="part tail" data-part="tail"></div>
+      <div class="part footL" data-part="footL"></div>
+      <div class="part footR" data-part="footR"></div>
+      <div class="part head" data-part="head"></div>
+      <div class="face" data-part="face">
+        <div class="eye eyeL"></div>
+        <div class="eye eyeR"></div>
+        <div class="nose"></div>
+      </div>`;
+  }
+  function applyShape(container, shape){
+    PARTS.forEach(p => {
+      const el = container.querySelector(`[data-part="${p}"]`);
+      if(!el || !shape[p]) return;
+      el.style.transform = shape[p].tf;
+      if(shape[p].br) el.style.borderRadius = shape[p].br;
+    });
+  }
+
+  /* =========================================================
+     形のモデル
+     - 場所ごとに「理想への近さ t」と「個性 quirk」を持つ
+     - こねると t が上がる。上限まで来たら、こねるほど個性が出る
+     ========================================================= */
   function getBlobState(part){
     const j = () => rand(-4,4);
     switch(part){
-      case 'earL':  return { rx:34+j(),  ry:84+j(),  rot:-70+rand(-10,10), sx:0.32, sy:0.30, rad:null };
-      case 'earR':  return { rx:-34+j(), ry:84+j(),  rot:70+rand(-10,10),  sx:0.32, sy:0.30, rad:null };
-      case 'head':  return { rx:0+j(),   ry:38+j(),  rot:10+rand(-8,8),    sx:0.75, sy:0.68,
-                              radArr:[50,50,46,54,55,45,55,45] };
-      case 'body':  return { rx:0+j(),   ry:-14+j(), rot:-6+rand(-8,8),    sx:1.12, sy:0.86,
-                              radArr:[58,42,55,45,46,58,42,54] };
-      case 'tail':  return { rx:-47+j(), ry:-5+j(),  rot:40+rand(-10,10),  sx:0.5, sy:0.5, rad:null };
-      case 'footL': return { rx:32+j(),  ry:-35+j(), rot:25+rand(-10,10),  sx:0.5, sy:0.6, rad:null };
-      case 'footR': return { rx:-32+j(), ry:-35+j(), rot:-25+rand(-10,10), sx:0.5, sy:0.6, rad:null };
-      case 'face':  return { rx:0+j(),   ry:38+j(),  rot:0, sx:0.3, sy:0.3, rad:null };
-      default: return { rx:0, ry:0, rot:0, sx:1, sy:1, rad:null };
+      case 'earL':  return { rx:34+j(),  ry:84+j(),  rot:-70+rand(-10,10), sx:0.32, sy:0.30 };
+      case 'earR':  return { rx:-34+j(), ry:84+j(),  rot:70+rand(-10,10),  sx:0.32, sy:0.30 };
+      case 'head':  return { rx:0+j(),   ry:38+j(),  rot:10+rand(-8,8),    sx:0.75, sy:0.68, radArr:[50,50,46,54,55,45,55,45] };
+      case 'body':  return { rx:0+j(),   ry:-14+j(), rot:-6+rand(-8,8),    sx:1.12, sy:0.86, radArr:[58,42,55,45,46,58,42,54] };
+      case 'tail':  return { rx:-47+j(), ry:-5+j(),  rot:40+rand(-10,10),  sx:0.5,  sy:0.5 };
+      case 'footL': return { rx:32+j(),  ry:-35+j(), rot:25+rand(-10,10),  sx:0.5,  sy:0.6 };
+      case 'footR': return { rx:-32+j(), ry:-35+j(), rot:-25+rand(-10,10), sx:0.5,  sy:0.6 };
+      case 'face':  return { rx:0+j(),   ry:38+j(),  rot:0, sx:0.3, sy:0.3 };
+      default: return { rx:0, ry:0, rot:0, sx:1, sy:1 };
     }
   }
-  // 理想（うさぎそのもの）＝ CSSのベース位置と一致する「変形なし」状態
   const idealHeadRad = [50,50,50,50,50,50,50,50];
   const idealBodyRad = [50,50,46,46,58,58,42,42];
   function getIdealState(part){
     if(part==='head') return { rx:0, ry:0, rot:0, sx:1, sy:1, radArr:idealHeadRad };
     if(part==='body') return { rx:0, ry:0, rot:0, sx:1, sy:1, radArr:idealBodyRad };
-    return { rx:0, ry:0, rot:0, sx:1, sy:1, rad:null };
+    return { rx:0, ry:0, rot:0, sx:1, sy:1 };
   }
-
-  let blobState = {};
-  let idealState = {};
-  function initShapeStates(){
-    parts.forEach(p => {
-      blobState[p] = getBlobState(p);
-      idealState[p] = getIdealState(p);
-    });
-  }
-  initShapeStates();
-
   function radArrToString(arr){
     return `${arr[0]}% ${arr[1]}% ${arr[2]}% ${arr[3]}% / ${arr[4]}% ${arr[5]}% ${arr[6]}% ${arr[7]}%`;
   }
+  const r1 = v => Math.round(v*10)/10;
+  const r3 = v => Math.round(v*1000)/1000;
 
-  // t: 0(塊) 〜 最大でも0.88程度(理想側) の間で形状を補間する
-  function renderCreatureShape(t, wobble){
-    parts.forEach(p => {
-      const b = blobState[p];
-      const i = idealState[p];
+  // 現在の状態から、各パーツのCSS（transform / border-radius）を計算する
+  function computeShape(wobble){
+    const shape = {};
+    PARTS.forEach(p => {
+      const g = PART_GROUP[p];
+      const t = prog[g], q = quirk[g];
+      const b = blobState[p], i = idealState[p];
       const n = wobble ? rand(-1,1) * (1-t) * 3 : 0;
-      const rx = lerp(b.rx, i.rx, t) + n;
-      const ry = lerp(b.ry, i.ry, t) + n*0.8;
-      const rot = lerp(b.rot, i.rot, t) + n*1.2;
-      const sx = lerp(b.sx, i.sx, t);
-      const sy = lerp(b.sy, i.sy, t);
-      const el = realCreature.querySelector(`[data-part="${p}"]`);
-      if(!el) return;
-      el.style.transform = `translate(${rx}px, ${ry}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
-      if(b.radArr && i.radArr){
-        const arr = b.radArr.map((v,idx) => lerp(v, i.radArr[idx], t) + (wobble ? rand(-1,1)*(1-t)*4 : 0));
-        el.style.borderRadius = radArrToString(arr);
+      let rx = lerp(b.rx, i.rx, t) + n;
+      let ry = lerp(b.ry, i.ry, t) + n*0.8;
+      let rot = lerp(b.rot, i.rot, t) + n*1.2;
+      let sx = lerp(b.sx, i.sx, t);
+      let sy = lerp(b.sy, i.sy, t);
+      if(p === 'footL' || p === 'footR'){
+        rot += q.rot * 0.3;
+      } else {
+        rot += q.rot;
+        sx *= (1 + q.sx);
+        sy *= (1 + q.sy);
       }
+      if(p === 'earL' || p === 'earR') ry -= q.sy * 18;   // 耳は根元から伸びる
+      if(p === 'tail'){             // しっぽは小さいので、個性を大きめに見せる
+        sx *= (1 + q.sx * 0.8);
+        sy *= (1 + q.sy * 0.8);
+        rx += q.sx * 10;
+        ry -= q.sy * 10;
+      }
+      const entry = { tf:`translate(${r1(rx)}px, ${r1(ry)}px) rotate(${r1(rot)}deg) scale(${r3(sx)}, ${r3(sy)})` };
+      if(b.radArr && i.radArr){
+        const arr = b.radArr.map((v,idx) => r1(lerp(v, i.radArr[idx], t) + (wobble ? rand(-1,1)*(1-t)*4 : 0)));
+        entry.br = radArrToString(arr);
+      }
+      shape[p] = entry;
     });
+    return shape;
   }
 
-  // ===== ゲーム状態 =====
-  let heat = 0;
-  let match = 0;
-  let peakTarget = 0;
-  let phase = 'rising'; // 'rising' -> 'falling'
-  let clickCount = 0;
+  /* =========================================================
+     名前づけ：できた形の特徴から
+     ========================================================= */
+  const ROUGH = { ears:'耳がまだ粘土っぽい', head:'顔がぼんやりした', body:'からだが塊のままの', tail:'しっぽがどこかにある' };
+  const NEAT  = { ears:'耳がぴんとした', head:'まるい顔の', body:'すわりのいい', tail:'しっぽがふわっとした' };
+  const QUIRK_WORDS = {
+    ears: { rot:'耳がななめの', syP:'耳がながーい', syN:'耳がちんまりした', sxP:'耳がぶあつい', sxN:'耳がほっそりした' },
+    head: { rot:'首をかしげた', syP:'顔がたまご形の', syN:'顔がつぶれ気味の', sxP:'顔がまんまるな', sxN:'顔がほっそりした' },
+    body: { rot:'ちょっと傾いた', syP:'すらっとした', syN:'どっしりした', sxP:'ずんぐりした', sxN:'スリムな' },
+    tail: { rot:'しっぽが上向きの', syP:'しっぽがでかい', syN:'しっぽがひかえめな', sxP:'しっぽがでかい', sxN:'しっぽがちいさい' }
+  };
+  const PLAIN = ['のんびりした','どこか見覚えのある','ひかえめな','まじめそうな','ぼーっとした'];
+
+  function quirkMag(q){ return Math.abs(q.rot)/25 + Math.abs(q.sy)/0.4 + Math.abs(q.sx)/0.35; }
+  function quirkWord(g){
+    const q = quirk[g];
+    const dims = [
+      { k:'rot', v: g === 'tail' ? 0 : Math.abs(q.rot)/25 }, // 丸いしっぽは回転が見えないので除外
+      { k: q.sy >= 0 ? 'syP' : 'syN', v:Math.abs(q.sy)/0.4 },
+      { k: q.sx >= 0 ? 'sxP' : 'sxN', v:Math.abs(q.sx)/0.35 }
+    ].sort((a,b) => b.v - a.v);
+    return QUIRK_WORDS[g][dims[0].k];
+  }
+  function makeName(){
+    const feats = [];
+    GROUPS.forEach(g => {
+      const t = prog[g], m = quirkMag(quirk[g]);
+      if(t < 0.45) feats.push({ g, word:ROUGH[g], score:1 - t });
+      else if(m >= 0.45) feats.push({ g, word:quirkWord(g), score:0.4 + m });
+      else if(t >= 0.75) feats.push({ g, word:NEAT[g], score:0.3 + Math.random()*0.1 });
+    });
+    feats.sort((a,b) => b.score - a.score);
+    const words = [];
+    feats.forEach(f => { if(words.length < 2 && !words.includes(f.word)) words.push(f.word); });
+    if(words.length === 0) words.push(pick(PLAIN));
+    return words.join('、') + 'うさぎ';
+  }
+
+  /* =========================================================
+     ゲーム状態
+     ========================================================= */
+  let blobState = {}, idealState = {};
+  let prog = {}, peak = {}, quirk = {}, counts = {};
+  let heat = 0, clickCount = 0, critCount = 0;
   let timeLeft = TIME_LIMIT;
   let timerId = null;
-  let ended = false;
+  let started = false, ended = false;
+  let lastGroup = null;
 
-  function initRunState(){
-    heat = 0;
-    match = rand(16, 24);       // 塊の状態にも一応「らしさ」が少し宿っている
-    peakTarget = rand(82, 88);  // 85%前後、100%には絶対に届かない上限
-    phase = 'rising';
-    clickCount = 0;
+  function initRun(){
+    PARTS.forEach(p => { blobState[p] = getBlobState(p); idealState[p] = getIdealState(p); });
+    GROUPS.forEach(g => {
+      prog[g] = 0;
+      peak[g] = rand(0.84, 0.92);   // 100%には絶対に届かない
+      quirk[g] = { rot:0, sx:0, sy:0 };
+      counts[g] = 0;
+      document.getElementById('cnt-' + g).textContent = '0';
+    });
+    heat = 0; clickCount = 0; critCount = 0;
     timeLeft = TIME_LIMIT;
-    ended = false;
+    started = false; ended = false;
+    lastGroup = null;
+    clearInterval(timerId);
+
+    partBtns.forEach(b => b.disabled = false);
+    statusLine.textContent = 'こねた瞬間から20秒スタート';
+    statusLine.classList.remove('critical');
+    matchCaption.textContent = '好きなところから、こねてみよう';
+    matchCaption.classList.remove('quirky');
+    matchBar.classList.remove('quirky');
+    resultScreen.classList.remove('show');
+
+    applyColor(realCreature, currentColor);
+    applyColor(idealCreature, currentColor);
+    renderColorRow();
+    updateHeatUI(); updateMatchUI(); updateTimeUI();
+    applyShape(realCreature, computeShape(false));
   }
-  initRunState();
+
+  function overallT(){
+    return GROUPS.reduce((s,g) => s + prog[g] * GROUP_WEIGHT[g], 0);
+  }
+  function matchPercent(){ return Math.round(20 + overallT() * 75); }
 
   function updateHeatUI(){
     heat = clamp(heat, 0, 100);
@@ -458,66 +665,145 @@
     heatVal.textContent = Math.round(heat) + '%';
   }
   function updateMatchUI(){
-    match = clamp(match, 18, 100);
-    matchBar.style.width = match + '%';
-    matchVal.textContent = Math.round(match) + '%';
-    if(phase === 'falling'){
-      matchBar.classList.add('falling');
-      matchCaption.classList.add('falling');
-      matchCaption.textContent = '力を入れすぎて、少しずつ崩れてきている…';
-    } else {
-      matchBar.classList.remove('falling');
-      matchCaption.classList.remove('falling');
-      matchCaption.textContent = '少しずつ理想に近づいている…';
-    }
+    const m = matchPercent();
+    matchBar.style.width = m + '%';
+    matchVal.textContent = m + '%';
   }
   function updateTimeUI(){
-    const ratio = clamp(timeLeft / TIME_LIMIT, 0, 1);
-    timeBar.style.width = (ratio*100) + '%';
-    timeVal.textContent = Math.max(0, Math.ceil(timeLeft)) + '秒';
+    timeVal.textContent = `⏱ ${Math.max(0, Math.ceil(timeLeft))}秒`;
   }
 
-  updateHeatUI();
-  updateMatchUI();
-  updateTimeUI();
-  renderCreatureShape(match/100, false);
+  /* 色えらび（こね始める前だけ変えられる） */
+  function renderColorRow(){
+    const list = unlockedColors(save.made);
+    colorRow.innerHTML = '';
+    colorRow.classList.toggle('locked', started);
+    if(list.length <= 1){
+      colorRow.innerHTML = `<span>粘土：${currentColor.name}</span><span style="opacity:.7">（作るほど色が増える）</span>`;
+      return;
+    }
+    const label = document.createElement('span');
+    label.textContent = '粘土：';
+    colorRow.appendChild(label);
+    list.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'swatch' + (c.id === currentColor.id ? ' selected' : '');
+      sw.style.background = `radial-gradient(circle at 35% 30%, ${c.light}, ${c.base} 60%, ${c.dark})`;
+      sw.title = c.name;
+      sw.addEventListener('click', () => {
+        if(started) return;
+        currentColor = c;
+        save.color = c.id;
+        writeSave();
+        applyColor(realCreature, c);
+        applyColor(idealCreature, c);
+        renderColorRow();
+      });
+      colorRow.appendChild(sw);
+    });
+    const nm = document.createElement('span');
+    nm.id = 'colorName';
+    nm.textContent = currentColor.name;
+    colorRow.appendChild(nm);
+  }
 
-  function stepMatch(){
-    if(phase === 'rising'){
-      const remainRatio = 1 - (match / peakTarget);
-      let step = rand(3, 7) * Math.max(0.15, remainRatio);
-      match = match + step;
-      if(match >= peakTarget){
-        match = peakTarget;
-        phase = 'falling';
-        spawnPop('もう限界かも…！', true);
+  /* =========================================================
+     こねる
+     ========================================================= */
+  const processTexts = {
+    ears: ['耳の角度を微調整した！','耳の付け根をなでた！','耳を指でつまんだ！','耳の厚みを整えた！','耳の先を丸めた！'],
+    head: ['ほっぺをふくらませた！','目の位置を考えた！','おでこをなでた！','鼻の高さを調整した！','顔の丸みを整えた！'],
+    body: ['おなかをなでた！','背中のカーブを整えた！','足の位置を直した！','座り方を考えた！','全体のバランスを見た！'],
+    tail: ['しっぽを丸めた！','しっぽの位置を探した！','しっぽをふわっとさせた！','しっぽをつまんだ！','しっぽの大きさを考えた！'],
+    any:  ['深呼吸してもう一度！','水加減を調整した！','手が疲れても続けた！','無心になって手を動かした！','参考動画を思い出した！']
+  };
+  const criticalTexts = ['会心の一撃！！','謎のゾーンに入った！！','手が止まらない！！','限界突破の集中力！！'];
+
+  function startTimer(){
+    started = true;
+    renderColorRow();
+    timerId = setInterval(() => {
+      if(ended) return;
+      timeLeft -= 0.1;
+      updateTimeUI();
+      if(timeLeft <= 0){
+        timeLeft = 0;
+        updateTimeUI();
+        endGame();
       }
+    }, 100);
+  }
+
+  function knead(g, btn){
+    if(ended) return;
+    if(!started) startTimer();
+    clickCount++;
+    counts[g]++;
+    lastGroup = g;
+    document.getElementById('cnt-' + g).textContent = counts[g];
+
+    // 熱量：毎回ばらつきつつ着実に上昇（純粋な指標）
+    const roll = Math.random();
+    const hs = roll < 0.1 ? rand(1,3) : roll < 0.85 ? rand(3,7) : rand(8,14);
+    heat = clamp(heat + hs, 0, 100);
+    updateHeatUI();
+
+    // 形：上限までは理想に近づき、そこからは個性が出る
+    let quirky = false;
+    if(prog[g] < peak[g]){
+      const remain = 1 - prog[g] / peak[g];
+      prog[g] = Math.min(peak[g], prog[g] + rand(0.05, 0.11) * Math.max(0.2, remain));
+      if(prog[g] >= peak[g]) spawnPop(btn, `${GROUP_NAME[g]}はもう十分かも`, 'quirk');
     } else {
-      // 崩れフェーズ：一方的に加速度的に下がるのではなく、ランダムに上下させる
-      // （わずかに下がりやすいバイアスは残しつつ、たまに持ち直すこともある）
-      const step = rand(-3.5, 5);
-      match = match - step;
-      match = clamp(match, MATCH_FLOOR, peakTarget - 1);
+      quirky = true;
+      prog[g] = clamp(prog[g] + rand(-0.03, 0.015), 0.55, peak[g]);
+      const q = quirk[g];
+      if(g !== 'tail') q.rot = clamp(q.rot + rand(-5, 5), -25, 25); // 丸いしっぽは回転させない
+      q.sy  = clamp(q.sy + rand(-0.04, 0.07), -0.3, 0.5);
+      q.sx  = clamp(q.sx + rand(-0.04, 0.06), -0.25, 0.4);
     }
     updateMatchUI();
+    matchBar.classList.toggle('quirky', quirky);
+    matchCaption.classList.toggle('quirky', quirky);
+    matchCaption.textContent = quirky
+      ? `${GROUP_NAME[g]}に個性が出てきた…`
+      : `${GROUP_NAME[g]}が少しずつ理想に近づいている…`;
+
+    applyShape(realCreature, computeShape(true));
+    spawnCrumbs(g, 3 + Math.floor(Math.random()*4));
+
+    const isCritical = Math.random() < 0.12;
+    if(isCritical){
+      critCount++;
+      const t = pick(criticalTexts);
+      spawnPop(btn, t, 'critical');
+      statusLine.textContent = t;
+      statusLine.classList.add('critical');
+      app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
+    } else {
+      spawnPop(btn, '+熱量!', '');
+      statusLine.textContent = Math.random() < 0.75 ? pick(processTexts[g]) : pick(processTexts.any);
+      statusLine.classList.remove('critical');
+    }
   }
 
-  function spawnPop(text, critical){
-    const rect = actionBtn.getBoundingClientRect();
+  function spawnPop(btn, text, cls){
+    const rect = btn.getBoundingClientRect();
     const appRect = app.getBoundingClientRect();
     const pop = document.createElement('div');
-    pop.className = 'pop' + (critical ? ' critical' : '');
+    pop.className = 'pop' + (cls ? ' ' + cls : '');
     pop.textContent = text;
-    pop.style.left = (rect.left - appRect.left + rect.width/2 - 30 + (Math.random()*40-20)) + 'px';
-    pop.style.top = (rect.top - appRect.top - 6) + 'px';
+    pop.style.left = (rect.left - appRect.left + rect.width/2 - 24 + (Math.random()*24-12)) + 'px';
+    pop.style.top = (rect.top - appRect.top - 8) + 'px';
     app.appendChild(pop);
     setTimeout(() => pop.remove(), 700);
   }
 
-  function spawnCrumbs(count){
-    const stageRect = realCreature.getBoundingClientRect();
+  function spawnCrumbs(g, count){
+    const target = realCreature.querySelector(g === 'ears' ? '.earL' : `.${g}`) || realCreature;
+    const r = target.getBoundingClientRect();
     const appRect = app.getBoundingClientRect();
-    const colors = ['#c97b56','#a15a3a','#e6a880','#8a6248'];
+    const colors = [currentColor.base, currentColor.dark, currentColor.light];
     for(let i=0;i<count;i++){
       const c = document.createElement('div');
       c.className = 'crumb';
@@ -525,115 +811,193 @@
       c.style.width = size+'px';
       c.style.height = size+'px';
       c.style.background = colors[Math.floor(Math.random()*colors.length)];
-      c.style.left = (stageRect.left - appRect.left + stageRect.width/2 + (Math.random()*70-35)) + 'px';
-      c.style.top = (stageRect.top - appRect.top + stageRect.height/2 + (Math.random()*40-20)) + 'px';
-      c.style.setProperty('--dx', (Math.random()*70-35)+'px');
+      c.style.left = (r.left - appRect.left + r.width/2 + (Math.random()*40-20)) + 'px';
+      c.style.top = (r.top - appRect.top + r.height/2 + (Math.random()*20-10)) + 'px';
+      c.style.setProperty('--dx', (Math.random()*60-30)+'px');
       app.appendChild(c);
       setTimeout(() => c.remove(), 800);
     }
   }
 
-  function onClick(){
-    if(ended) return;
-    clickCount++;
-
-    // 熱量：毎回ばらつきつつ着実に上昇（クリア条件ではなく純粋な指標）
-    let step;
-    const roll = Math.random();
-    if(roll < 0.1) step = rand(1, 3);
-    else if(roll < 0.85) step = rand(3, 7);
-    else step = rand(8, 14);
-    heat = clamp(heat + step, 0, 100);
-    updateHeatUI();
-
-    // 一致度：85%前後まで上がり、その後は必ず崩れていく
-    stepMatch();
-
-    // 見た目を一致度に応じて再描画
-    renderCreatureShape(match/100, true);
-    if(phase === 'falling'){
-      realCreature.classList.add('falling-wobble');
-    }
-
-    // 演出
-    const crumbCount = 3 + Math.floor(Math.random()*5);
-    spawnCrumbs(crumbCount);
-
-    const isCritical = Math.random() < 0.14;
-    if(isCritical){
-      const t = pick(criticalTexts);
-      spawnPop(t, true);
-      btnSub.textContent = t;
-      btnSub.classList.add('critical');
-      app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
-    } else {
-      spawnPop('+熱量!', false);
-      btnSub.textContent = pick(processTexts);
-      btnSub.classList.remove('critical');
-    }
-
-    actionBtn.style.transform = 'scale(.97)';
-    setTimeout(() => { actionBtn.style.transform = ''; }, 90);
-  }
-
-  function tickTimer(){
-    if(ended) return;
-    timeLeft -= 0.1;
-    updateTimeUI();
-    if(timeLeft <= 0){
-      timeLeft = 0;
-      updateTimeUI();
-      endGame();
-    }
-  }
-
+  /* =========================================================
+     完成 → 図鑑へ
+     ========================================================= */
   function endGame(){
     ended = true;
     clearInterval(timerId);
-    actionBtn.disabled = true;
+    partBtns.forEach(b => b.disabled = true);
     setTimeout(finishGame, 350);
   }
 
   function finishGame(){
-    heatResultEl.textContent = Math.round(heat) + '%';
-    clickNumEl.textContent = clickCount;
-    matchResultEl.textContent = Math.round(match) + '%';
+    const shape = computeShape(false);
+    applyShape(realCreature, shape);
+    const name = makeName();
+    const match = matchPercent();
+    const beforeColors = unlockedColors(save.made).length;
+
+    save.made += 1;
+    save.kneads += clickCount;
+    const entry = {
+      no: save.made,
+      name,
+      color: currentColor.id,
+      match,
+      heat: Math.round(heat),
+      shape,
+      date: new Date().toISOString().slice(0,10)
+    };
+    save.zukan.push(entry);
+    if(save.zukan.length > ZUKAN_MAX) save.zukan = save.zukan.slice(-ZUKAN_MAX);
+    writeSave();
+
+    const newColors = unlockedColors(save.made).slice(beforeColors);
+
+    // 結果は事実として小さく（グレースケール）
+    flatReport.textContent = `理想との一致度 ${match}%（事実）`;
+    buildCreature(resultCreature);
+    applyColor(resultCreature, currentColor);
+    applyShape(resultCreature, shape);
+    rabbitNo.textContent = `No.${entry.no}`;
+    rabbitName.textContent = `「${name}」`;
+
+    // 意図が伝わるよう、最初の1体だけ一言そえる
+    if(save.made === 1){
+      introLine.textContent = '理想どおりじゃない形が、このうさぎの形。';
+      introLine.style.display = 'block';
+    } else {
+      introLine.style.display = 'none';
+    }
+
+    factRows.innerHTML = '';
+    buildLines().forEach(l => factRows.appendChild(makeRow(l, false)));
+    newColors.forEach(c => factRows.appendChild(makeRow({ icon:'🎨', text:`新しい粘土「${c.name}」が使えるようになった` }, true)));
+
+    totalLine.textContent = `これまでに ${save.made} 体つくって、${save.kneads} 回こねた`;
+
     resultScreen.classList.add('show');
-    sendResultToPortal();
+    sendResultToPortal(entry);
+  }
+
+  // その回のデータから「見てたよ」の言葉を組み立てる（評価語は使わない）
+  function buildLines(){
+    const n = v => `<b>${v}</b>`;
+    const main = pick([
+      { icon:'⏱️', text:`${n(TIME_LIMIT)} 秒、手を止めなかった` },
+      { icon:'🤲', text:`${n(clickCount)} 回、粘土に触れてた` },
+      { icon:'🔥', text:`熱量は ${n(Math.round(heat) + '%')} まで上がってた` }
+    ]);
+    const extras = [];
+    const sorted = GROUPS.slice().sort((a,b) => counts[b] - counts[a]);
+    const top = sorted[0];
+    if(counts[top] > 0){
+      extras.push({ icon:'👀', text:`いちばん時間をかけたのは${GROUP_NAME[top]}（${n(counts[top])} 回）` });
+    }
+    const untouched = GROUPS.filter(g => counts[g] === 0);
+    if(untouched.length === 0){
+      extras.push({ icon:'🐰', text:`耳も顔もからだもしっぽも、全部さわってた` });
+    } else if(untouched.length < GROUPS.length){
+      extras.push({ icon:'🐰', text:`${untouched.map(g => GROUP_NAME[g]).join('と')}は、粘土のままの形を残してた` });
+    }
+    const quirkyGroups = GROUPS.filter(g => quirkMag(quirk[g]) >= 0.45);
+    if(quirkyGroups.length > 0){
+      const g = pick(quirkyGroups);
+      extras.push({ icon:'✨', text:`${GROUP_NAME[g]}をこねつづけて、形に個性が出た` });
+    }
+    if(critCount > 0){
+      extras.push({ icon:'⚡', text:`${n(critCount)} 回、ゾーンに入ってた` });
+    }
+    return [main].concat(shuffle(extras).slice(0, 2));
+  }
+
+  function makeRow(line, isEvent){
+    const row = document.createElement('div');
+    row.className = 'factRow' + (isEvent ? ' event' : '');
+    const icon = document.createElement('div');
+    icon.className = 'icon';
+    icon.textContent = line.icon;
+    const txt = document.createElement('div');
+    txt.className = 'txt';
+    txt.innerHTML = line.text; // 数値以外は固定文なので安全
+    row.appendChild(icon);
+    row.appendChild(txt);
+    return row;
+  }
+
+  function renderZukan(){
+    zukanGrid.innerHTML = '';
+    const list = save.zukan.slice().reverse();
+    zukanSub.textContent = save.made > 0
+      ? `これまでに ${save.made} 体（最新 ${list.length} 体を表示）`
+      : '';
+    if(list.length === 0){
+      zukanGrid.innerHTML = '<div id="zukanEmpty">まだ1体もいません。<br>作ったうさぎはここに並びます。</div>';
+      return;
+    }
+    list.forEach(e => {
+      const card = document.createElement('div');
+      card.className = 'zCard';
+      const wrap = document.createElement('div');
+      wrap.className = 'zStageWrap';
+      const stageEl = document.createElement('div');
+      stageEl.className = 'zStage';
+      const cr = document.createElement('div');
+      cr.className = 'creature';
+      buildCreature(cr);
+      applyColor(cr, colorById(e.color));
+      applyShape(cr, e.shape);
+      stageEl.appendChild(cr);
+      wrap.appendChild(stageEl);
+      const no = document.createElement('div');
+      no.className = 'zNo';
+      no.textContent = `No.${e.no}`;
+      const nm = document.createElement('div');
+      nm.className = 'zName';
+      nm.textContent = e.name;
+      card.appendChild(wrap);
+      card.appendChild(no);
+      card.appendChild(nm);
+      zukanGrid.appendChild(card);
+    });
   }
 
   // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
-  function sendResultToPortal(){
+  function sendResultToPortal(entry){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'clay-rabbit',
-        summary: `熱量${Math.round(heat)}% / 一致度${Math.round(match)}%（${clickCount}回作業）`,
-        detail: { heat: Math.round(heat), match: Math.round(match), clicks: clickCount }
+        summary: `No.${entry.no}「${entry.name}」が完成（${clickCount}回こねた）`,
+        detail: { no: entry.no, name: entry.name, color: entry.color, heat: entry.heat, match: entry.match, clicks: clickCount, counts: Object.assign({}, counts) }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
-  function resetGame(){
-    clearInterval(timerId);
-    initRunState();
-    initShapeStates();
-    updateHeatUI();
-    updateMatchUI();
-    updateTimeUI();
-    renderCreatureShape(match/100, false);
-    realCreature.classList.remove('falling-wobble');
-    btnSub.textContent = '粘土をこねている…';
-    btnSub.classList.remove('critical');
-    resultScreen.classList.remove('show');
-    actionBtn.disabled = false;
-    timerId = setInterval(tickTimer, 100);
+  /* =========================================================
+     イベント
+     ========================================================= */
+  partBtns.forEach(btn => {
+    btn.addEventListener('click', () => knead(btn.dataset.group, btn));
+  });
+  // キーボード：1〜4 で耳・顔・からだ・しっぽ
+  window.addEventListener('keydown', (e) => {
+    const idx = ['1','2','3','4'].indexOf(e.key);
+    if(idx < 0 || ended || resultScreen.classList.contains('show') || zukanScreen.classList.contains('show')) return;
+    knead(GROUPS[idx], partBtns[idx]);
+  });
+  retryBtn.addEventListener('click', initRun);
+  function openZukan(){
+    if(started && !ended) return; // 制作中は開かない（時間が進んでしまうため）
+    renderZukan();
+    zukanScreen.classList.add('show');
   }
+  document.getElementById('zukanBtn').addEventListener('click', openZukan);
+  document.getElementById('openZukanBtn').addEventListener('click', openZukan);
+  document.getElementById('closeZukanBtn').addEventListener('click', () => zukanScreen.classList.remove('show'));
 
-  actionBtn.addEventListener('click', onClick);
-  retryBtn.addEventListener('click', resetGame);
-
-  timerId = setInterval(tickTimer, 100);
+  buildCreature(idealCreature);
+  buildCreature(realCreature);
+  initRun();
 })();
 </script>
 </body>
