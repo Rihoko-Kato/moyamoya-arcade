@@ -80,14 +80,14 @@
   /* 蓋（開いた状態で奥に立っている） */
   #lid{
     position:absolute;
-    left:50%; bottom:112px;
-    width:248px; height:150px;
-    margin-left:-124px;
-    transform-origin:bottom center;
-    transform:rotateX(-108deg);
+    left:50%; bottom:0;
+    width:264px; height:126px;
+    margin-left:-132px;
+    transform-origin:top center;
+    transform:rotateX(-112deg);
     transition:transform .75s cubic-bezier(.4,1.4,.4,1);
     transform-style:preserve-3d;
-    z-index:2;
+    z-index:6;
   }
   #lid.closed{ transform:rotateX(0deg); }
   #lidFace{
@@ -140,7 +140,7 @@
 
   #innerWell{
     position:absolute;
-    left:50%; top:-46px;
+    left:50%; top:148px;
     width:216px; height:96px;
     margin-left:-108px;
     border-radius:8px;
@@ -290,14 +290,14 @@
     opacity:0;
     animation:ribbonGrow .45s cubic-bezier(.3,1.6,.4,1) forwards;
   }
-  .ribbonV{ left:50%; top:-20px; width:26px; height:400px; margin-left:-13px; transform-origin:top center; }
-  .ribbonH{ left:-20px; top:50%; width:400px; height:26px; margin-top:-13px; transform-origin:left center; animation-delay:.1s; }
+  .ribbonV{ left:50%; top:134px; width:26px; height:126px; margin-left:-13px; transform-origin:top center; }
+  .ribbonH{ left:18px; top:197px; width:264px; height:26px; margin-top:-13px; transform-origin:left center; animation-delay:.1s; }
   @keyframes ribbonGrow{
     0%{ transform:scale(0); opacity:0; }
     100%{ transform:scale(1); opacity:1; }
   }
   .bow{
-    position:absolute; left:50%; top:50%;
+    position:absolute; left:50%; top:197px;
     width:70px; height:46px;
     margin:-23px 0 0 -35px;
     z-index:7;
@@ -329,45 +329,158 @@
   }
 
   /* ===== 結果画面 ===== */
-  #resultScreen{
-    position:fixed; inset:0;
-    background:rgba(40,30,20,.55);
-    display:none;
-    align-items:center; justify-content:center; flex-direction:column;
-    z-index:80; text-align:center; padding:26px;
+  /* ===== 箱の柄（出荷数で増える） ===== */
+  #boxRow{
+    position:relative; z-index:12;
+    display:flex; justify-content:center; align-items:center; gap:6px;
+    font-size:11px; color:#8a7a5a; margin-top:4px; min-height:20px;
   }
-  #resultScreen.show{ display:flex; }
-  #resultCard{
+  .boxSwatch{
+    width:18px; height:18px; border-radius:5px; cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.3), inset 0 0 0 1.5px rgba(230,200,105,.6);
+  }
+  .boxSwatch.selected{ outline:2px solid var(--gold); outline-offset:2px; }
+
+  /* ===== 札えらび ===== */
+  #tagPicker{
+    position:absolute;
+    left:50%; top:-6px;
+    transform:translateX(-50%) scale(.6);
+    z-index:9;
+    display:flex; align-items:center; gap:6px;
+    background:#fffaf0f2; border:1px solid #d8c69a; border-radius:16px;
+    padding:6px 10px;
+    box-shadow:0 6px 14px rgba(0,0,0,.2);
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease, transform .25s cubic-bezier(.3,1.6,.4,1);
+    white-space:nowrap;
+  }
+  #tagPicker.show{ opacity:1; pointer-events:auto; transform:translateX(-50%) scale(1); }
+  #tagPicker .q{ font-size:11px; color:#8a7a5a; }
+  .tagBtn{
+    border:1px solid #cbb98f; background:#fff; color:var(--charcoal);
+    border-radius:10px; padding:4px 9px; font-size:12px; font-weight:700;
+    font-family:inherit; cursor:pointer;
+  }
+  .tagBtn[data-tag="fact"]{ border-color:#8a8a96; }
+  .tagBtn[data-tag="feel"]{ border-color:#c98aa0; }
+  .tagBtn[data-tag="both"]{ border-color:#c9a227; }
+
+  /* 箱に入ったモヤモヤ：色が抜けて、ただの言葉になる */
+  .moyaBlock.inBox{
+    transition:filter 1.2s ease, background 1.2s ease, border-color 1.2s ease, left .38s ease, top .38s ease, transform .38s ease;
+    font-size:11.5px; padding:6px 10px; max-width:120px;
+  }
+  .moyaBlock.gray{
+    filter:grayscale(1);
+    background:#ececec;
+    border-color:#bdbdbd;
+    color:#6a6a6a;
+  }
+  .moyaBlock .tag{
+    position:absolute; top:-9px; right:-6px;
+    font-size:9.5px; font-weight:700; color:#fff;
+    padding:1px 6px; border-radius:8px;
+    background:#8a8a96;
+  }
+  .moyaBlock .tag.feel{ background:#c98aa0; }
+  .moyaBlock .tag.both{ background:#c9a227; }
+
+  /* ===== 届け先えらび・伝票 共通 ===== */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(40,30,20,.6);
+    display:none; flex-direction:column; align-items:center;
+    z-index:80; text-align:center; padding:16px;
+    overflow-y:auto;
+  }
+  .overlay.show{ display:flex; }
+  .overlayInner{ margin:auto 0; width:100%; max-width:360px; }
+
+  #destScreen h2{ font-size:17px; color:#fff6e0; margin:0 0 4px; letter-spacing:2px; }
+  #destScreen .sub{ font-size:12px; color:#e8dcc0; margin-bottom:12px; }
+  #destCards{ display:flex; flex-direction:column; gap:8px; }
+  .destCard{
+    display:flex; align-items:center; gap:12px;
     background:linear-gradient(160deg,#fffaf0,#f2e6cc);
+    border:1px solid #d8c69a; border-radius:14px;
+    padding:10px 14px; text-align:left; cursor:pointer;
+    font-family:inherit; color:var(--charcoal);
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+  }
+  .destCard:active{ transform:scale(.98); }
+  .destCard .ic{ font-size:28px; }
+  .destCard .nm{ font-size:14px; font-weight:700; }
+  .destCard .ds{ font-size:11px; color:#8a7a5a; }
+  .destCard.rare{ border:2px solid var(--gold); background:linear-gradient(160deg,#fff8dc,#f6e2a8); }
+  .destCard.rare .nm::after{ content:" ✦レア"; font-size:10px; color:var(--vermillion); }
+  .destCard .new{ font-size:10px; color:var(--vermillion); font-weight:700; margin-left:4px; }
+
+  /* 伝票 */
+  #slip{
+    background:#fffdf6;
     border:1px solid #d8c69a;
-    border-radius:20px;
-    padding:34px 30px 28px;
+    border-radius:6px;
+    padding:16px 16px 14px;
+    text-align:left;
     box-shadow:0 20px 40px rgba(0,0,0,.35);
-    max-width:320px;
+    position:relative;
     animation:cardPop .5s cubic-bezier(.3,1.6,.4,1);
+    background-image:repeating-linear-gradient(0deg, transparent 0 27px, #f0e6d2 27px 28px);
   }
   @keyframes cardPop{
     0%{ transform:scale(.7); opacity:0; }
     100%{ transform:scale(1); opacity:1; }
   }
-  #resultCard .stamp{
-    font-size:13px; letter-spacing:4px; color:var(--vermillion); font-weight:700; margin-bottom:10px;
+  #slip .slipHead{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:2px solid var(--vermillion); padding-bottom:6px; margin-bottom:8px;
   }
-  #resultCard h2{
-    font-size:21px; margin:0 0 10px; color:var(--indigo-deep); font-weight:700;
+  #slip .slipTitle{ font-size:15px; font-weight:700; color:var(--vermillion); letter-spacing:3px; }
+  #slip .slipNo{ font-size:10.5px; color:#8a7a5a; font-family:monospace; }
+  .slipRow{ display:flex; gap:8px; font-size:12.5px; line-height:28px; }
+  .slipRow .k{ width:72px; flex-shrink:0; color:#8a7a5a; font-size:11.5px; }
+  .slipRow .v{ color:var(--charcoal); font-weight:700; }
+  #slipComment{
+    margin-top:6px; padding:8px 10px;
+    background:#f6efe0; border-radius:8px;
+    font-size:13px; line-height:1.6; color:var(--indigo-deep); font-weight:700;
   }
-  #resultCard p{
-    font-size:13px; color:#8a7a5a; line-height:1.8; margin:0 0 20px;
+  #slipComment .who{ display:block; font-size:10.5px; color:#8a7a5a; font-weight:500; }
+  #slip .stampDone{
+    position:absolute; right:14px; top:44px;
+    width:62px; height:62px; border-radius:50%;
+    border:3px solid var(--vermillion); color:var(--vermillion);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; transform:rotate(-14deg); opacity:.75;
+    font-family:"Shippori Mincho", serif;
   }
-  #resultCard .count{
-    font-size:12px; color:#a8916a; margin-bottom:20px;
+
+  #afterSlip{ margin-top:12px; }
+  .flatReport{
+    display:inline-block;
+    font-size:12.5px; color:#e8dcc0; font-weight:700;
+    background:#00000030; border-radius:12px; padding:6px 14px;
+    margin-bottom:8px;
   }
-  #resultCard .count b{ color:var(--indigo-deep); font-size:16px; }
+  #introLine{ font-size:12.5px; color:#ffe9a8; font-weight:700; margin:0 0 8px; line-height:1.6; }
+  .factRow{
+    display:flex; align-items:center; gap:10px;
+    background:#fffaf0e8; border-radius:12px;
+    padding:8px 12px; margin-bottom:6px; text-align:left;
+  }
+  .factRow.event{ background:#f6e2a8e8; }
+  .factRow .icon{ font-size:17px; }
+  .factRow .txt{ font-size:12.5px; font-weight:700; color:var(--charcoal); line-height:1.5; }
+  .factRow .txt b{ color:var(--vermillion); font-size:14px; }
+  #totalLine{ font-size:11.5px; color:#e8dcc0; margin:8px 0 0; font-weight:700; }
   #newBoxBtn{
-    padding:13px 30px; border:none; border-radius:24px;
+    margin-top:12px;
+    padding:12px 28px; border:none; border-radius:24px;
     background:linear-gradient(160deg, var(--indigo-mid), var(--indigo-deep));
-    color:#f6efe0; font-weight:700; font-size:13.5px; letter-spacing:1px;
+    color:#f6efe0; font-weight:700; font-size:13.5px; letter-spacing:1px; font-family:inherit;
     box-shadow:0 5px 0 #16273e, 0 8px 14px rgba(0,0,0,.25);
+    cursor:pointer;
   }
   #newBoxBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #16273e; }
 </style>
@@ -380,9 +493,16 @@
   <header>
     <h1 class="mincho">モヤモヤ納品</h1>
     <span class="kanji-sub">— 心の荷物、お預かりします —</span>
+    <div id="boxRow"></div>
   </header>
 
   <div id="boxStage">
+    <div id="tagPicker">
+      <span class="q">札をつける？</span>
+      <button class="tagBtn" data-tag="fact">事実</button>
+      <button class="tagBtn" data-tag="feel">気持ち</button>
+      <button class="tagBtn" data-tag="both">どっちも</button>
+    </div>
     <div id="boxShip">
       <div id="lid">
         <div id="lidFace"></div>
@@ -397,21 +517,43 @@
     </div>
   </div>
 
-  <button id="closeLidBtn">フタを閉める</button>
+  <button id="closeLidBtn">フタを閉めて、届け先を選ぶ</button>
 
   <div id="inputBar">
     <input id="moyaInput" type="text" maxlength="40" placeholder="今日のモヤモヤを書き出してみる…" />
-    <button id="spitBtn">吐き出す</button>
+    <button id="spitBtn">書き出す</button>
   </div>
 </div>
 
-<div id="resultScreen">
-  <div id="resultCard">
-    <div class="stamp mincho">納品完了</div>
-    <h2>お疲れ様でした！</h2>
-    <p>今日のモヤモヤは、ちゃんと箱に収めて送り出しました。<br>あとはもう、気にしなくて大丈夫です。</p>
-    <div class="count">納品したモヤモヤ：<b id="deliverCount">0</b> 個</div>
-    <button id="newBoxBtn">また箱を用意する</button>
+<div id="destScreen" class="overlay">
+  <div class="overlayInner">
+    <h2 class="mincho">届け先を選んでください</h2>
+    <div class="sub" id="destSub"></div>
+    <div id="destCards"></div>
+  </div>
+</div>
+
+<div id="resultScreen" class="overlay">
+  <div class="overlayInner">
+    <div id="slip">
+      <div class="slipHead">
+        <span class="slipTitle mincho">お届け伝票</span>
+        <span class="slipNo" id="slipNo"></span>
+      </div>
+      <div class="stampDone">受領</div>
+      <div class="slipRow"><span class="k">お届け先</span><span class="v" id="slipDest"></span></div>
+      <div class="slipRow"><span class="k">品名</span><span class="v" id="slipItem"></span></div>
+      <div class="slipRow"><span class="k">重さ</span><span class="v" id="slipWeight"></span></div>
+      <div class="slipRow"><span class="k">到着</span><span class="v" id="slipEta"></span></div>
+      <div id="slipComment"><span class="who" id="slipWho"></span><span id="slipText"></span></div>
+    </div>
+    <div id="afterSlip">
+      <div class="flatReport" id="flatReport"></div>
+      <div id="introLine"></div>
+      <div id="factRows"></div>
+      <div id="totalLine"></div>
+      <button id="newBoxBtn">また箱を用意する</button>
+    </div>
   </div>
 </div>
 
@@ -426,65 +568,175 @@
   const closeLidBtn = document.getElementById('closeLidBtn');
   const moyaInput = document.getElementById('moyaInput');
   const spitBtn = document.getElementById('spitBtn');
+  const tagPicker = document.getElementById('tagPicker');
+  const boxRow = document.getElementById('boxRow');
+  const destScreen = document.getElementById('destScreen');
+  const destSub = document.getElementById('destSub');
+  const destCards = document.getElementById('destCards');
   const resultScreen = document.getElementById('resultScreen');
-  const deliverCountEl = document.getElementById('deliverCount');
+  const flatReport = document.getElementById('flatReport');
+  const introLine = document.getElementById('introLine');
+  const factRows = document.getElementById('factRows');
+  const totalLine = document.getElementById('totalLine');
   const newBoxBtn = document.getElementById('newBoxBtn');
 
-  let deliveredCount = 0;
-  let firstDelivered = false;
-  let sealed = false;
+  const GRAMS_PER_CHAR = 15; // 1文字 = 15g として重さにする
+
+  /* =========================================================
+     届け先（スケールの大きい場所ほど「大きな世界」）
+     ========================================================= */
+  const DESTS = [
+    { id:'moon',    icon:'🌕', name:'月の裏側',         desc:'38万km先の静かな倉庫', who:'うさぎ配送員',
+      eta:['3日後','次の満月の夜'], say:['餅といっしょに、ちゃんと保管しておくね','月から見ると、地球はまるくて小さいよ','受け取りました。ここはとても静かです'] },
+    { id:'penguin', icon:'🐧', name:'南極 ペンギン配送センター', desc:'冷凍でしっかり保管', who:'ペンギン一同',
+      eta:['1週間後','白夜が明けたころ'], say:['冷凍保存しておきます','みんなで順番に眺めました。ふむふむ','ここは寒いので、たいていのものは固まって動かなくなります'] },
+    { id:'deepsea', icon:'🐟', name:'深海6000m',         desc:'暗くて静かな海の底', who:'デメニギス',
+      eta:['ゆっくり沈んで10日後','そのうち'], say:['暗いところで、預かっておくね','ここは水圧がすごいので、たいていのものは小さくなる','光る魚たちが見張ってくれています'] },
+    { id:'future',  icon:'📮', name:'1年後の自分',       desc:'タイムカプセル便', who:'1年後のあなた',
+      eta:['ちょうど1年後','来年の今日'], say:['届いたよ。ちょっと懐かしい','開けるかどうかは、そのとき決めるね','こんなこと考えてたんだね、と思いました'] },
+    { id:'galaxy',  icon:'🌌', name:'銀河の果ての倉庫',   desc:'138億年保管できます', who:'倉庫番ロボ',
+      eta:['光の速さで2万年後','いつか'], say:['登録番号を振りました。ずっと置いておけます','宇宙は広いので、置き場所には困りません','ピピッ。受領完了'] },
+    { id:'edo',     icon:'🏃', name:'江戸時代',           desc:'飛脚が走って届けます', who:'飛脚の源さん',
+      eta:['300年前に到着済み','へい、明日には'], say:['へい、確かに！','江戸でもみんな、似たようなことで悩んでましたぜ','重さは問題ねえ。走るだけでさ'] },
+    { id:'dino',    icon:'🦕', name:'白亜紀',             desc:'6600万年前の大地', who:'トリケラトプス',
+      eta:['6600万年前','ずっと昔'], say:['（もぐもぐ…）','受け取りのしるしに、足跡を押しておいた','このへんは火山がにぎやかです'] },
+    { id:'fuji',    icon:'🗻', name:'富士山頂',           desc:'雲の上でひと晩あずかります', who:'山小屋のおじさん',
+      eta:['明日の朝','ご来光のころ'], say:['ここからだと、雲が下に見えるよ','ひと晩、あずかっておくね','朝日に当てておきました'] },
+    { id:'cat',     icon:'🐈', name:'ねこの集会所',       desc:'夜の公園で受け取ります', who:'ボスねこ',
+      eta:['今夜','気が向いたら'], say:['にゃ（確かに）','中身より、箱のほうに興味がある','みんなで箱に入って寝ています'] },
+    { id:'turtle',  icon:'🐢', name:'太平洋のまんなか',   desc:'ウミガメがのんびり運びます', who:'ウミガメ',
+      eta:['100年くらいかけて','のんびり'], say:['のんびり運んでいくね','海は広いから、まあ、だいたい浮かんでいられる','途中でクジラにも見せておくね'] }
+  ];
+  const RARE_DESTS = [
+    { id:'museum',  icon:'🏛️', name:'未来の博物館',       desc:'展示品として受け付けます', who:'学芸員',
+      eta:['西暦3000年','展示準備中'], say:['「2020年代のモヤモヤ」として展示します','来館者が熱心に見ていました'] },
+    { id:'blackhole', icon:'🕳️', name:'ブラックホール',   desc:'返品はできません', who:'事象の地平面 係',
+      eta:['……','時間の概念がありません'], say:['……（吸い込まれました）','光も出てこられないので、中身は誰にも見えません'] }
+  ];
+  const RARE_RATE = 0.12;
+  const ALL_DESTS = DESTS.concat(RARE_DESTS);
+
+  /* 箱の柄（出荷数で増える） */
+  const BOXES = [
+    { id:'ai',     name:'藍',   from:0,  mid:'#2e4a70', deep:'#1f3350' },
+    { id:'shu',    name:'朱',   from:3,  mid:'#b5493c', deep:'#7e2a22' },
+    { id:'sakura', name:'桜',   from:6,  mid:'#d68aa0', deep:'#a85a72' },
+    { id:'wakaba', name:'若草', from:10, mid:'#7fa25a', deep:'#4f7036' },
+    { id:'kin',    name:'金',   from:16, mid:'#c9a227', deep:'#8a6e14' }
+  ];
+
+  /* =========================================================
+     累計記録（書いた言葉は保存しない）
+     ========================================================= */
+  const SAVE_KEY = 'moyamoyaDelivery_v1';
+  function defaultSave(){ return { ships:0, items:0, grams:0, dests:{}, box:'ai' }; }
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      return raw ? Object.assign(defaultSave(), JSON.parse(raw)) : defaultSave();
+    }catch(e){ return defaultSave(); }
+  }
+  function writeSave(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){ /* 保存できない環境では今回分だけ */ }
+  }
+  let save = loadSave();
 
   function rand(min,max){ return min + Math.random()*(max-min); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  function fmtWeight(g){ return g >= 1000 ? (g/1000).toFixed(2) + 'kg' : g + 'g'; }
 
-  // ===== ブロック生成 =====
+  /* =========================================================
+     この回の状態
+     ========================================================= */
+  let blocks = [];      // { el, text, inBox, tag }
+  let sealed = false;
+  let pendingTagBlock = null;
+  let tagTimer = null;
+  let writtenCount = 0;
+
+  function currentBox(){ return BOXES.find(b => b.id === save.box && save.ships >= b.from) || BOXES[0]; }
+  function applyBox(){
+    const b = currentBox();
+    boxShip.style.setProperty('--indigo-mid', b.mid);
+    boxShip.style.setProperty('--indigo-deep', b.deep);
+  }
+  function renderBoxRow(){
+    const list = BOXES.filter(b => save.ships >= b.from);
+    boxRow.innerHTML = '';
+    if(list.length <= 1) return;
+    const label = document.createElement('span');
+    label.textContent = '箱：';
+    boxRow.appendChild(label);
+    list.forEach(b => {
+      const sw = document.createElement('div');
+      sw.className = 'boxSwatch' + (b.id === currentBox().id ? ' selected' : '');
+      sw.style.background = `linear-gradient(160deg, ${b.mid}, ${b.deep})`;
+      sw.title = b.name;
+      sw.addEventListener('click', () => {
+        if(sealed) return;
+        save.box = b.id;
+        writeSave();
+        applyBox();
+        renderBoxRow();
+      });
+      boxRow.appendChild(sw);
+    });
+  }
+
+  /* ===== ブロック生成 ===== */
   function spitOutBlock(){
     const text = moyaInput.value.trim();
     if(!text || sealed) return;
     moyaInput.value = '';
+    writtenCount++;
 
-    const block = document.createElement('div');
-    block.className = 'moyaBlock popIn';
-    block.textContent = text;
-    document.body.appendChild(block);
+    const el = document.createElement('div');
+    el.className = 'moyaBlock popIn';
+    el.textContent = text;
+    document.body.appendChild(el);
+    const b = { el, text, inBox:false, tag:null };
+    blocks.push(b);
 
     // 入力欄の少し上にランダムな位置で出現
     const barRect = spitBtn.getBoundingClientRect();
-    const bw = block.offsetWidth || 120;
+    const bw = el.offsetWidth || 120;
     const startX = Math.min(window.innerWidth - bw - 20,
-                    Math.max(20, barRect.left + rand(-60,60)));
-    const startY = barRect.top - 90 + rand(-20,10);
-    block.style.left = startX + 'px';
-    block.style.top = startY + 'px';
+                    Math.max(20, window.innerWidth/2 - bw/2 + rand(-90,90)));
+    const startY = barRect.top - 80 + rand(-20,10);
+    el.style.left = startX + 'px';
+    el.style.top = startY + 'px';
 
-    attachDrag(block);
+    attachDrag(b);
   }
 
-  // ===== ドラッグ処理（重みのある手触り） =====
-  function attachDrag(block){
+  // ===== ドラッグ処理（重みのある手触り）。タップだけでも箱に入る =====
+  function attachDrag(b){
+    const block = b.el;
     let dragging = false;
-    let px, py;           // ポインタ座標
-    let curX, curY;       // 表示座標（追従は遅れる＝重み）
-    let offX, offY;
+    let px, py, curX, curY, offX, offY, downX, downY;
     let rafId = null;
     let lastCurX = 0;
 
-    function getPos(){
-      const r = block.getBoundingClientRect();
-      return { x:r.left, y:r.top };
-    }
-
     function onPointerDown(e){
-      if(sealed) return;
+      if(sealed || b.inBox) return;
       dragging = true;
       block.classList.add('dragging');
-      block.classList.remove('settling','rejected');
+      block.classList.remove('settling','popIn');
       block.setPointerCapture(e.pointerId);
-      const pos = getPos();
-      curX = pos.x; curY = pos.y; lastCurX = curX;
-      offX = e.clientX - pos.x;
-      offY = e.clientY - pos.y;
-      px = e.clientX - offX;
-      py = e.clientY - offY;
+      const r = block.getBoundingClientRect();
+      curX = r.left; curY = r.top; lastCurX = curX;
+      downX = e.clientX; downY = e.clientY;
+      offX = e.clientX - r.left;
+      offY = e.clientY - r.top;
+      px = curX; py = curY;
       block.style.transition = 'none';
       loop();
       block.addEventListener('pointermove', onPointerMove);
@@ -496,20 +748,18 @@
       if(!dragging) return;
       px = e.clientX - offX;
       py = e.clientY - offY;
-      checkHover();
+      innerWell.classList.toggle('drop-hover', isOverWell());
     }
 
-    function checkHover(){
-      const wellRect = innerWell.getBoundingClientRect();
+    function isOverWell(){
+      const w = innerWell.getBoundingClientRect();
       const cx = curX + block.offsetWidth/2;
       const cy = curY + block.offsetHeight/2;
-      const inside = cx > wellRect.left && cx < wellRect.right && cy > wellRect.top && cy < wellRect.bottom;
-      innerWell.classList.toggle('drop-hover', inside);
+      return cx > w.left && cx < w.right && cy > w.top - 20 && cy < w.bottom;
     }
 
     function loop(){
       if(!dragging) return;
-      // 重みのある追従（イージングで少し遅れてついてくる）
       curX += (px - curX) * 0.28;
       curY += (py - curY) * 0.28;
       const vx = curX - lastCurX;
@@ -529,17 +779,12 @@
       block.removeEventListener('pointermove', onPointerMove);
       block.removeEventListener('pointerup', onPointerUp);
       block.removeEventListener('pointercancel', onPointerUp);
-
-      const wellRect = innerWell.getBoundingClientRect();
-      const cx = curX + block.offsetWidth/2;
-      const cy = curY + block.offsetHeight/2;
-      const inside = cx > wellRect.left && cx < wellRect.right && cy > wellRect.top && cy < wellRect.bottom;
       innerWell.classList.remove('drop-hover');
 
-      if(inside){
-        settleIntoBox(block);
+      const tapped = Math.hypot(e.clientX - downX, e.clientY - downY) < 6;
+      if(tapped || isOverWell()){
+        settleIntoBox(b);
       } else {
-        // 箱の外なら、ストンとその場に着地するだけ
         block.classList.add('settling');
         block.style.transform = 'rotate(0deg)';
       }
@@ -548,85 +793,224 @@
     block.addEventListener('pointerdown', onPointerDown);
   }
 
-  function settleIntoBox(block){
-    block.classList.add('settling');
-    const wellRect = innerWell.getBoundingClientRect();
-    const targetX = wellRect.left + rand(14, Math.max(20, wellRect.width - block.offsetWidth - 14));
-    const targetY = wellRect.top + rand(10, Math.max(14, wellRect.height - block.offsetHeight - 10));
-    const rot = rand(-8,8);
-
-    // ストンと落ちる（少し重みのある着地）
+  function settleIntoBox(b){
+    const block = b.el;
+    b.inBox = true;
+    block.classList.add('inBox');
+    const w = innerWell.getBoundingClientRect();
     requestAnimationFrame(() => {
+      const targetX = w.left + rand(8, Math.max(10, w.width - block.offsetWidth - 8));
+      const targetY = w.top + rand(6, Math.max(8, w.height - block.offsetHeight - 6));
       block.style.left = targetX + 'px';
       block.style.top = targetY + 'px';
-      block.style.transform = `rotate(${rot}deg) scale(.94)`;
+      block.style.transform = `rotate(${rand(-8,8)}deg)`;
     });
-
-    setTimeout(() => {
-      block.style.pointerEvents = 'none';
-    }, 380);
-
-    deliveredCount++;
-    if(!firstDelivered){
-      firstDelivered = true;
-      closeLidBtn.classList.add('show');
-    }
+    block.style.pointerEvents = 'none';
+    closeLidBtn.classList.add('show');
+    askTag(b);
   }
 
-  // ===== フタを閉める・出荷演出 =====
-  function closeLidAndShip(){
+  /* ===== 札（任意）。選んでも選ばなくても、やがて色が抜ける ===== */
+  function askTag(b){
+    if(pendingTagBlock && pendingTagBlock !== b) grayOut(pendingTagBlock);
+    pendingTagBlock = b;
+    tagPicker.classList.add('show');
+    clearTimeout(tagTimer);
+    tagTimer = setTimeout(() => { grayOut(b); }, 4000);
+  }
+  function setTag(tag){
+    const b = pendingTagBlock;
+    if(!b) return;
+    b.tag = tag;
+    const t = document.createElement('span');
+    t.className = 'tag ' + tag;
+    t.textContent = tag === 'fact' ? '事実' : tag === 'feel' ? '気持ち' : 'どっちも';
+    b.el.appendChild(t);
+    grayOut(b);
+  }
+  function grayOut(b){
+    b.el.classList.add('gray');
+    if(pendingTagBlock === b){
+      pendingTagBlock = null;
+      tagPicker.classList.remove('show');
+      clearTimeout(tagTimer);
+    }
+  }
+  tagPicker.querySelectorAll('.tagBtn').forEach(btn => {
+    btn.addEventListener('click', () => setTag(btn.dataset.tag));
+  });
+
+  /* ===== フタを閉める → 届け先 ===== */
+  function openDestPicker(){
     if(sealed) return;
+    if(pendingTagBlock) grayOut(pendingTagBlock);
     sealed = true;
     closeLidBtn.classList.remove('show');
-
     lid.classList.add('closed');
+    setTimeout(() => { ribbonWrap.style.display = 'block'; }, 450);
+
+    const inBox = blocks.filter(b => b.inBox);
+    const grams = inBox.reduce((s,b) => s + Array.from(b.text).length * GRAMS_PER_CHAR, 0);
+    destSub.textContent = `${inBox.length}個・${fmtWeight(grams)}`;
+
+    let options = shuffle(DESTS).slice(0, 3);
+    if(Math.random() < RARE_RATE) options[2] = pick(RARE_DESTS);
+    destCards.innerHTML = '';
+    options.forEach(d => {
+      const card = document.createElement('button');
+      card.className = 'destCard' + (RARE_DESTS.includes(d) ? ' rare' : '');
+      card.innerHTML = `<span class="ic"></span><span><span class="nm"></span>${save.dests[d.id] ? '' : '<span class="new">NEW</span>'}<br><span class="ds"></span></span>`;
+      card.querySelector('.ic').textContent = d.icon;
+      card.querySelector('.nm').textContent = d.name;
+      card.querySelector('.ds').textContent = d.desc;
+      card.addEventListener('click', () => ship(d, inBox, grams));
+      destCards.appendChild(card);
+    });
+    setTimeout(() => destScreen.classList.add('show'), 1100);
+  }
+
+  function ship(dest, inBox, grams){
+    destScreen.classList.remove('show');
+    // 箱の中のブロックも一緒に飛んでいく
+    inBox.forEach(b => {
+      b.el.style.transition = 'transform .9s cubic-bezier(.5,0,.85,.25), opacity .9s ease';
+      b.el.style.transform = 'translateY(-1100px)';
+      b.el.style.opacity = '0';
+    });
+    boxShip.classList.add('launch');
+
+    const newDest = !save.dests[dest.id];
+    const beforeBoxes = BOXES.filter(b => save.ships >= b.from).length;
+    save.ships += 1;
+    save.items += inBox.length;
+    save.grams += grams;
+    save.dests[dest.id] = true;
+    writeSave();
+    const newBoxes = BOXES.filter(b => save.ships >= b.from).slice(beforeBoxes);
 
     setTimeout(() => {
-      ribbonWrap.style.display = 'block';
-    }, 500);
-
-    setTimeout(() => {
-      boxShip.classList.add('launch');
-    }, 1450);
-
-    setTimeout(() => {
-      deliverCountEl.textContent = deliveredCount;
+      renderResult(dest, inBox, grams, newDest, newBoxes);
       resultScreen.classList.add('show');
-      sendResultToPortal();
-    }, 2350);
+      sendResultToPortal(dest, inBox, grams);
+    }, 1000);
+  }
+
+  /* ===== 伝票と結果 ===== */
+  function renderResult(dest, inBox, grams, newDest, newBoxes){
+    document.getElementById('slipNo').textContent = 'No.' + String(Math.floor(rand(100000, 999999)));
+    document.getElementById('slipDest').textContent = `${dest.icon} ${dest.name}`;
+    document.getElementById('slipItem').textContent = `モヤモヤ ${inBox.length} 個`;
+    document.getElementById('slipWeight').textContent = fmtWeight(grams);
+    document.getElementById('slipEta').textContent = pick(dest.eta);
+    document.getElementById('slipWho').textContent = `受取人：${dest.who}`;
+    document.getElementById('slipText').textContent = `「${pick(dest.say)}」`;
+
+    // 結果は事実として（グレースケール）
+    flatReport.textContent = `${inBox.length}個、${fmtWeight(grams)} を出荷した（事実）`;
+
+    // 意図が伝わるよう、最初の1回だけ一言そえる
+    if(save.ships === 1){
+      introLine.textContent = '箱に入れても、なくなるわけじゃない。ただ、置き場所が決まった。';
+      introLine.style.display = 'block';
+    } else {
+      introLine.style.display = 'none';
+    }
+
+    factRows.innerHTML = '';
+    buildLines(inBox).forEach(l => factRows.appendChild(makeRow(l, false)));
+    if(newDest){
+      const seen = Object.keys(save.dests).length;
+      factRows.appendChild(makeRow({ icon:'🗺️', text:`はじめての届け先だった（配送先帳 ${seen} / ${ALL_DESTS.length}）` }, true));
+    }
+    newBoxes.forEach(b => factRows.appendChild(makeRow({ icon:'🎁', text:`新しい箱「${b.name}」が使えるようになった` }, true)));
+
+    totalLine.textContent = `これまでに ${save.ships} 回、合計 ${fmtWeight(save.grams)} を出荷`;
+  }
+
+  // その回のデータから「見てたよ」の言葉を組み立てる（評価語は使わない）
+  function buildLines(inBox){
+    const n = v => `<b>${v}</b>`;
+    const chars = blocks.reduce((s,b) => s + Array.from(b.text).length, 0);
+    const main = pick([
+      { icon:'✍️', text:`${n(writtenCount)} 個のモヤモヤを、言葉にして書き出してた` },
+      { icon:'✍️', text:`ぜんぶで ${n(chars)} 文字、書き出してた` }
+    ]);
+    const extras = [];
+    const facts = inBox.filter(b => b.tag === 'fact').length;
+    const feels = inBox.filter(b => b.tag === 'feel').length;
+    const boths = inBox.filter(b => b.tag === 'both').length;
+    if(facts + feels + boths > 0){
+      const parts = [];
+      if(facts) parts.push(`「事実」${n(facts)}`);
+      if(feels) parts.push(`「気持ち」${n(feels)}`);
+      if(boths) parts.push(`「どっちも」${n(boths)}`);
+      extras.push({ icon:'🏷️', text:`${parts.join('・')} の札をつけてた` });
+    }
+    const kept = blocks.length - inBox.length;
+    if(kept > 0){
+      extras.push({ icon:'🤲', text:`${n(kept)} 個は箱に入れずに、手元に残した` });
+    } else if(inBox.length >= 2){
+      extras.push({ icon:'📦', text:`書いたものは全部、箱に入れた` });
+    }
+    const longest = inBox.slice().sort((a,b) => b.text.length - a.text.length)[0];
+    if(longest && Array.from(longest.text).length >= 12){
+      extras.push({ icon:'⚖️', text:`いちばん重かったのは ${n(fmtWeight(Array.from(longest.text).length * GRAMS_PER_CHAR))}` });
+    }
+    return [main].concat(shuffle(extras).slice(0, 2));
+  }
+
+  function makeRow(line, isEvent){
+    const row = document.createElement('div');
+    row.className = 'factRow' + (isEvent ? ' event' : '');
+    const icon = document.createElement('div');
+    icon.className = 'icon';
+    icon.textContent = line.icon;
+    const txt = document.createElement('div');
+    txt.className = 'txt';
+    txt.innerHTML = line.text; // 数値と固定文だけ（書いた言葉はここに入れない）
+    row.appendChild(icon);
+    row.appendChild(txt);
+    return row;
   }
 
   // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する
-  function sendResultToPortal(){
+  // （書いた言葉の中身は送らない）
+  function sendResultToPortal(dest, inBox, grams){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'moyamoya-delivery',
-        summary: `モヤモヤを${deliveredCount}個、納品完了！`,
-        detail: { delivered: deliveredCount }
+        summary: `モヤモヤを${inBox.length}個（${fmtWeight(grams)}）、${dest.name}へ出荷！`,
+        detail: { delivered: inBox.length, grams, dest: dest.id, written: writtenCount, ships: save.ships }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
   function resetAll(){
     sealed = false;
-    firstDelivered = false;
-    deliveredCount = 0;
-    document.querySelectorAll('.moyaBlock').forEach(b => b.remove());
-
+    blocks.forEach(b => b.el.remove());
+    blocks = [];
+    writtenCount = 0;
+    pendingTagBlock = null;
+    tagPicker.classList.remove('show');
     lid.classList.remove('closed');
     boxShip.classList.remove('launch');
     ribbonWrap.style.display = 'none';
     closeLidBtn.classList.remove('show');
     resultScreen.classList.remove('show');
+    applyBox();
+    renderBoxRow();
   }
 
   spitBtn.addEventListener('click', spitOutBlock);
   moyaInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') spitOutBlock();
+    if(e.key === 'Enter' && !e.isComposing) spitOutBlock();
   });
-  closeLidBtn.addEventListener('click', closeLidAndShip);
+  closeLidBtn.addEventListener('click', openDestPicker);
   newBoxBtn.addEventListener('click', resetAll);
+
+  applyBox();
+  renderBoxRow();
 })();
 </script>
 </body>
