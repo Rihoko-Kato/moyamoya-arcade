@@ -87,7 +87,34 @@
     box-shadow:0 0 18px rgba(208,122,216,.55);
   }
   .thought.boss .hp{ display:block; font-size:10px; letter-spacing:2px; opacity:.85; }
-  .thought.sheep{ background:none; box-shadow:none; padding:0; font-size:32px; line-height:1; }
+  .thought.star{ background:none; box-shadow:none; padding:0; font-size:30px; line-height:1; filter:drop-shadow(0 0 6px #fff6c0); }
+  /* 夜が深まると混ざる、どうでもいい考えごと */
+  .thought.weird{ background:#1f3a5aee; border:1.5px dashed #8fc8ff; color:#dcefff; border-radius:18px; }
+
+  /* 柵と、吹き飛ばした考えごとが変身したひつじ */
+  #fence{
+    position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+    width:72px; height:34px; z-index:3; pointer-events:none;
+    background:
+      linear-gradient(#c9a27a,#c9a27a) 0 8px/100% 4px no-repeat,
+      linear-gradient(#c9a27a,#c9a27a) 0 18px/100% 4px no-repeat,
+      repeating-linear-gradient(90deg, #a87e58 0 6px, transparent 6px 19px);
+    opacity:.85;
+  }
+  .runSheep{
+    position:absolute; bottom:4px; left:-40px; z-index:3; pointer-events:none;
+    animation:sheepRun 2.4s linear forwards;
+  }
+  .runSheep span{ display:block; font-size:24px; animation:sheepHop 2.4s ease-in-out forwards; }
+  @keyframes sheepRun{ to{ left:calc(100% + 40px); } }
+  /* 🐑 は左向きなので、右へ走るときは反転させる */
+  @keyframes sheepHop{
+    0%,40%{ transform:scaleX(-1) translateY(0); }
+    50%{ transform:scaleX(-1) translateY(-34px) rotate(12deg); }
+    60%,100%{ transform:scaleX(-1) translateY(0); }
+  }
+  #sheepCount{ font-size:11px; color:#cfc4ee; text-align:center; }
+  #app.dawn #sheepCount{ color:#6a5a3a; }
   .thought.hit{ animation:hitShake .2s ease; }
   @keyframes hitShake{ 25%{ margin-left:-5px; } 75%{ margin-left:5px; } }
   .thought.gone{ transition:transform .45s cubic-bezier(.2,.7,.3,1), opacity .45s ease; opacity:0; pointer-events:none; }
@@ -135,6 +162,14 @@
   @keyframes banner{ 0%{ opacity:0; transform:translate(-50%,-30%); } 15%,75%{ opacity:1; transform:translate(-50%,-50%); } 100%{ opacity:0; } }
   #banner .big{ font-size:30px; font-weight:900; letter-spacing:4px; color:var(--gold); text-shadow:0 3px 12px rgba(0,0,0,.4); }
   #banner .small{ font-size:13px; font-weight:700; margin-top:4px; }
+  #banner{ width:90%; max-width:420px; }
+  #banner .dream{
+    margin-top:10px; font-size:13px; font-weight:700; line-height:1.6;
+    background:#ffffffd8; color:#4a3f6a; border-radius:14px; padding:8px 12px;
+  }
+  #banner .dream:empty{ display:none; }
+  #banner .dream::before{ content:"💤 今夜見た夢"; display:block; font-size:10.5px; color:#8a7fb0; }
+  #banner.long{ animation-duration:3.6s; }
   #app.dawn #banner .big{ color:#c9891a; text-shadow:none; }
   #app.dawn #banner .small{ color:#6a5a3a; }
 
@@ -170,6 +205,12 @@
   .stat .n{ font-size:20px; font-weight:900; color:var(--gold); }
   .stat .l{ font-size:10.5px; color:#b7a9e0; }
   #comment{ font-size:13px; background:#ffffff0e; border-radius:12px; padding:8px 12px; margin-bottom:14px; }
+  #lastDream{
+    font-size:13px; line-height:1.6; text-align:left;
+    background:#ffffffe0; color:#4a3f6a; border-radius:12px; padding:8px 12px; margin-bottom:12px;
+  }
+  #lastDream:empty{ display:none; }
+  #lastDream::before{ content:"💤 最後に見た夢"; display:block; font-size:10.5px; color:#8a7fb0; }
 </style>
 </head>
 <body>
@@ -182,6 +223,7 @@
       <div id="score"><small>SCORE</small><span id="scoreVal">0</span></div>
       <div>
         <div id="nightLabel">1夜目</div>
+        <div id="sheepCount">🐑 0</div>
         <div id="comboBox"><b id="comboVal">0</b> COMBO</div>
       </div>
       <div id="lives"></div>
@@ -191,7 +233,8 @@
 
   <div id="sleeper"><span id="face">😴</span></div>
   <div id="layer"></div>
-  <div id="banner"><div class="big" id="bannerBig"></div><div class="small" id="bannerSmall"></div></div>
+  <div id="fence"></div>
+  <div id="banner"><div class="big" id="bannerBig"></div><div class="small" id="bannerSmall"></div><div class="dream" id="bannerDream"></div></div>
 </div>
 
 <div id="startScreen" class="overlay show">
@@ -201,7 +244,8 @@
       眠ろうとすると、考えごとが押し寄せてくる。<br>
       <span class="tag e">むらさき</span>タップで吹き飛ばす<br>
       <span class="tag f">グレー</span>さわらずに通すと得点<br>
-      🐑 タップでボーナス＆眠りが深くなる<br>
+      吹き飛ばした考えごとは、ひつじになって柵をこえていく🐑<br>
+      🌠 タップでボーナス＆眠りが深くなる<br>
       ゲージがたまると朝。夜を重ねるほど手強くなる。<br>
       ❤ がなくなったら、おしまい。
     </div>
@@ -218,9 +262,10 @@
     <div id="bestLine"></div>
     <div class="stats">
       <div class="stat"><div class="n" id="stNight">0</div><div class="l">越えた夜</div></div>
-      <div class="stat"><div class="n" id="stBlast">0</div><div class="l">吹き飛ばした数</div></div>
+      <div class="stat"><div class="n" id="stBlast">0</div><div class="l">数えたひつじ</div></div>
       <div class="stat"><div class="n" id="stCombo">0</div><div class="l">最大コンボ</div></div>
     </div>
+    <div id="lastDream"></div>
     <div id="comment"></div>
     <button class="mainBtn" id="retryBtn">もう一度ねる</button>
   </div>
@@ -244,6 +289,19 @@
       fact:['週末に会う予定がある','LINEの返信が来てた','朝ごはんは一緒','電話は10分だった','お土産を渡しそびれた'] }
   ];
   const BOSS_TEXTS = ['自分はダメな人間だ','どうせ何やってもムダ','みんなに嫌われてる','自分には何もない'];
+  // ボスのまぬけな倒れ方
+  const BOSS_DOWN = ['…ぐぅ（ボスも寝た）','まくらに負けた','毛布にくるまって退場','あくびして帰った'];
+  // 夜が深まると混ざる、どうでもいい考えごと（届いてもハートは減らない。夢に混ざる）
+  const WEIRD = ['冷蔵庫のプリン食べたっけ','ペンギンって膝あるのかな','明日の天気なんだろ','あの歌の続きなんだっけ','なんで靴下って片方消える？','カピバラって何考えてる？','おにぎりの具、何が最強？'];
+  // 「今夜見た夢」の材料
+  const DREAM_WHO = {
+    'バイトのこと':['店長','先輩','新人くん','常連さん'],
+    '制作のこと':['先生','ライバル','巨大な粘土','完成した作品'],
+    '面接・発表のこと':['面接官','隣の就活生','司会者','教授'],
+    '家族・親しい人のこと':['お母さん','いとこ','飼い猫','おばあちゃん']
+  };
+  const DREAM_WHERE = ['プリンの上で','雲の上で','冷蔵庫の中で','巨大なおふとんの上で','月面で','回転寿司のレーンの上で','ペンギンの行列の中で'];
+  const DREAM_DO = ['空を飛んでいた','タップダンスしていた','綿あめを配っていた','ひたすら回転していた','ラーメンを茹でていた','カラオケで100点を出していた'];
   const MANTRAS = ['まあいっか！','寝たら忘れる！','それはそれ！','明日考えよう','おふとんの勝ち','今日は閉店！','続きは夢で','ひと晩おいとこ','いったん保留！','深呼吸〜'];
   const COMMENTS = {
     great: ['夜の番人みたいだった','もう考えごとの方が逃げていく','その連打、プロ級'],
@@ -289,7 +347,8 @@
   let score = 0, combo = 0, maxCombo = 0, lives = MAX_LIVES;
   let blasted = 0, nightsCleared = 0;
   let gauge = 0, thoughts = [];
-  let nextEmo = 0, nextFact = 0, nextSheep = 0, bossSpawned = false;
+  let nextEmo = 0, nextFact = 0, nextStar = 0, nextWeird = 0, bossSpawned = false;
+  let sheepCount = 0, dreamBits = [], lastDream = '';
   let lastTs = null, rafId = null;
 
   // 夜が進むほど速く・多く
@@ -314,6 +373,7 @@
       lv.appendChild(s);
     }
     gaugeInner.style.width = Math.min(100, gauge) + '%';
+    document.getElementById('sheepCount').textContent = `🐑 ${sheepCount}`;
   }
 
   /* ===== 出現 ===== */
@@ -323,9 +383,9 @@
     const el = document.createElement('div');
     el.className = 'thought ' + kind;
     let x, y, vx, vy, hp = 1, text = '';
-    if(kind === 'sheep'){
-      el.textContent = '🐑';
-      x = -30; y = rand(h*0.25, h*0.42); vx = rand(70, 100); vy = 0;
+    if(kind === 'star'){
+      el.textContent = '🌠';
+      x = -30; y = rand(h*0.2, h*0.4); vx = rand(80, 110); vy = rand(8, 20);
     } else {
       if(kind === 'boss'){
         text = pick(BOSS_TEXTS);
@@ -334,7 +394,7 @@
         el.querySelector('.txt').textContent = text;
         el.querySelector('.hp').textContent = '●'.repeat(hp);
       } else {
-        text = kind === 'emo' ? pick(theme.emo) : pick(theme.fact);
+        text = kind === 'emo' ? pick(theme.emo) : kind === 'weird' ? pick(WEIRD) : pick(theme.fact);
         el.textContent = text;
       }
       const edge = pick(['top','left','right','bottom']);
@@ -351,7 +411,7 @@
     el.style.left = x + 'px';
     el.style.top = y + 'px';
     layer.appendChild(el);
-    const t = { kind, el, x, y, vx, vy, hp, maxHp:hp, done:false };
+    const t = { kind, el, x, y, vx, vy, hp, maxHp:hp, done:false, text };
     el.addEventListener('pointerdown', e => { e.preventDefault(); tap(t); });
     thoughts.push(t);
   }
@@ -359,10 +419,11 @@
   /* ===== タップ ===== */
   function tap(t){
     if(!running || paused || t.done) return;
-    if(t.kind === 'emo'){
+    if(t.kind === 'emo' || t.kind === 'weird'){
       combo++; maxCombo = Math.max(maxCombo, combo); blasted++;
       const mult = 1 + Math.floor(combo / 10);
-      const pts = 10 * mult;
+      const pts = (t.kind === 'weird' ? 15 : 10) * mult;
+      dreamBits.push(t.text);
       score += pts;
       gauge += 1;
       blast(t);
@@ -376,21 +437,22 @@
         combo++; maxCombo = Math.max(maxCombo, combo); blasted++;
         score += 100 * night;
         gauge += 8;
+        dreamBits.push(t.text);
         blast(t);
-        showPts(t.x, t.y, `撃破！ +${100 * night}`);
+        showPts(t.x, t.y, `${pick(BOSS_DOWN)} +${100 * night}`);
       }
     } else if(t.kind === 'fact'){
       // 事実は撃たなくていい。さわるとコンボが切れる
       combo = 0;
       t.el.classList.remove('hit'); void t.el.offsetWidth; t.el.classList.add('hit');
       showPts(t.x, t.y, 'それは事実', 'bad');
-    } else if(t.kind === 'sheep'){
+    } else if(t.kind === 'star'){
       t.done = true;
       score += 50;
       gauge += 7;
       t.el.classList.add('passed');
       setTimeout(() => t.el.remove(), 400);
-      showPts(t.x, t.y, '🐑 +50');
+      showPts(t.x, t.y, '🌠 +50');
     }
     renderHud();
   }
@@ -404,6 +466,20 @@
     t.el.style.transform = `translate(-50%,-50%) translate(${dx/d*300}px, ${dy/d*300}px) rotate(${rand(-90,90)}deg) scale(.6)`;
     burstAt(t.x, t.y);
     setTimeout(() => t.el.remove(), 480);
+    if(t.kind === 'emo' || t.kind === 'boss' || t.kind === 'weird') runSheep();
+  }
+
+  // 吹き飛ばした考えごとが、ひつじになって柵をこえていく（ひつじを数えて眠る）
+  function runSheep(){
+    sheepCount++;
+    if(app.querySelectorAll('.runSheep').length >= 8) return;   // 画面にあふれないように
+    const s = document.createElement('div');
+    s.className = 'runSheep';
+    s.innerHTML = '<span>🐑</span>';
+    s.style.animationDelay = rand(0, 0.3) + 's';
+    s.firstChild.style.animationDelay = s.style.animationDelay;
+    app.appendChild(s);
+    setTimeout(() => s.remove(), 3000);
   }
   function burstAt(x, y){
     const b = document.createElement('div');
@@ -432,6 +508,13 @@
       setTimeout(() => t.el.remove(), 360);
       return;
     }
+    if(t.kind === 'weird'){
+      dreamBits.push(t.text);
+      showPts(t.x, t.y - 20, '夢に混ざった', 'fact');
+      t.el.classList.add('passed');
+      setTimeout(() => t.el.remove(), 360);
+      return;
+    }
     lives--;
     combo = 0;
     t.el.classList.add('passed');
@@ -450,10 +533,12 @@
     lastTs = ts;
 
     if(!paused){
-      nextEmo -= dt; nextFact -= dt; nextSheep -= dt;
+      nextEmo -= dt; nextFact -= dt; nextStar -= dt; nextWeird -= dt;
       if(nextEmo <= 0){ spawn('emo'); nextEmo = emoInterval() * rand(0.8, 1.2); }
       if(nextFact <= 0){ spawn('fact'); nextFact = rand(2.8, 4.2); }
-      if(nextSheep <= 0){ spawn('sheep'); nextSheep = rand(7, 11); }
+      if(nextStar <= 0){ spawn('star'); nextStar = rand(7, 11); }
+      // 夜が深まる（2夜目以降の後半）と、どうでもいい考えごとが混ざってくる
+      if(night >= 2 && gauge >= 40 && nextWeird <= 0){ spawn('weird'); nextWeird = rand(2.5, 4); }
       if(!bossSpawned && gauge >= 50){ bossSpawned = true; spawn('boss'); }
 
       const { cx, cy } = center();
@@ -462,11 +547,11 @@
         if(t.done) return;
         t.x += t.vx * dt; t.y += t.vy * dt;
         t.el.style.left = t.x + 'px'; t.el.style.top = t.y + 'px';
-        if(t.kind === 'sheep'){
+        if(t.kind === 'star'){
           if(t.x > app.clientWidth + 40){ t.done = true; t.el.remove(); }
           return;
         }
-        if(t.kind !== 'fact') pressure += t.kind === 'boss' ? 2 : 1;
+        if(t.kind === 'emo' || t.kind === 'boss') pressure += t.kind === 'boss' ? 2 : 1;
         if(Math.hypot(cx - t.x, cy - t.y) < 54) reach(t);
       });
       thoughts = thoughts.filter(t => !t.done || t.el.isConnected);
@@ -484,17 +569,30 @@
   function clearThoughts(){
     thoughts.forEach(t => {
       if(t.done) return;
-      if(t.kind === 'emo' || t.kind === 'boss') blast(t);
+      if(t.kind === 'emo' || t.kind === 'boss' || t.kind === 'weird'){ t.kind = 'cleared'; blast(t); }
       else { t.done = true; t.el.classList.add('passed'); setTimeout(() => t.el.remove(), 360); }
     });
     thoughts = [];
   }
 
-  function showBanner(big, small){
+  function showBanner(big, small, dream){
     document.getElementById('bannerBig').textContent = big;
     document.getElementById('bannerSmall').textContent = small;
+    document.getElementById('bannerDream').textContent = dream || '';
     const b = document.getElementById('banner');
+    b.classList.toggle('long', !!dream);
     b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  }
+
+  // 吹き飛ばした考えごとの断片から、ヘンな夢をつくる
+  function makeDream(){
+    if(dreamBits.length === 0) return 'ぐっすりで、夢は見なかった。';
+    const q = s => '「' + (Array.from(s.replace(/…$/,'')).length > 12 ? Array.from(s).slice(0, 11).join('') + '…' : s.replace(/…$/,'')) + '」';
+    const who = DREAM_WHO[theme.name] || ['だれか'];
+    const bits = dreamBits.slice().sort(() => Math.random() - .5);
+    let d = `${pick(who)}が、${pick(DREAM_WHERE)}${q(bits[0])}と歌いながら${pick(DREAM_DO)}。`;
+    if(bits.length >= 2) d += `そのあと${pick(who)}が、${q(bits[1])}と書かれた風船を${pick(['飛ばしていた','食べていた','抱きしめていた','うちわにしていた'])}。`;
+    return d;
   }
 
   // 朝が来たら次の夜へ
@@ -506,20 +604,22 @@
     clearThoughts();
     app.classList.add('dawn');
     face.textContent = '😌';
-    showBanner('朝！', `${night}夜目クリア　+${bonus}`);
+    lastDream = makeDream();
+    showBanner('朝！', `${night}夜目クリア　+${bonus}`, lastDream);
     renderHud();
     setTimeout(() => {
       if(!running) return;
       night++;
       startNight();
-    }, 2000);
+    }, 3800);
   }
 
   function startNight(){
     theme = THEMES[(night - 1) % THEMES.length];
     gauge = 0;
     bossSpawned = false;
-    nextEmo = 0.8; nextFact = rand(2.5, 3.5); nextSheep = rand(5, 9);
+    dreamBits = [];
+    nextEmo = 0.8; nextFact = rand(2.5, 3.5); nextStar = rand(5, 9); nextWeird = rand(1, 3);
     app.classList.remove('dawn');
     face.textContent = '😴';
     showBanner(`${night}夜目`, `今夜のモヤモヤ：${theme.name}`);
@@ -533,6 +633,8 @@
     layer.innerHTML = '';
     thoughts = [];
     night = 1; score = 0; combo = 0; maxCombo = 0; lives = MAX_LIVES; blasted = 0; nightsCleared = 0;
+    sheepCount = 0; lastDream = '';
+    app.querySelectorAll('.runSheep').forEach(e => e.remove());
     running = true;
     startNight();
     lastTs = null;
@@ -551,7 +653,9 @@
     document.getElementById('newBest').style.display = isBest && score > 0 ? 'inline-block' : 'none';
     document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()} ／ 最高 ${save.bestNight}夜`;
     document.getElementById('stNight').textContent = nightsCleared;
-    document.getElementById('stBlast').textContent = blasted;
+    document.getElementById('stBlast').textContent = sheepCount;
+    // 朝を迎えられなかった夜も、それまでの考えごとで夢を見る
+    document.getElementById('lastDream').textContent = dreamBits.length ? makeDream() : lastDream;
     document.getElementById('stCombo').textContent = maxCombo;
     const pool = nightsCleared >= 5 ? COMMENTS.great : nightsCleared >= 2 ? COMMENTS.good : COMMENTS.normal;
     document.getElementById('comment').textContent = pick(pool);
@@ -566,7 +670,7 @@
         type: 'moyamoyaGameResult',
         gameId: 'jikoken-defense',
         summary: `スコア ${score.toLocaleString()}（${nightsCleared}夜を越えた）`,
-        detail: { score, nights: nightsCleared, blasted, maxCombo }
+        detail: { score, nights: nightsCleared, blasted, sheep: sheepCount, maxCombo }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
