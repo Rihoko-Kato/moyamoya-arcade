@@ -208,13 +208,22 @@
     border-bottom:1.5px solid #5a3a1a; border-radius:0 0 4px 4px;
   }
   .cat .head i:first-child{ left:3px; } .cat .head i:last-child{ right:3px; }
-  .cat .zz{
+  .cat .zz{ white-space:nowrap;
     position:absolute; left:16px; top:-18px; font-size:11px; font-weight:900; color:#7a7a9a;
     animation:zz 1.6s ease-in-out infinite;
   }
   @keyframes zz{ 0%,100%{ opacity:.3; transform:translateY(0); } 50%{ opacity:1; transform:translateY(-4px); } }
-  .cat.stirred .head{ animation:catTwitch .4s ease 2; }
-  @keyframes catTwitch{ 50%{ transform:rotate(-10deg); } }
+  /* ぶつかると、ねこが起きる → びくっ → 歩いていく */
+  .cat.awake{ animation:catStartle .35s ease; }
+  @keyframes catStartle{ 40%{ transform:translateY(-16px); } }
+  .cat.awake .head{ bottom:7px; }
+  .cat.awake .head i{ width:4px; height:4px; top:6px; border:none; border-radius:50%; background:#5a3a1a; }
+  .cat.awake .zz{ animation:none; opacity:1; left:2px; top:-30px; font-size:13px; color:#c0392b; background:#ffffffd0; padding:0 5px; border-radius:8px; }
+  .cat.awake .tail{ transform:rotate(-35deg); transform-origin:left center; }
+  .cat.walking{ transform:scaleX(-1); }
+  .cat.walking .zz{ transform:scaleX(-1); }
+  .cat.walking .body{ animation:catStep .3s ease-in-out infinite; }
+  @keyframes catStep{ 50%{ margin-bottom:2px; } }
 
   /* プレイヤーの影（高さに応じて縮小・薄くなる＝浮遊感） */
   #playerShadow{
@@ -753,14 +762,17 @@
     if(lives <= 0) setTimeout(gameOver, 400);
   }
 
-  // ねこにぶつかると、つまずいて少し遅くなるだけ（ハートは減らない）。ねこは起きない
+  // ねこにぶつかると、つまずいて少し遅くなるだけ（ハートは減らない）。ねこは起きて、歩いていく
   function tripOverCat(o){
     o.done = true;
     catTrips++;
     speedFactor = 0.35;
     player.classList.remove('stumble'); void player.offsetWidth; player.classList.add('stumble');
-    o.el.classList.add('stirred');
-    floatMsg(o.x - cameraX - 4, 92 + 30, pick(['にゃ…zzz','（起きない）','むにゃ']));
+    floatMsg(PLAYER_X - 10, 92 + 56, 'あ、ごめん');
+    const zz = o.el.querySelector('.zz');
+    o.el.classList.add('awake');
+    zz.textContent = '!?';
+    setTimeout(() => { zz.textContent = pick(['にゃ','…にゃ','にゃ？']); o.el.classList.add('walking'); o.walk = true; }, 400);
   }
   function floatMsg(x, bottom, text){
     const m = document.createElement('div');
@@ -855,6 +867,7 @@
       }
 
       objects.forEach(o => {
+        if(o.walk) o.x += speed * 1.3 * dt;   // 起きたねこは、先にてくてく歩いていく
         const sx = o.x - cameraX;
         if(!o.el.classList.contains('kicked')) o.el.style.left = sx + 'px';
         if(o.done) return;
@@ -958,7 +971,7 @@
       pool.push(`「${last}」の壁で、ぺしゃんこ`);
       if(cleared >= 2) pool.push(`ぺしゃんこ${cleared}回、ぽよん${cleared}回`);
     }
-    if(catTrips) pool.push(`ねこに${catTrips}回つまずいた（ねこは起きなかった）`);
+    if(catTrips) pool.push(`ねこを${catTrips}回起こした（あ、ごめん）`);
     if(catsPassed >= 2) pool.push(`寝てるねこを${catsPassed}匹またいだ`);
     if(stars) pool.push(`☆を${stars}個ひろった`);
     if(!pool.length) pool.push(`${Math.round(totalDist / PX_PER_M)}m 走った`);
