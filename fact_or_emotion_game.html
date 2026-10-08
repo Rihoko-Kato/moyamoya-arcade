@@ -128,20 +128,14 @@
     opacity:0;
   }
 
-  .piece{
-    position:absolute;
-    width:min(40%, 160px);
-    background:var(--card-bg);
-    border:2px solid #3a4150;
-    border-radius:12px;
-    padding:10px;
-    text-align:center;
-    font-size:13.5px; font-weight:700; line-height:1.4;
-    transform:translate(-50%,-50%);
-    transition:transform .5s cubic-bezier(.3,.7,.3,1), opacity .5s ease;
+  /* ✂ で切れた2枚。切り口を点線にして、ふつうのカードとして落ちてくる（色で答えは見せない） */
+  .fcard.cutTop{ border-top-style:dashed; border-top-color:#8a93a5; }
+  .fcard.cutBottom{ border-bottom-style:dashed; border-bottom-color:#8a93a5; }
+  .fcard.split{ animation:split .35s cubic-bezier(.3,1.5,.4,1); }
+  @keyframes split{
+    0%{ transform:translateX(-50%) scale(.85); opacity:.4; }
+    100%{ transform:translateX(-50%) scale(1); opacity:1; }
   }
-  .piece.f{ border-color:var(--fact-color); }
-  .piece.e{ border-color:var(--emotion-color); }
 
   .pts{
     position:absolute; pointer-events:none;
@@ -360,7 +354,7 @@
       落ちてくるカードを、下に着く前に仕分けよう。<br>
       <span class="k e">← 左へ</span>気持ち（手放す）<br>
       <span class="k f">右へ →</span>事実（受け止める）<br>
-      <span class="k c">↓ 下へ</span>点線のあるカードは ✂ で切る<br>
+      <span class="k c">↓ 下へ</span>点線のあるカードは ✂ で切って、2枚にしてから仕分ける<br>
       <span style="font-size:11.5px;color:var(--text-sub)">画面のどこでもスワイプ／ボタン／キーボードの ← → ↓</span>
     </div>
     <div class="best" id="startBest"></div>
@@ -581,6 +575,17 @@
     updateActive();
   }
 
+  // ✂ で切れた1枚を、ふつうのカードとして場に出す
+  function addPieceCard(d, edgeClass){
+    const el = document.createElement('div');
+    el.className = 'fcard split ' + edgeClass;
+    el.appendChild(document.createTextNode(d.text));
+    field.appendChild(el);
+    const c = { data:d, el, y:0, h: el.offsetHeight, done:false };
+    cards.push(c);
+    return c;
+  }
+
   // いちばん下まで来ているカードが操作対象
   function activeCard(){
     let best = null;
@@ -617,9 +622,9 @@
     c.el.classList.remove('active');   // 飛んでいく途中のカードは操作対象の枠を外す
     combo++;
     maxCombo = Math.max(maxCombo, combo);
-    sorted++;
+    if(t !== 'mix') sorted++;
     const mult = 1 + Math.floor(combo / 5);
-    const base = t === 'mix' ? 250 : c.data.super ? 300 : 100;
+    const base = t === 'mix' ? 150 : c.data.super ? 300 : 100;
     // 下に近いほど少しだけボーナス（ギリギリまで待つ楽しさ）
     const edge = Math.max(0, Math.round((c.y / field.clientHeight) * 20) * 5);
     const gained = (base + edge) * mult;
@@ -630,7 +635,7 @@
     if(navigator.vibrate) navigator.vibrate(12);
 
     // ミカのひとこと
-    if(c.data.big) galSay('big', true);
+    if(c.data.big && t !== 'mix') galSay('big', true);
     else if(c.data.super) galSay('super', true);
     else if(combo > 0 && combo % 5 === 0) galSay('combo');
     else galSay(t === 'mix' ? 'cut' : t);
@@ -664,29 +669,19 @@
     tag.classList.remove('gulp'); void tag.offsetWidth; tag.classList.add('gulp');
   }
 
-  // ✂ 事実は右へ、気持ちは左へ
+  // ✂ 切ると、事実と気持ちの2枚に分かれて、そのまま落ちてくる。それぞれをあらためて仕分ける
   function sliceCard(c){
-    const cx = field.clientWidth / 2;
-    const cy = c.y + c.h / 2;
     c.el.remove();
-    const mk = (cls, text, dy) => {
-      const p = document.createElement('div');
-      p.className = 'piece ' + cls;
-      p.textContent = text;
-      p.style.left = cx + 'px';
-      p.style.top = (cy + dy) + 'px';
-      field.appendChild(p);
-      return p;
-    };
-    const f = mk('f', c.data.fact, c.data.factFirst ? -18 : 18);
-    const e = mk('e', c.data.emo, c.data.factFirst ? 18 : -18);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      f.style.transform = 'translate(-50%,-50%) translateX(260px) rotate(18deg)';
-      e.style.transform = 'translate(-50%,-50%) translateX(-260px) rotate(-18deg)';
-      f.style.opacity = '0';
-      e.style.opacity = '0';
-    }));
-    setTimeout(() => { f.remove(); e.remove(); }, 520);
+    const fact = { type:'fact', text:c.data.fact, key:'' };
+    const emo  = { type:'emo',  text:c.data.emo,  key:'', big:c.data.big };
+    const top = c.data.factFirst ? fact : emo, bottom = c.data.factFirst ? emo : fact;
+    const upper = addPieceCard(top, 'cutBottom');
+    const lower = addPieceCard(bottom, 'cutTop');
+    // 少しだけ持ち上げて、仕分ける間をつくる
+    lower.y = Math.max(0, c.y + c.h - lower.h - 24);
+    upper.y = lower.y - upper.h - 10;
+    upper.el.style.top = upper.y + 'px';
+    lower.el.style.top = lower.y + 'px';
   }
 
   function showPts(c, text, color){
