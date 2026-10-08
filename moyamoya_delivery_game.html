@@ -81,6 +81,19 @@
   }
   #shipBanner .small{ margin-top:6px; font-size:13px; font-weight:700; color:var(--indigo-deep); background:#fffaf0e8; padding:3px 10px; border-radius:10px; display:inline-block; }
 
+  /* ===== 受取人のひとこと ===== */
+  #recv{
+    width:100%; margin-top:6px; min-height:34px;
+    display:flex; align-items:center; gap:8px;
+    background:#fffaf0d8; border:1px solid #d8c69a; border-radius:12px;
+    padding:4px 10px; font-size:12px; line-height:1.35;
+  }
+  #recvIcon{ font-size:20px; flex:none; }
+  #recvWho{ font-size:10px; color:#8a7a5a; display:block; }
+  #recvSay{ font-weight:700; color:var(--indigo-deep); }
+  #recv.pop{ animation:recvPop .45s ease; }
+  @keyframes recvPop{ 0%{ transform:scale(.94); opacity:.3; } 60%{ transform:scale(1.03); opacity:1; } 100%{ transform:scale(1); } }
+
   /* ===== ボタン ===== */
   #pad{ width:100%; display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
   .pbtn{
@@ -127,6 +140,9 @@
   .stat{ background:#ffffffa0; border-radius:10px; padding:7px 10px; min-width:84px; }
   .stat .n{ font-size:18px; font-weight:700; color:var(--indigo-deep); }
   .stat .l{ font-size:10.5px; color:#8a7a5a; }
+  #shipLog{ font-size:12px; color:var(--charcoal); background:#ffffff70; border-radius:10px; padding:6px 10px; margin-bottom:8px; line-height:1.7; }
+  #shipLog .nw{ white-space:nowrap; }
+  #shipLog small{ display:block; font-size:10.5px; color:#8a7a5a; }
   #comment{ font-size:13px; background:#ffffffa0; border-radius:10px; padding:7px 10px; margin-bottom:14px; }
 </style>
 </head>
@@ -138,6 +154,8 @@
     <div id="destBox">いまの届け先<span id="destName"></span><div id="lineBar"><div id="lineBarIn"></div></div></div>
     <div id="nextBox">NEXT<canvas id="nextCanvas"></canvas></div>
   </div>
+
+  <div id="recv"><span id="recvIcon">📦</span><span><span id="recvWho"></span><span id="recvSay"></span></span></div>
 
   <div id="boxWrap">
     <canvas id="board"></canvas>
@@ -158,7 +176,7 @@
     <div class="title">モヤモヤ納品</div>
     <div class="howto">
       モヤモヤが書かれたブロックが落ちてくる。箱にすきまなく詰めよう。<br>
-      横1列そろうと <b>出荷！</b> 5列出荷するごとに、届け先が遠くなる。<br>
+      横1列そろうと、箱に詰めて <b>出荷！</b> 5列出荷するごとに、届け先が遠くなる。<br>
       箱からあふれたら、おしまい。<br>
       <span style="font-size:11.5px;color:#8a7a5a">◀▶ 移動　⟳ 回転　▼ ゆっくり落とす　⤓ 一気に落とす<br>画面のスワイプ・タップ、キーボード（←→↑↓・スペース）でも操作できます</span>
     </div>
@@ -177,6 +195,7 @@
       <div class="stat"><div class="n" id="stLines">0</div><div class="l">出荷した列</div></div>
       <div class="stat"><div class="n" id="stDest" style="font-size:14px">-</div><div class="l">いちばん遠い届け先</div></div>
     </div>
+    <div id="shipLog"></div>
     <div id="comment"></div>
     <button class="mainBtn" id="retryBtn">また箱を用意する</button>
   </div>
@@ -203,13 +222,33 @@
   };
   const TYPES = Object.keys(SHAPES);
 
-  const DESTS = ['🏠 となりの町','🗻 富士山頂','🌕 月の裏側','🐧 南極','🐟 深海6000m','🦕 白亜紀','🏃 江戸時代','🌌 銀河の果て','🏛️ 未来の博物館','🕳️ ブラックホール'];
+  // 届け先と受取人（遠くなるほど大きな世界）。{w} は出荷した言葉のひとつ
+  const DESTS = [
+    { icon:'🐈', name:'となり町の空き地', who:'ボスねこ',
+      say:['にゃ（確かに）','中身より、箱のほうに興味がある','みんなで箱に入って寝てる','受け取りのしるしに、肉球ぺたん','「{w}」の箱、ちょうどいい寝床'] },
+    { icon:'🗻', name:'富士山頂', who:'山小屋のおじさん',
+      say:['ここからだと、雲が下に見えるよ','ひと晩、あずかっておくね','朝日に当てておいたよ','ご来光といっしょに拝んどいた'] },
+    { icon:'🌕', name:'月の裏側', who:'うさぎ配送員',
+      say:['餅といっしょに、保管しておくね','月から見ると、地球はまるくて小さいよ','受け取りました。ここは静かです','クレーターにちょうどはまった'] },
+    { icon:'🐧', name:'南極', who:'ペンギン一同',
+      say:['冷凍保存しておきます','みんなで順番に眺めました。ふむふむ','氷の上をすべって運びました','「{w}」、カチコチに凍りました'] },
+    { icon:'🐟', name:'深海6000m', who:'デメニギス',
+      say:['暗いところで、預かっておくね','水圧で、ちょっと小さくなった','光る魚たちが見張ってます','（すけた頭の中から見てます）'] },
+    { icon:'🦕', name:'白亜紀', who:'トリケラトプス',
+      say:['（もぐもぐ…）','受け取りのしるしに、足跡を押しといた','このへんは火山がにぎやかです','6600万年たてば、化石になるかも'] },
+    { icon:'🏃', name:'江戸時代', who:'飛脚の源さん',
+      say:['へい、確かに！','江戸でもみんな、似たようなことで悩んでましたぜ','重さは問題ねえ。走るだけでさ','お代は団子でいいですぜ'] },
+    { icon:'🌌', name:'銀河の果て', who:'倉庫番ロボ',
+      say:['ピピッ。受領完了','登録番号を振りました。ずっと置いておけます','宇宙は広いので、置き場所には困りません','138億年ぶんの棚があります'] },
+    { icon:'🏛️', name:'未来の博物館', who:'学芸員',
+      say:['「2020年代のモヤモヤ」として展示します','来館者が熱心に見ていました','「{w}」の札をつけて展示します','ガラスケースに入れました'] },
+    { icon:'🕳️', name:'ブラックホール', who:'事象の地平面 係',
+      say:['……（吸い込まれました）','光も出てこられないので、中身は誰にも見えません','受領印も吸い込まれました','……'] }
+  ];
+  const destLabel = d => `${d.icon} ${d.name}`;
   const LINES_PER_DEST = 5;
-  const COMMENTS = {
-    great: ['宇宙規模の配送業者だ','その詰め方、職人芸','もはや倉庫の主'],
-    good:  ['いい箱詰めだった','手際がよくなってきた','遠くまで届けたね'],
-    normal:['まずは近場から','次はもっと遠くへ','箱はいくらでもあるよ']
-  };
+  // 1列も出荷できなかったとき
+  const EMPTY_SAY = ['空の箱、もらっていい？','箱だけでも、うれしい','（箱に入って寝はじめた）'];
 
   const SAVE_KEY = 'moyamoyaPack_v1';
   function loadSave(){
@@ -220,6 +259,13 @@
   let save = loadSave();
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  // 同じ受取人のセリフは、ひととおり出るまでくり返さない
+  let sayQueue = new Map();
+  function pickSay(arr){
+    let q = sayQueue.get(arr);
+    if(!q || q.length === 0){ q = arr.slice().sort(() => Math.random() - .5); sayQueue.set(arr, q); }
+    return q.pop();
+  }
 
   const board = document.getElementById('board');
   const ctx = board.getContext('2d');
@@ -232,6 +278,9 @@
   let piece = null, nextPiece = null;
   let running = false, clearing = false;
   let score = 0, lines = 0, destIndex = 0;
+  let shipped = [];     // shipped[destIndex] = 出荷した列の数
+  let ship = null;      // 出荷中のアニメーション { rows, words, dest, t }
+  const SHIP_PACK = 0.4, SHIP_SEND = 0.45;   // 箱詰め・送り出しの秒数
   let dropTimer = 0, lastTs = null, rafId = null;
   let bag = [];
 
@@ -290,7 +339,7 @@
     piece.cells.forEach(c => {
       const x = piece.x + c.x, y = piece.y + c.y;
       if(y < 0){ over = true; return; }
-      grid[y][x] = { ch:c.ch, color:piece.color };
+      grid[y][x] = { ch:c.ch, color:piece.color, word:piece.word };
     });
     piece = null;
     renderHud();
@@ -305,27 +354,50 @@
     draw();
   }
 
+  // そろった列は、箱に詰めてテープを貼り、横へ送り出す（消すのではなく、届け先へ運ぶ）
   function clearRows(full){
     clearing = true;
-    let flashes = 0;
-    const iv = setInterval(() => {
-      flashes++;
-      draw(flashes % 2 ? full : []);
-      if(flashes >= 4){
-        clearInterval(iv);
-        full.forEach(y => { grid.splice(y, 1); grid.unshift(Array(COLS).fill(null)); });
-        const before = destIndex;
-        lines += full.length;
-        score += [0, 100, 300, 500, 800][full.length] * (destIndex + 1);
-        destIndex = Math.min(DESTS.length - 1, Math.floor(lines / LINES_PER_DEST));
-        if(destIndex > before) banner('出荷完了！', `次の届け先：${DESTS[destIndex]}`);
-        else banner(full.length >= 2 ? `${full.length}列 出荷！` : '出荷！', DESTS[destIndex] + ' へ');
-        clearing = false;
-        renderHud();
-        spawn();
-        draw();
-      }
-    }, 70);
+    const words = [];
+    full.forEach(y => grid[y].forEach(g => { if(!words.includes(g.word)) words.push(g.word); }));
+    ship = { rows:full, words, dest:destIndex, t:0 };
+    banner(full.length >= 2 ? `${full.length}箱 出荷！` : '出荷！',
+      `${words.slice(0, 2).map(w => `「${w}」`).join('')}${words.length > 2 ? 'ほか' : ''} → ${destLabel(DESTS[destIndex])}`);
+  }
+
+  function updateShip(dt){
+    ship.t += dt;
+    if(ship.t >= SHIP_PACK + SHIP_SEND) finishShip();
+    else draw();
+  }
+
+  function finishShip(){
+    const full = ship.rows, d = ship.dest;
+    full.forEach(y => { grid.splice(y, 1); grid.unshift(Array(COLS).fill(null)); });
+    lines += full.length;
+    shipped[d] = (shipped[d] || 0) + full.length;
+    score += [0, 100, 300, 500, 800][full.length] * (d + 1);
+    destIndex = Math.min(DESTS.length - 1, Math.floor(lines / LINES_PER_DEST));
+    showReceipt(DESTS[d], pick(ship.words));
+    if(destIndex > d) setTimeout(() => banner('届け先が遠くなった！', `次は ${destLabel(DESTS[destIndex])}`), 350);
+    ship = null;
+    clearing = false;
+    renderHud();
+    spawn();
+    draw();
+  }
+
+  function showReceipt(dest, word){
+    document.getElementById('recvIcon').textContent = dest.icon;
+    document.getElementById('recvWho').textContent = `${dest.name}の ${dest.who} より`;
+    document.getElementById('recvSay').textContent = `「${pickSay(dest.say).replace('{w}', word)}」`;
+    const r = document.getElementById('recv');
+    r.classList.remove('pop'); void r.offsetWidth; r.classList.add('pop');
+  }
+  function showWaiting(){
+    const d = DESTS[destIndex];
+    document.getElementById('recvIcon').textContent = '📦';
+    document.getElementById('recvWho').textContent = `いまの届け先：${destLabel(d)}`;
+    document.getElementById('recvSay').textContent = `${d.who}が、受け取りを待っています`;
   }
 
   function spawn(){
@@ -378,7 +450,7 @@
     c2.globalAlpha = 1;
   }
 
-  function draw(flashRows){
+  function draw(){
     const W = COLS * cell, H = ROWS * cell;
     ctx.clearRect(0, 0, W, H);
     // うっすらマス目
@@ -386,13 +458,13 @@
     for(let x=1;x<COLS;x++){ ctx.beginPath(); ctx.moveTo(x*cell, 0); ctx.lineTo(x*cell, H); ctx.stroke(); }
     for(let y=1;y<ROWS;y++){ ctx.beginPath(); ctx.moveTo(0, y*cell); ctx.lineTo(W, y*cell); ctx.stroke(); }
     for(let y=0;y<ROWS;y++){
+      if(ship && ship.rows.includes(y)) continue;
       for(let x=0;x<COLS;x++){
         const g = grid[y][x];
-        if(!g) continue;
-        const flash = flashRows && flashRows.includes(y);
-        drawCell(ctx, x*cell, y*cell, cell, flash ? '#fff6c8' : g.color, g.ch);
+        if(g) drawCell(ctx, x*cell, y*cell, cell, g.color, g.ch);
       }
     }
+    if(ship) drawShip();
     if(piece){
       // 落ちる場所のガイド
       let d = 0;
@@ -408,6 +480,42 @@
     }
   }
 
+  // 出荷中の列：段ボールが左から閉じていき、テープと届け先の札がついて右へすべっていく
+  function drawShip(){
+    const W = COLS * cell;
+    const pack = Math.min(1, ship.t / SHIP_PACK);
+    const send = Math.max(0, (ship.t - SHIP_PACK) / SHIP_SEND);
+    const ox = W * 1.1 * send * send;   // だんだん速く
+    const d = DESTS[ship.dest];
+    ship.rows.forEach(y => {
+      const top = y * cell;
+      ctx.save();
+      ctx.translate(ox, 0);
+      for(let x=0;x<COLS;x++){
+        const g = grid[y][x];
+        if(g) drawCell(ctx, x*cell, top, cell, g.color, g.ch);
+      }
+      // 段ボールのふたが左から閉じる
+      const bw = W * pack;
+      ctx.fillStyle = '#c9a46a';
+      ctx.fillRect(0, top + 1, bw, cell - 2);
+      ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(0.75, top + 1.75, bw - 1.5, cell - 3.5);
+      if(pack >= 1){
+        // テープと札
+        ctx.fillStyle = 'rgba(240,225,180,.85)';
+        ctx.fillRect(W * 0.62, top + 1, cell * 0.5, cell - 2);
+        ctx.fillStyle = '#fffaf0';
+        ctx.fillRect(cell * 0.4, top + cell * 0.2, W * 0.5, cell * 0.6);
+        ctx.fillStyle = '#3a332a';
+        ctx.font = `700 ${Math.floor(cell * 0.42)}px "Zen Kaku Gothic New", sans-serif`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${d.icon} ${d.name}`, cell * 0.5, top + cell / 2 + 1, W * 0.48);
+      }
+      ctx.restore();
+    });
+  }
+
   function drawNext(){
     const nc = Math.round(cell * 0.6);
     nctx.clearRect(0, 0, 4*nc, 2.5*nc);
@@ -421,7 +529,7 @@
 
   function renderHud(){
     document.getElementById('scoreVal').textContent = score.toLocaleString();
-    document.getElementById('destName').textContent = DESTS[destIndex];
+    document.getElementById('destName').textContent = destLabel(DESTS[destIndex]);
     document.getElementById('lineBarIn').style.width = ((lines % LINES_PER_DEST) / LINES_PER_DEST * 100) + '%';
   }
 
@@ -431,7 +539,8 @@
     if(lastTs === null) lastTs = ts;
     const dt = Math.min(0.1, (ts - lastTs) / 1000);
     lastTs = ts;
-    if(!clearing && piece){
+    if(ship) updateShip(dt);
+    else if(!clearing && piece){
       dropTimer += dt;
       if(dropTimer >= gravity()){
         dropTimer = 0;
@@ -478,7 +587,9 @@
     document.getElementById('resultScreen').classList.remove('show');
     emptyGrid();
     score = 0; lines = 0; destIndex = 0; bag = []; nextPiece = null; clearing = false;
+    shipped = []; ship = null; sayQueue = new Map();
     renderHud();
+    showWaiting();
     spawn();
     running = true;
     lastTs = null; dropTimer = 0;
@@ -498,9 +609,19 @@
     document.getElementById('newBest').style.display = isBest && score > 0 ? 'inline-block' : 'none';
     document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()}`;
     document.getElementById('stLines').textContent = lines;
-    document.getElementById('stDest').textContent = DESTS[destIndex];
-    const pool = destIndex >= 4 ? COMMENTS.great : destIndex >= 2 ? COMMENTS.good : COMMENTS.normal;
-    document.getElementById('comment').textContent = pick(pool);
+    document.getElementById('stDest').textContent = lines ? destLabel(DESTS[destIndex]) : '-';
+    // どこに何列届いたか
+    const log = shipped.map((n, i) => n ? `<span class="nw">${DESTS[i].icon}${DESTS[i].name} ${n}列</span>` : '').filter(Boolean);
+    const logEl = document.getElementById('shipLog');
+    logEl.style.display = log.length ? 'block' : 'none';
+    logEl.innerHTML = log.length ? `<small>届け先の記録</small>${log.join('　')}` : '';
+    // ひとこと：いちばん遠い届け先の受取人から
+    let far = DESTS[0], say = pick(EMPTY_SAY);
+    if(lines){
+      for(let i = shipped.length - 1; i >= 0; i--) if(shipped[i]){ far = DESTS[i]; break; }
+      say = pickSay(far.say).replace('{w}', pick(WORDS));
+    }
+    document.getElementById('comment').textContent = `${far.icon} ${far.who}「${say}」`;
     setTimeout(() => document.getElementById('resultScreen').classList.add('show'), 500);
     sendResultToPortal();
   }
@@ -511,7 +632,7 @@
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'moyamoya-delivery',
-        summary: `スコア ${score.toLocaleString()}（${lines}列出荷・${DESTS[destIndex]}まで）`,
+        summary: `スコア ${score.toLocaleString()}（${lines}列出荷・${DESTS[destIndex].name}まで）`,
         detail: { score, lines, dest: destIndex }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
@@ -523,6 +644,7 @@
   document.getElementById('retryBtn').addEventListener('click', startGame);
   emptyGrid();
   renderHud();
+  showWaiting();
   // フォント読み込み後にサイズを合わせて描き直す
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(resize);
   resize();
