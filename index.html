@@ -240,7 +240,31 @@
     width:28px; flex-shrink:0; text-align:center;
     font-size:16px; font-weight:900; color:var(--text-sub);
   }
-  .resultCard.mine{ border-color:var(--neon-cyan); box-shadow:0 0 0 2px rgba(79,240,255,.25); }
+.resultCard.mine{ border-color:var(--neon-cyan); box-shadow:0 0 0 2px rgba(79,240,255,.25); }
+
+  /* みんなで積み上げた合計（ランキングはしない） */
+  .totalCard{
+    background:linear-gradient(135deg, rgba(255,242,79,.08), rgba(255,255,255,.02));
+    border:1.5px solid rgba(255,242,79,.25);
+    border-radius:14px; padding:14px 16px;
+  }
+  .totalCard .tLabel{ font-size:12.5px; font-weight:800; color:var(--text-sub); }
+  .totalCard .tBig{ font-size:30px; font-weight:900; color:var(--neon-yellow); line-height:1.25; font-variant-numeric:tabular-nums; }
+  .totalCard .tBig small{ font-size:14px; margin-left:4px; }
+  .totalCard .tSub{ font-size:12px; color:var(--text-main); margin-top:2px; line-height:1.7; }
+  .totalCard .tSub span{ white-space:nowrap; }
+  .totalCard .tToday{ color:var(--neon-green); font-weight:800; }
+  .totalCard .tPeople{ display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-top:10px; font-size:12px; color:var(--text-sub); }
+  .totalCard .tPeople b{ color:var(--text-main); margin-right:4px; }
+  .totalCard .tFace{
+    width:26px; height:26px; border-radius:50%; background:var(--panel-light);
+    display:inline-flex; align-items:center; justify-content:center; font-size:14px;
+  }
+  .totalCard .tMine{
+    margin-top:10px; padding-top:9px; border-top:1px dashed rgba(255,255,255,.18);
+    font-size:12.5px; color:var(--neon-cyan); font-weight:700; line-height:1.7;
+  }
+  .totalCard .tMine span{ white-space:nowrap; }
 
   /* ===================== コメント ===================== */
   #commentsSection{ margin-top:24px; }
@@ -443,7 +467,7 @@
   </div>
 
   <div id="resultsSection">
-    <h4>🏆 みんなの記録</h4>
+    <h4>🤝 みんなの記録</h4>
     <div id="resultList"></div>
   </div>
 
@@ -829,82 +853,92 @@
     return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
+  // みんなの記録：ランキングはやめて、全員で積み上げた合計を出す（要件定義書 7章・決定D）
+  // 今の版（2026-10-08 以降）の記録だけを数える
+  const TOTALS_SINCE = new Date('2026-10-08T00:00:00+09:00');
+  const DEST_NAMES = ['🐈 となり町の空き地','🗻 富士山頂','🌕 月の裏側','🐧 南極','🐟 深海6000m','🦕 白亜紀','🏃 江戸時代','🌌 銀河の果て','🏛️ 未来の博物館','🕳️ ブラックホール'];
+  const SOUDAN_WINDOWS = { nod:'🤖', good:'🎰', oracle:'🔮', buddy:'😎' };
+  const fmtM = m => m >= 1000 ? `${(m / 1000).toFixed(1)}<small>km</small>` : `${m.toLocaleString()}<small>m</small>`;
+  const TOTALS = {
+    'fact-emotion':     { label:'みんなで仕分けたカード',       key:'sorted', unit:'枚', subs:[{ label:'✂ で切り分けた', key:'cuts', unit:'枚' }] },
+    'clay-rabbit':      { label:'みんなで棚に飾ったフィギュア', key:'made',   unit:'体', subs:[{ label:'そのうち新作', key:'newShapes', unit:'体' }] },
+    'jikoken-defense':  { label:'みんなで数えたひつじ',         key:'sheep',  unit:'匹', subs:[{ label:'明けた夜', key:'nights', unit:'夜' }] },
+    'moyamoya-delivery':{ label:'みんなで出荷したモヤモヤ',     key:'lines',  unit:'箱', subs:[],
+                          extra: ds => { const m = Math.max(...ds.map(d => d.dest || 0)); return `いちばん遠い届け先：${DEST_NAMES[m] || DEST_NAMES[0]}`; } },
+    'fact-run':         { label:'みんなで走った距離',           key:'dist',   unit:'m', fmt:fmtM, subs:[{ label:'ぺしゃんこになった壁', key:'stages', unit:'枚' }] },
+    'soudanjo':         { label:'みんなの相談',                 key:null,     unit:'回', subs:[],
+                          extra: ds => { const c = {}; ds.forEach(d => { if(SOUDAN_WINDOWS[d.window]) c[d.window] = (c[d.window] || 0) + 1; });
+                                         return Object.keys(SOUDAN_WINDOWS).filter(k => c[k]).map(k => `${SOUDAN_WINDOWS[k]} ${c[k]}`).join('　'); } }
+  };
+  const FACES_LIMIT = 12;
+
   async function renderResults(gameId){
     resultList.innerHTML = '<div class="resultEmpty">読み込み中…</div>';
     const results = await loadResults(gameId);
+    const conf = TOTALS[gameId];
+    // 今の版の記録（数える数値を持っているもの）だけを使う
+    const rows = results
+      .map(r => ({ ...r, d: detailOf(r) }))
+      .filter(r => r.d && new Date(r.createdAt) >= TOTALS_SINCE && (!conf || !conf.key || typeof r.d[conf.key] === 'number'));
     resultList.innerHTML = '';
 
-    if(results.length === 0){
-      resultList.innerHTML = '<div class="resultEmpty">まだ記録はありません。遊んでみると、ここに結果が並びます。</div>';
+    if(!conf || rows.length === 0){
+      resultList.innerHTML = '<div class="resultEmpty">まだ記録はありません。遊んでみると、みんなの合計に入ります。</div>';
       return;
     }
 
-    // スコアのあるゲームは、1人1行（その人のベスト）のランキングにする
-    const scored = results
-      .map(r => ({ ...r, score: scoreOf(r) }))
-      .filter(r => r.score !== null);
-    if(scored.length > 0){
-      renderRanking(scored);
-      return;
+    const val = (d, key) => key ? (Number(d[key]) || 0) : 1;   // key がないときは回数を数える
+    const sum = (list, key) => list.reduce((a, r) => a + val(r.d, key), 0);
+    const show = n => conf.fmt ? conf.fmt(n) : `${n.toLocaleString()}<small>${conf.unit}</small>`;
+    const plain = n => conf.fmt ? conf.fmt(n).replace(/<\/?small>/g, '') : `${n.toLocaleString()}${conf.unit}`;
+
+    const total = sum(rows, conf.key);
+    const todayStr = new Date().toDateString();
+    const todayRows = rows.filter(r => new Date(r.createdAt).toDateString() === todayStr);
+    const today = sum(todayRows, conf.key);
+
+    const subs = conf.subs.map(sb => `<span>${sb.label} ${sum(rows, sb.key).toLocaleString()}${sb.unit}</span>`);
+    if(conf.extra){ const e = conf.extra(rows.map(r => r.d)); if(e) subs.push(`<span>${e}</span>`); }
+    if(today > 0 && today < total) subs.push(`<span class="tToday">今日 +${plain(today)}</span>`);   // 全部が今日の分なら出さない
+
+    // 遊んだ人（人数と、最近遊んだ人のアバター。点数は出さない）
+    const people = [];
+    rows.forEach(r => { if(!people.some(p => p.userUuid === r.userUuid)) people.push(r); });   // rows は新しい順
+    const faces = people.slice(0, FACES_LIMIT)
+      .map(p => `<span class="tFace" title="${escapeHtml(p.userName || 'ゲスト')}">${p.userAvatar || '🙂'}</span>`).join('');
+
+    // 自分の分と自己ベスト
+    const myUuid = currentUser ? currentUser.uuid : null;
+    const mine = rows.filter(r => r.userUuid === myUuid);
+    let mineHtml;
+    if(mine.length){
+      const parts = [`<span>そのうち あなたの分 ${plain(sum(mine, conf.key))}</span>`];
+      const best = Math.max(...mine.map(r => typeof r.d.score === 'number' ? r.d.score : -1));
+      if(best >= 0) parts.push(`<span>あなたの自己ベスト ${best.toLocaleString()}点</span>`);
+      mineHtml = parts.join(' ／ ');
+    } else {
+      mineHtml = '遊ぶと、あなたの分もここに入ります';
     }
 
-    results.forEach(r => {
-      const el = document.createElement('div');
-      el.className = 'resultCard';
-      el.innerHTML = `
-        <div class="rAvatar">${r.userAvatar || '🙂'}</div>
-        <div class="rBody">
-          <div class="rHead">
-            <span class="rName">${escapeHtml(r.userName || 'ゲスト')} <span class="cTag">${shortTag(r.userUuid)}</span></span>
-            <span>${formatDate(r.createdAt)}</span>
-          </div>
-          <div class="rSummary">${escapeHtml(r.summary || '')}</div>
-        </div>
-      `;
-      resultList.appendChild(el);
-    });
+    const el = document.createElement('div');
+    el.className = 'totalCard';
+    el.innerHTML = `
+      <div class="tLabel">${conf.label}</div>
+      <div class="tBig">${show(total)}</div>
+      ${subs.length ? `<div class="tSub">${subs.join('　')}</div>` : ''}
+      <div class="tPeople"><b>${people.length}人で</b>${faces}${people.length > FACES_LIMIT ? `<span>…ほか${people.length - FACES_LIMIT}人</span>` : ''}</div>
+      <div class="tMine">${mineHtml}</div>
+    `;
+    resultList.appendChild(el);
   }
 
   // detail はスプレッドシート経由だと JSON 文字列、localStorage だとオブジェクトで返ってくる
-  function scoreOf(r){
+  function detailOf(r){
     let d = r.detail;
     if(typeof d === 'string'){
       try{ d = JSON.parse(d); }catch(e){ return null; }
     }
-    return d && typeof d.score === 'number' ? d.score : null;
-  }
-
-  const RANK_LIMIT = 10;
-  function renderRanking(scored){
-    const bestByUser = {};
-    scored.forEach(r => {
-      const cur = bestByUser[r.userUuid];
-      if(!cur || r.score > cur.score) bestByUser[r.userUuid] = r;
-    });
-    const ranking = Object.values(bestByUser).sort((a,b) => b.score - a.score);
-    const myUuid = currentUser ? currentUser.uuid : null;
-    const myIndex = ranking.findIndex(r => r.userUuid === myUuid);
-    const medals = ['🥇','🥈','🥉'];
-
-    const rows = ranking.slice(0, RANK_LIMIT).map((r, i) => ({ r, i }));
-    if(myIndex >= RANK_LIMIT) rows.push({ r: ranking[myIndex], i: myIndex });
-
-    rows.forEach(({ r, i }) => {
-      const el = document.createElement('div');
-      el.className = 'resultCard' + (r.userUuid === myUuid ? ' mine' : '');
-      el.innerHTML = `
-        <div class="rRank">${medals[i] || (i + 1)}</div>
-        <div class="rAvatar">${r.userAvatar || '🙂'}</div>
-        <div class="rBody">
-          <div class="rHead">
-            <span class="rName">${escapeHtml(r.userName || 'ゲスト')} <span class="cTag">${shortTag(r.userUuid)}</span></span>
-            <span>${formatDate(r.createdAt)}</span>
-          </div>
-          <div class="rSummary">${r.score.toLocaleString()} 点</div>
-        </div>
-      `;
-      resultList.appendChild(el);
-    });
+    return d && typeof d === 'object' ? d : null;
   }
 
   // 埋め込んだゲーム（iframe）からの postMessage を受け取り、記録として保存する
