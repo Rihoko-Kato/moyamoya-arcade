@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>モヤモヤ解消アーケード</title>
+<title>有意義な暇つぶしアーケード</title>
 <style>
   :root{
     --bg1:#120c2e;
@@ -97,6 +97,8 @@
     margin:0 0 6px;
     font-weight:900;
   }
+  /* スマホでも「どうせなら、」の区切りで改行されるように */
+  #galleryIntro .nowrap{ display:inline-block; }
   #galleryIntro p{
     font-size:13px; color:var(--text-sub); margin:0;
   }
@@ -400,7 +402,7 @@
 
 <header>
   <div>
-    <h1 id="siteTitle">モヤモヤ解消アーケード<span class="sub">MOYAMOYA ARCADE</span></h1>
+    <h1 id="siteTitle">有意義な暇つぶしアーケード<span class="sub">MEANINGFUL PASTIME ARCADE</span></h1>
   </div>
   <div id="profileBtn">
     <div id="profileAvatar">🙂</div>
@@ -414,7 +416,7 @@
 <!-- ===== ギャラリー画面 ===== -->
 <main id="galleryView">
   <div id="galleryIntro">
-    <h2>今日のモヤモヤ、遊んで手放そう</h2>
+    <h2><span class="nowrap">どうせなら、</span><span class="nowrap">有意義な暇つぶしをしよう！</span></h2>
     <p>好きなゲームを選んで、感想もぜひコメントしてね。</p>
   </div>
   <div id="cardGrid"></div>
@@ -714,15 +716,15 @@
      空のままなら「プレビュー準備中」の画面のままになります。 */
   const games = [
     { id:'fact-emotion',     emoji:'🗂️', color:'cyan',   title:'事実と感情の仕分け', url:'https://rihoko-kato.github.io/moyamoya-arcade/fact_or_emotion_game.html',
-      desc:'日々の振り返りを「事実」と「感情」に仕分けて客観視するカードゲーム。' },
-    { id:'clay-rabbit',      emoji:'🐰', color:'yellow', title:'粘土工作クリッカー（うさぎ）', url:'https://rihoko-kato.github.io/moyamoya-arcade/nendo_craft_clicker_rabbit.html',
-      desc:'制限時間内にひたすら連打！完成度より「熱量」だけを評価するクリッカー。' },
-    { id:'jikoken-defense',  emoji:'😴', color:'pink',   title:'自己嫌悪ディフェンス', url:'https://rihoko-kato.github.io/moyamoya-arcade/jikoken_defense_game.html',
-      desc:'夜な夜な襲ってくる自己嫌悪モンスターを、寝るボタン連打で吹き飛ばせ。' },
+      desc:'落ちてくるカードを左右に仕分け。点線のカードは✂で切れ！スピード勝負のアクション。' },
+    { id:'clay-rabbit',      emoji:'🐰', color:'yellow', title:'粘土うさぎ屋さん', url:'https://rihoko-kato.github.io/moyamoya-arcade/nendo_craft_clicker_rabbit.html',
+      desc:'お客さんの注文どおりにうさぎをこねて売ろう。60秒の営業でいくら稼げる？' },
+    { id:'jikoken-defense',  emoji:'🌙', color:'pink',   title:'自己嫌悪ディフェンス', url:'https://rihoko-kato.github.io/moyamoya-arcade/jikoken_defense_game.html',
+      desc:'眠りをじゃまする考えごとをタップで吹き飛ばせ。グレーの事実はさわらずに。何夜越えられる？' },
     { id:'moyamoya-delivery',emoji:'📦', color:'green',  title:'モヤモヤ納品', url:'https://rihoko-kato.github.io/moyamoya-arcade/moyamoya_delivery_game.html',
-      desc:'モヤモヤを箱に詰めてリボンをかけ、出荷して区切りをつけるドラッグ&ドロップゲーム。' },
-    { id:'fact-run',         emoji:'🏃', color:'cyan',   title:'絶対勝てないラン「FACT」', url:'https://rihoko-kato.github.io/moyamoya-arcade/fact_run_game.html',
-      desc:'絶対に避けられない壁にぶつかって終わる、でも行動の事実だけを称えるランゲーム。' },
+      desc:'モヤモヤの言葉が書かれたブロックを箱に詰める落ちものパズル。1列そろえて出荷！' },
+    { id:'fact-run',         emoji:'🏃', color:'cyan',   title:'FACTラン', url:'https://rihoko-kato.github.io/moyamoya-arcade/fact_run_game.html',
+      desc:'小石とモヤ雲を2段ジャンプでかわして走れ。ステージの最後の壁は…越えられない。' },
     { id:'soudanjo',         emoji:'🏠', color:'pink',   title:'モヤモヤ相談所', url:'https://rihoko-kato.github.io/moyamoya-arcade/soudanjo.html',
       desc:'うなずきロボ・いいこと抽出・お告げ・ぶっとび相棒。今日の気分で窓口を選べる、ひと息つける場所。' }
   ];
