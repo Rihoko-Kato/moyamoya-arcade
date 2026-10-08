@@ -9,13 +9,12 @@
     --bg1:#12151c;
     --bg2:#1b2029;
     --fact-color:#2fbfa3;
-    --fact-dim:#1d6f60;
     --emotion-color:#e2566b;
-    --emotion-dim:#8a2e3a;
     --card-bg:#242a35;
     --text-main:#eef1f5;
     --text-sub:#9aa3b2;
     --accent:#f4c95d;
+    --gal-pink:#ff7eb6;
   }
   *{ box-sizing:border-box; }
   html,body{
@@ -61,7 +60,6 @@
     flex:1;
     overflow:hidden;
     border-top:1px solid #ffffff10;
-    border-bottom:1px solid #ffffff10;
     background:
       linear-gradient(90deg, rgba(226,86,107,.07), transparent 22%, transparent 78%, rgba(47,191,163,.07));
   }
@@ -71,22 +69,25 @@
     opacity:.5;
   }
   .sideTag{
-    position:absolute; top:50%; transform:translateY(-50%);
-    font-size:28px; opacity:.18; pointer-events:none;
+    position:absolute; bottom:14px;
+    font-size:30px; opacity:.35; pointer-events:none;
+    transition:transform .15s ease;
   }
-  .sideTag.l{ left:8px; } .sideTag.r{ right:8px; }
+  .sideTag.l{ left:10px; } .sideTag.r{ right:10px; }
+  .sideTag.gulp{ animation:gulp .35s ease; opacity:.8; }
+  @keyframes gulp{ 40%{ transform:scale(1.35) rotate(-8deg); } }
 
   .fcard{
     position:absolute;
     left:50%;
-    width:min(78%, 300px);
+    width:min(74%, 290px);
     transform:translateX(-50%);
     background:var(--card-bg);
     border:2px solid #3a4150;
     border-radius:16px;
-    padding:14px 14px;
+    padding:12px 14px;
     text-align:center;
-    font-size:16px; font-weight:700; line-height:1.5;
+    font-size:15.5px; font-weight:700; line-height:1.5;
     box-shadow:0 8px 20px rgba(0,0,0,.4);
     will-change:top, transform;
   }
@@ -94,6 +95,12 @@
     border-color:var(--accent);
     box-shadow:0 0 0 3px rgba(244,201,93,.35), 0 8px 20px rgba(0,0,0,.4);
   }
+  .fcard.super{
+    border-color:#ffd76a;
+    background:linear-gradient(160deg,#3a3320,#242a35);
+    box-shadow:0 0 18px rgba(255,215,106,.45), 0 8px 20px rgba(0,0,0,.4);
+  }
+  .fcard.super::before{ content:"✦ 超事実 ✦"; display:block; font-size:10px; color:#ffd76a; letter-spacing:2px; }
   .fcard.mix .half{ display:block; }
   .fcard.mix .cut{
     display:block; height:0; margin:8px -14px;
@@ -103,12 +110,23 @@
   .fcard.mix .cut::after{
     content:"✂"; position:absolute; left:-2px; top:-12px; font-size:14px; color:#8a93a5;
   }
-  .fcard.wrong{ animation:wrongShake .3s ease; border-color:#ff3b3b; }
-  @keyframes wrongShake{
-    0%,100%{ margin-left:0; } 25%{ margin-left:-10px; } 75%{ margin-left:10px; }
+  /* 外したときは「ぽよん」と戻るだけ（赤くしない） */
+  .fcard.boing{ animation:boing .4s cubic-bezier(.3,1.6,.4,1); }
+  @keyframes boing{
+    0%{ transform:translateX(-50%) scale(1); }
+    30%{ transform:translateX(-50%) scale(1.08, .9); }
+    60%{ transform:translateX(-50%) scale(.95, 1.05); }
+    100%{ transform:translateX(-50%) scale(1); }
   }
   .fcard.fly{ transition:transform .35s ease, opacity .35s ease; opacity:0; }
-  .fcard.dropped{ transition:opacity .4s ease; opacity:0; border-color:#ff3b3b; }
+  .fcard.dropped{ transition:opacity .4s ease; opacity:0; }
+  /* 手放したカードは丸めてゴミ箱へシュート */
+  .fcard.crumple{
+    transition:transform .45s cubic-bezier(.4,-0.3,.6,1), border-radius .2s ease, opacity .45s ease .25s;
+    border-radius:50%;
+    color:transparent;
+    opacity:0;
+  }
 
   .piece{
     position:absolute;
@@ -127,7 +145,7 @@
 
   .pts{
     position:absolute; pointer-events:none;
-    font-weight:900; font-size:18px;
+    font-weight:900; font-size:17px;
     transform:translate(-50%,-50%);
     animation:ptsUp .7s ease forwards;
     text-shadow:0 2px 6px rgba(0,0,0,.6);
@@ -147,14 +165,87 @@
   #speedUp.show{ animation:speedShow 1.2s ease; }
   @keyframes speedShow{ 0%,100%{ opacity:0; } 20%,70%{ opacity:1; } }
 
+  /* ===== ギャル（ミカ） ===== */
+  #galRow{
+    display:flex; align-items:flex-end; gap:8px;
+    padding:6px 12px 0;
+    min-height:66px;
+  }
+  .gal{
+    position:relative;
+    width:56px; height:56px; flex-shrink:0;
+  }
+  .gal .hair{
+    position:absolute; inset:0;
+    border-radius:50% 50% 42% 42%;
+    background:radial-gradient(circle at 40% 30%, #fff2b0, #f2c94c 60%, #d9a521);
+  }
+  .gal .hair::before, .gal .hair::after{
+    content:""; position:absolute; bottom:-6px; width:16px; height:26px;
+    background:linear-gradient(180deg,#f2c94c,#d9a521);
+    border-radius:0 0 10px 10px;
+  }
+  .gal .hair::before{ left:2px; transform:rotate(8deg); }
+  .gal .hair::after{ right:2px; transform:rotate(-8deg); }
+  .gal .face{
+    position:absolute; left:9px; top:13px; width:38px; height:38px;
+    border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #fff1e6, #ffd9c2);
+  }
+  .gal .eye{
+    position:absolute; top:15px; width:6px; height:7px; background:#3a2a3a; border-radius:50%;
+  }
+  .gal .eye.l{ left:9px; } .gal .eye.r{ right:9px; }
+  .gal .eye::before{
+    content:""; position:absolute; top:-3px; left:-2px; width:10px; height:3px;
+    border-top:2px solid #3a2a3a; border-radius:50% 50% 0 0;
+  }
+  .gal .cheek{ position:absolute; top:23px; width:8px; height:5px; border-radius:50%; background:#ff9ec4; opacity:.8; }
+  .gal .cheek.l{ left:4px; } .gal .cheek.r{ right:4px; }
+  .gal .mouth{
+    position:absolute; left:14px; top:26px; width:10px; height:5px;
+    border-bottom:2px solid #c2456e; border-radius:0 0 8px 8px;
+  }
+  .gal .bang{
+    position:absolute; left:8px; top:8px; width:40px; height:14px;
+    background:linear-gradient(180deg,#f2c94c,#e8b83a);
+    border-radius:20px 20px 6px 30px;
+  }
+  .gal .peace{ position:absolute; right:-10px; bottom:-4px; font-size:18px; transform:rotate(12deg); }
+  .gal.talk{ animation:galBob .35s ease; }
+  @keyframes galBob{ 40%{ transform:translateY(-4px) rotate(-3deg); } }
+  .gal.tsukkomi{ animation:galTsukkomi .45s ease; }
+  @keyframes galTsukkomi{ 20%{ transform:translateX(-4px) rotate(-8deg); } 60%{ transform:translateX(4px) rotate(6deg); } }
+
+  #galBubble{
+    position:relative;
+    flex:1;
+    background:#fff5fa;
+    color:#4a2a3a;
+    border:2px solid var(--gal-pink);
+    border-radius:16px;
+    padding:8px 12px;
+    font-size:14px; font-weight:800; line-height:1.4;
+    min-height:40px;
+    margin-bottom:6px;
+  }
+  #galBubble::before{
+    content:""; position:absolute; left:-9px; bottom:12px;
+    border-right:9px solid var(--gal-pink);
+    border-top:6px solid transparent; border-bottom:6px solid transparent;
+  }
+  #galBubble .name{ display:block; font-size:10px; color:var(--gal-pink); font-weight:800; letter-spacing:1px; }
+  #galBubble.pop{ animation:bubblePop .25s ease; }
+  @keyframes bubblePop{ 0%{ transform:scale(.92); } 100%{ transform:scale(1); } }
+
   /* ===== ボタン ===== */
   #controls{
     display:flex; gap:10px;
-    padding:10px 12px calc(12px + env(safe-area-inset-bottom));
+    padding:8px 12px calc(12px + env(safe-area-inset-bottom));
   }
   .actionBtn{
     flex:1;
-    padding:14px 6px;
+    padding:12px 6px;
     border:none; border-radius:16px;
     font-size:15px; font-weight:800; color:#fff;
     font-family:inherit;
@@ -184,9 +275,14 @@
     background:linear-gradient(90deg,var(--emotion-color),var(--accent),var(--fact-color));
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
+  .galIntro{ display:flex; align-items:center; gap:10px; justify-content:center; margin:12px 0 4px; }
+  .galIntro .say{
+    text-align:left; background:#fff5fa; color:#4a2a3a; border:2px solid var(--gal-pink);
+    border-radius:14px; padding:8px 12px; font-size:13px; font-weight:800; line-height:1.5;
+  }
   .howto{
     text-align:left; font-size:13px; line-height:1.9;
-    background:#ffffff0c; border-radius:14px; padding:10px 14px; margin:14px 0;
+    background:#ffffff0c; border-radius:14px; padding:10px 14px; margin:12px 0;
   }
   .howto .k{ display:inline-block; min-width:64px; font-weight:800; }
   .howto .k.e{ color:var(--emotion-color); }
@@ -202,7 +298,7 @@
   .mainBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 #a87a1e; }
 
   #countdown{
-    position:absolute; left:50%; top:45%; transform:translate(-50%,-50%);
+    position:absolute; left:50%; top:40%; transform:translate(-50%,-50%);
     font-size:72px; font-weight:900; color:var(--accent);
     z-index:20; pointer-events:none;
   }
@@ -218,9 +314,10 @@
   .stat{ background:var(--card-bg); border-radius:12px; padding:8px 10px; min-width:84px; }
   .stat .n{ font-size:20px; font-weight:900; }
   .stat .l{ font-size:10.5px; color:var(--text-sub); }
-  #comment{
-    font-size:13px; color:#d8dde6; margin:4px 0 16px;
-    background:#ffffff0c; border-radius:12px; padding:8px 12px;
+  .resultGal{ display:flex; align-items:center; gap:10px; justify-content:center; margin:4px 0 16px; }
+  .resultGal .say{
+    text-align:left; background:#fff5fa; color:#4a2a3a; border:2px solid var(--gal-pink);
+    border-radius:14px; padding:8px 12px; font-size:13.5px; font-weight:800;
   }
 </style>
 </head>
@@ -234,10 +331,15 @@
   </div>
 
   <div id="field">
-    <div class="sideTag l">🗑️</div>
-    <div class="sideTag r">📥</div>
+    <div class="sideTag l" id="trashTag">🗑️</div>
+    <div class="sideTag r" id="boxTag">📥</div>
     <div id="speedUp">SPEED UP!</div>
     <div id="dangerLine"></div>
+  </div>
+
+  <div id="galRow">
+    <div class="gal" id="gal"></div>
+    <div id="galBubble"><span class="name">ミカ</span><span id="galText">いっしょに仕分けよ〜</span></div>
   </div>
 
   <div id="controls">
@@ -250,6 +352,10 @@
 <div id="startScreen" class="overlay show">
   <div class="overlayInner">
     <div class="title">事実と感情の仕分け</div>
+    <div class="galIntro">
+      <div class="gal galStatic"></div>
+      <div class="say">ミカだよ〜！<br>となりで見てるから、どんどん仕分けてこ✌️</div>
+    </div>
     <div class="howto">
       落ちてくるカードを、下に着く前に仕分けよう。<br>
       <span class="k e">← 左へ</span>気持ち（手放す）<br>
@@ -273,7 +379,10 @@
       <div class="stat"><div class="n" id="stCombo">0</div><div class="l">最大コンボ</div></div>
       <div class="stat"><div class="n" id="stCut">0</div><div class="l">✂ 切った枚数</div></div>
     </div>
-    <div id="comment"></div>
+    <div class="resultGal">
+      <div class="gal galStatic"></div>
+      <div class="say" id="comment"></div>
+    </div>
     <button class="mainBtn" id="retryBtn">もう一回</button>
   </div>
 </div>
@@ -290,6 +399,8 @@
     '夕飯のときに母と話した','「別にいい」と返事をした','部屋のドアを閉めた','週末に会う約束がある','返信は2時間後に来た','ありがとうと言わなかった',
     '朝7時に起きた','電車が5分遅れた','課題を半分まで書いた','傘を持って出なかった'
   ];
+  // たまに出るレアな「超事実」
+  const SUPER_FACTS = ['今日も地球は回っていた','今日も朝は来た','お腹は今日もすいた','空はだいたい上にあった','猫は今日も猫だった'];
   const EMOS = [
     '先輩なのに情けない','自分はダメな人間だ','みんなに嫌われたかも','なんで自分だけ要領が悪いんだろう','もう顔を合わせられない',
     'この程度にしかできない','センスがない','時間をかけても意味がない','人に見せるのが恥ずかしい','いつも無計画だ',
@@ -297,19 +408,43 @@
     '可愛げがない自分が嫌だ','嫌われたかもしれない','素直になれない自分が嫌い','私ってほんと子どもだ','全然成長してない',
     'どうせうまくいかない','また失敗する気がする'
   ];
+  // 大げさすぎる思い込み（笑いどころ）
+  const BIG_EMOS = ['全人類に嫌われた','もう人生終了','明日から引きこもるしかない','宇宙一ダメな人間だ'];
   const MIXES = [
     ['後輩のフォローに入れなかった','最悪の先輩だ'],['店長に声をかけられた','きっと怒ってる'],['注文を1つ間違えた','いつもこうだ'],
     ['思っていた形にならなかった','才能がない'],['友達が上手な作品を出した','私はだめだ'],['予定より進まなかった','また中途半端'],
     ['最初の質問で言葉に詰まった','もう終わった'],['声が少し震えた','恥ずかしすぎる'],['面接官がメモを取らなかった','興味なかったんだ'],
     ['強い口調で言い返した','最低だ'],['返信が遅かった','怒ってるに違いない'],['感謝を伝えられなかった','冷たい人間だ']
   ];
+  const BIG_MIXES = [
+    ['店長に声をかけられた','きっと世界が終わる'],['既読がついて1時間たった','もう絶交された'],
+    ['プレゼンで1回噛んだ','一生ネタにされる'],['課題の提出がギリギリだった','教授に存在ごと忘れられる']
+  ];
 
-  // 結果画面のひとこと（プレイの様子だけに触れる）
-  const COMMENTS = {
-    great: ['手が勝手に動いてたね','その速さ、もう職人','仕分けの達人が来た','迷いがない…！'],
-    combo: ['コンボがつながると気持ちいいね','リズムに乗ってたね','連続仕分け、おみごと'],
-    cut:   ['✂ さばき、キレてた','切り分けがうまい','点線、見逃さなかったね'],
-    normal:['次はもっと積み上げよう','慣れるとどんどん速くなるよ','もう1回いけそう？','いい準備運動だったね']
+  /* =========================================================
+     ミカ（ギャル）のセリフ
+     決まり：人を評価しない／ツッコむのは解釈で気持ちではない／外しても責めない／説明しない／短く
+     ========================================================= */
+  const GAL = {
+    fact:      ['それな、ただの事実〜','事実確認おけ👌','はい事実〜受け止め完了','それはそう','ふつうに起きたことね','ログ保存〜📝'],
+    emo:       ['それ妄想入ってない？ぽいっ','考えすぎ〜バイバイ👋','その解釈、重すぎ〜','いったん捨て捨て','頭の中の声ね、ぽい','盛りすぎ〜笑'],
+    cut:       ['くっついてたの分けたのえぐ','事実と気持ち、別居させといた〜','✂さばき神','いい感じに切れた〜','はい分離〜✂'],
+    wrongFact: ['待って、それ事実！カメラ映るやつ！','それ捨てちゃダメなやつ〜笑','いやそれ起きたことじゃん笑','📷に映るやつだって〜'],
+    wrongEmo:  ['いやそれ想像じゃん笑','それ事実ってことにしちゃう？笑','カメラには映らないやつ〜','それ頭の中の声だよ〜'],
+    wrongMix:  ['それ2個混ざってない？✂いこ','点線あるよ〜✂✂','半分事実で半分妄想〜笑'],
+    wrongCut:  ['それはもう切れないって笑','切るとこなくない？笑'],
+    big:       ['世界は終わんないって笑','スケールでかすぎ笑','それはさすがに盛ってる〜','ないない笑'],
+    super:     ['それはガチ','それは誰が見ても事実〜','壮大な事実きた笑'],
+    combo:     ['ノってきたじゃん','連続えぐ','止まんないね〜','リズム最高〜🎶'],
+    drop:      ['あ、見送った〜 次次','落ちちゃった〜まいっか次','ドンマイ〜次いこ'],
+    speed:     ['速くなってきた〜！','ここからが本番っしょ'],
+    start:     ['いっしょに仕分けよ〜','いくよ〜✌️','準備おけ？']
+  };
+  const RESULT_GAL = {
+    great: ['手が勝手に動いてたね笑','その速さ、もう職人','仕分けの達人きた〜','迷いなさすぎて笑った'],
+    combo: ['コンボつながると気持ちいいよね〜','リズム乗ってたね🎶','連続仕分け、見てて楽しかった'],
+    cut:   ['✂さばき、キレてた','切り分けうますぎ〜','点線、見逃さなかったね'],
+    normal:['次はもっといけそうじゃない？','慣れるとどんどん速くなるよ〜','もう1回いこ✌️','いい準備運動だった〜']
   };
 
   /* 自己ベスト（この端末に保存） */
@@ -332,8 +467,36 @@
   const speedUp = document.getElementById('speedUp');
   const startScreen = document.getElementById('startScreen');
   const resultScreen = document.getElementById('resultScreen');
+  const galEl = document.getElementById('gal');
+  const galBubble = document.getElementById('galBubble');
+  const galText = document.getElementById('galText');
+  const trashTag = document.getElementById('trashTag');
+  const boxTag = document.getElementById('boxTag');
 
   const MAX_LIVES = 3;
+
+  /* ===== ミカを描く ===== */
+  function drawGal(el){
+    el.innerHTML = '<div class="hair"></div><div class="face"><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="mouth"></div></div><div class="bang"></div><div class="peace">✌️</div>';
+  }
+  drawGal(galEl);
+  document.querySelectorAll('.galStatic').forEach(drawGal);
+
+  let lastLine = '';
+  let galLock = 0;   // ツッコミを少しの間ほかのセリフで上書きしない
+  function galSay(kind, force){
+    const now = performance.now();
+    if(!force && now < galLock) return;
+    let line = pick(GAL[kind]);
+    if(line === lastLine) line = pick(GAL[kind]);
+    lastLine = line;
+    galText.textContent = line;
+    galBubble.classList.remove('pop'); void galBubble.offsetWidth; galBubble.classList.add('pop');
+    const tsukkomi = kind.startsWith('wrong') || kind === 'big';
+    galEl.classList.remove('talk','tsukkomi'); void galEl.offsetWidth;
+    galEl.classList.add(tsukkomi ? 'tsukkomi' : 'talk');
+    if(tsukkomi) galLock = now + 1100;
+  }
 
   /* =========================================================
      状態
@@ -368,14 +531,25 @@
 
   /* ===== カード生成 ===== */
   function nextData(){
+    // 超事実はまれに
+    if(Math.random() < 0.04){
+      const t = pick(SUPER_FACTS);
+      if(!recent.includes(t)){ recent.push(t); return { type:'fact', super:true, text:t, key:t }; }
+    }
     // 混ざりカードは時間とともに少しずつ増える
     const mixRate = Math.min(0.32, 0.12 + elapsed * 0.004);
     for(let tries=0; tries<10; tries++){
       const r = Math.random();
+      const big = Math.random() < 0.15;   // ときどき大げさな思い込み
       let d;
-      if(r < mixRate){ const m = pick(MIXES); d = { type:'mix', fact:m[0], emo:m[1], key:m[0] }; }
-      else if(r < mixRate + (1 - mixRate)/2){ const t = pick(FACTS); d = { type:'fact', text:t, key:t }; }
-      else { const t = pick(EMOS); d = { type:'emo', text:t, key:t }; }
+      if(r < mixRate){
+        const m = big ? pick(BIG_MIXES) : pick(MIXES);
+        d = { type:'mix', fact:m[0], emo:m[1], key:m[0] + m[1], big };
+      } else if(r < mixRate + (1 - mixRate)/2){
+        const t = pick(FACTS); d = { type:'fact', text:t, key:t };
+      } else {
+        const t = big ? pick(BIG_EMOS) : pick(EMOS); d = { type:'emo', text:t, key:t, big };
+      }
       if(!recent.includes(d.key)){
         recent.push(d.key);
         if(recent.length > 12) recent.shift();
@@ -388,7 +562,7 @@
   function spawnCard(){
     const d = nextData();
     const el = document.createElement('div');
-    el.className = 'fcard' + (d.type === 'mix' ? ' mix' : '');
+    el.className = 'fcard' + (d.type === 'mix' ? ' mix' : '') + (d.super ? ' super' : '');
     if(d.type === 'mix'){
       el.innerHTML = '<span class="half"></span><span class="cut"></span><span class="half"></span>';
       const halves = el.querySelectorAll('.half');
@@ -398,7 +572,7 @@
       halves[1].textContent = factFirst ? d.emo : d.fact;
       d.factFirst = factFirst;
     } else {
-      el.textContent = d.text;
+      el.appendChild(document.createTextNode(d.text));
     }
     field.appendChild(el);
     const c = { data:d, el, y: -el.offsetHeight - 10, h: el.offsetHeight, done:false };
@@ -427,21 +601,25 @@
     const ok = (choice === 'fact' && t === 'fact') || (choice === 'emo' && t === 'emo') || (choice === 'cut' && t === 'mix');
 
     if(!ok){
-      // 外したらコンボが切れるだけ。カードはそのまま落ち続ける
+      // 外したら：赤くせず「ぽよん」と戻り、ミカが笑ってツッコむ。コンボは静かにリセット
       combo = 0;
       renderCombo();
-      c.el.classList.remove('wrong'); void c.el.offsetWidth; c.el.classList.add('wrong');
-      showPts(c, 'COMBO BREAK', '#ff7a8a');
-      if(navigator.vibrate) navigator.vibrate([20,30,20]);
+      c.el.classList.remove('boing'); void c.el.offsetWidth; c.el.classList.add('boing');
+      if(t === 'mix') galSay('wrongMix', true);
+      else if(choice === 'cut') galSay('wrongCut', true);
+      else if(t === 'fact') galSay('wrongFact', true);
+      else galSay('wrongEmo', true);
+      if(navigator.vibrate) navigator.vibrate(15);
       return;
     }
 
     c.done = true;
+    c.el.classList.remove('active');   // 飛んでいく途中のカードは操作対象の枠を外す
     combo++;
     maxCombo = Math.max(maxCombo, combo);
     sorted++;
     const mult = 1 + Math.floor(combo / 5);
-    const base = t === 'mix' ? 250 : 100;
+    const base = t === 'mix' ? 250 : c.data.super ? 300 : 100;
     // 下に近いほど少しだけボーナス（ギリギリまで待つ楽しさ）
     const edge = Math.max(0, Math.round((c.y / field.clientHeight) * 20) * 5);
     const gained = (base + edge) * mult;
@@ -451,17 +629,39 @@
     showPts(c, `+${gained}${mult > 1 ? ' ×' + mult : ''}`, t === 'fact' ? 'var(--fact-color)' : t === 'emo' ? 'var(--emotion-color)' : 'var(--accent)');
     if(navigator.vibrate) navigator.vibrate(12);
 
+    // ミカのひとこと
+    if(c.data.big) galSay('big', true);
+    else if(c.data.super) galSay('super', true);
+    else if(combo > 0 && combo % 5 === 0) galSay('combo');
+    else galSay(t === 'mix' ? 'cut' : t);
+
     if(t === 'mix'){
       cuts++;
       sliceCard(c);
-    } else {
-      const dir = t === 'fact' ? 1 : -1;
+    } else if(t === 'fact'){
       c.el.classList.add('fly');
-      c.el.style.transform = `translateX(-50%) translateX(${dir * 420}px) rotate(${dir * 25}deg)`;
+      c.el.style.transform = 'translateX(-50%) translateX(420px) rotate(25deg)';
+      bump(boxTag);
       setTimeout(() => c.el.remove(), 380);
+    } else {
+      crumple(c);
     }
     cards = cards.filter(x => x !== c);
     updateActive();
+  }
+
+  // 手放したカードは丸めてゴミ箱へシュート
+  function crumple(c){
+    const fr = field.getBoundingClientRect(), tr = trashTag.getBoundingClientRect(), cr = c.el.getBoundingClientRect();
+    const dx = (tr.left + tr.width/2) - (cr.left + cr.width/2);
+    const dy = (tr.top + tr.height/2) - (cr.top + cr.height/2);
+    c.el.classList.add('crumple');
+    c.el.style.transform = `translateX(-50%) translate(${dx}px, ${dy}px) scale(.18) rotate(-540deg)`;
+    setTimeout(() => bump(trashTag), 380);
+    setTimeout(() => c.el.remove(), 720);
+  }
+  function bump(tag){
+    tag.classList.remove('gulp'); void tag.offsetWidth; tag.classList.add('gulp');
   }
 
   // ✂ 事実は右へ、気持ちは左へ
@@ -533,6 +733,7 @@
     if(lv > level){
       level = lv;
       speedUp.classList.remove('show'); void speedUp.offsetWidth; speedUp.classList.add('show');
+      galSay('speed');
     }
 
     spawnTimer -= dt;
@@ -556,7 +757,7 @@
         renderLives();
         c.el.classList.add('dropped');
         setTimeout(() => c.el.remove(), 420);
-        field.animate([{ background:'rgba(255,59,59,.25)' }, { background:'transparent' }], { duration:400 });
+        galSay('drop', true);
       }
     });
     cards = cards.filter(c => !c.done);
@@ -575,6 +776,8 @@
     score = 0; combo = 0; maxCombo = 0; lives = MAX_LIVES;
     sorted = 0; cuts = 0; elapsed = 0; spawnTimer = 0; level = 1;
     renderScore(); renderCombo(); renderLives();
+    galLock = 0;
+    galSay('start', true);
 
     // 3・2・1
     const cd = document.createElement('div');
@@ -607,17 +810,17 @@
     document.getElementById('stSorted').textContent = sorted;
     document.getElementById('stCombo').textContent = maxCombo;
     document.getElementById('stCut').textContent = cuts;
-    let pool = COMMENTS.normal;
-    if(sorted >= 40) pool = COMMENTS.great;
-    else if(maxCombo >= 12) pool = COMMENTS.combo;
-    else if(cuts >= 5) pool = COMMENTS.cut;
+    let pool = RESULT_GAL.normal;
+    if(sorted >= 40) pool = RESULT_GAL.great;
+    else if(maxCombo >= 12) pool = RESULT_GAL.combo;
+    else if(cuts >= 5) pool = RESULT_GAL.cut;
     document.getElementById('comment').textContent = pick(pool);
 
     setTimeout(() => resultScreen.classList.add('show'), 500);
     sendResultToPortal();
   }
 
-  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score はランキング用）
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score は記録用）
   function sendResultToPortal(){
     try{
       window.parent.postMessage({
