@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>粘土うさぎ屋さん</title>
+<title>粘土フィギュア工房</title>
 <style>
   :root{
     --bg1:#f3e6d3;
@@ -46,13 +46,12 @@
     width:100%;
     display:flex; justify-content:space-between; align-items:center;
     font-weight:800;
-    margin-bottom:6px;
+    margin-bottom:4px;
   }
-  #money{ font-size:20px; font-variant-numeric:tabular-nums; }
-  #money small{ display:block; font-size:10px; color:var(--text-sub); font-weight:600; }
-  #comboBox{ font-size:12px; color:var(--accent-dark); opacity:0; transition:opacity .2s ease; text-align:center; }
-  #comboBox.on{ opacity:1; }
-  #comboBox b{ font-size:18px; display:block; line-height:1; }
+  #scoreBox{ font-size:20px; font-variant-numeric:tabular-nums; }
+  #scoreBox small{ display:block; font-size:10px; color:var(--text-sub); font-weight:600; }
+  #zukanBox{ font-size:12px; color:var(--text-sub); text-align:center; }
+  #zukanBox b{ font-size:16px; color:var(--text-main); }
   #clock{
     font-size:15px; background:#ffffffa0; padding:4px 12px; border-radius:14px;
     font-variant-numeric:tabular-nums;
@@ -60,52 +59,31 @@
   #clock.hurry{ color:#d4423f; animation:hurry .5s ease infinite alternate; }
   @keyframes hurry{ to{ transform:scale(1.08); } }
 
-  /* ===== お客さん ===== */
-  #customerArea{
+  /* ===== 今日の棚 ===== */
+  #shelf{
     width:100%;
-    display:flex; align-items:flex-start; gap:8px;
-    min-height:76px;
+    height:58px;
+    display:flex; align-items:flex-end; gap:2px;
+    overflow-x:auto; overflow-y:hidden;
+    padding:0 4px 6px;
+    border-bottom:8px solid var(--board);
+    box-shadow:0 3px 0 var(--board-dark);
+    border-radius:2px;
+    scrollbar-width:none;
   }
-  #customer{
-    font-size:40px; line-height:1;
-    flex-shrink:0;
-    transition:transform .3s ease, opacity .3s ease;
+  #shelf::-webkit-scrollbar{ display:none; }
+  #shelf .empty{ font-size:11px; color:var(--text-sub); margin:auto; }
+  .mini{ position:relative; flex-shrink:0; width:40px; height:46px; }
+  .mini .creature{ position:absolute; left:0; top:0; width:150px; height:170px; transform:scale(.27); transform-origin:0 0; }
+  .mini.new::after{
+    content:"新"; position:absolute; top:-2px; right:-2px;
+    font-size:9px; font-weight:900; color:#fff; background:#e0708a;
+    border-radius:6px; padding:0 3px;
   }
-  #customer.leave{ transform:translateX(-60px); opacity:0; }
-  #customer.arrive{ animation:arrive .35s cubic-bezier(.3,1.6,.4,1); }
-  @keyframes arrive{ from{ transform:translateX(50px); opacity:0; } to{ transform:none; opacity:1; } }
-  #orderBubble{
-    flex:1;
-    position:relative;
-    background:#fffdf6;
-    border:2px solid #e2c9a2;
-    border-radius:14px;
-    padding:6px 10px 8px;
-  }
-  #orderText{ font-size:13px; font-weight:800; line-height:1.5; min-height:20px; }
-  #orderChips{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
-  .chip{
-    font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px;
-    color:#fff; background:var(--zone-rough);
-    opacity:.55;
-  }
-  .chip.neat{ background:var(--zone-neat); }
-  .chip.quirk{ background:var(--zone-quirk); }
-  .chip.ok{ opacity:1; box-shadow:0 0 0 2px #fff, 0 0 0 4px currentColor; }
-  .chip.ok::after{ content:" ✓"; }
-  #patience{
-    height:5px; border-radius:3px; background:#0001; margin-top:6px; overflow:hidden;
-  }
-  #patienceBar{ height:100%; width:100%; background:#7fbf5a; transition:background .3s ease; }
-  #queue{ font-size:16px; letter-spacing:2px; opacity:.6; margin-left:4px; align-self:center; white-space:nowrap; }
-  #reaction{
-    position:absolute; right:8px; top:-14px;
-    font-size:22px; opacity:0; pointer-events:none;
-  }
-  #reaction.show{ animation:react .9s ease; }
-  @keyframes react{ 0%{ opacity:0; transform:translateY(6px) scale(.6); } 25%{ opacity:1; transform:none; } 80%{ opacity:1; } 100%{ opacity:0; transform:translateY(-10px); } }
+  .mini.arrive{ animation:arrive .4s cubic-bezier(.3,1.6,.4,1); }
+  @keyframes arrive{ from{ transform:translateY(-30px) scale(1.4); opacity:0; } to{ transform:none; opacity:1; } }
 
-  /* ===== うさぎ ===== */
+  /* ===== 作業台 ===== */
   #boxArea{
     width:100%; flex:1;
     display:flex; align-items:center; justify-content:center;
@@ -122,17 +100,23 @@
     box-shadow:0 3px 0 var(--board-dark);
     z-index:0;
   }
-  #rabbitStage.sold{ animation:sold .45s ease-in forwards; }
-  @keyframes sold{ to{ transform:translateX(-140px) scale(.6); opacity:0; } }
+  #rabbitStage.shelve{ animation:shelve .45s ease-in forwards; }
+  @keyframes shelve{ to{ transform:translateY(-160px) scale(.3); opacity:0; } }
   #rabbitStage.fresh{ animation:fresh .35s cubic-bezier(.3,1.6,.4,1); }
   @keyframes fresh{ from{ transform:scale(.4); opacity:0; } to{ transform:none; opacity:1; } }
+  #nameTag{
+    position:absolute; left:50%; bottom:2px; transform:translateX(-50%);
+    font-size:11.5px; font-weight:800; color:var(--text-main);
+    background:#fffdf6e0; border:1px solid #e2c9a2; border-radius:10px;
+    padding:2px 10px; white-space:nowrap; max-width:96%; overflow:hidden; text-overflow:ellipsis;
+  }
 
   .creature{ position:absolute; inset:0; }
   .creature .part{
     position:absolute;
     background:radial-gradient(circle at 35% 28%, var(--clay-light), var(--clay) 55%, var(--clay-dark) 100%);
     box-shadow:0 5px 10px rgba(90,50,20,.25), inset 0 0 0 2px rgba(255,255,255,.12);
-    transition:transform .12s ease, border-radius .12s ease;
+    transition:transform .12s ease;
   }
   .earL{ width:18px; height:48px; left:32px; top:2px; border-radius:50% 50% 40% 40%/60% 60% 30% 30%; }
   .earR{ width:18px; height:48px; left:100px; top:2px; border-radius:50% 50% 40% 40%/60% 60% 30% 30%; }
@@ -156,11 +140,13 @@
 
   .pop{
     position:absolute; font-size:15px; font-weight:900; color:var(--accent-dark);
-    pointer-events:none; animation:popUp .8s ease forwards; z-index:10; white-space:nowrap;
+    pointer-events:none; animation:popUp .9s ease forwards; z-index:10; white-space:nowrap;
     transform:translateX(-50%);
+    text-shadow:0 1px 0 #fff;
   }
+  .pop.big{ font-size:18px; color:#c2456e; }
   @keyframes popUp{
-    0%{ opacity:0; margin-top:0; } 15%{ opacity:1; margin-top:-6px; } 100%{ opacity:0; margin-top:-46px; }
+    0%{ opacity:0; margin-top:0; } 15%{ opacity:1; margin-top:-6px; } 100%{ opacity:0; margin-top:-50px; }
   }
   .crumb{ position:absolute; border-radius:50%; pointer-events:none; animation:crumbFall .7s ease-out forwards; z-index:9; }
   @keyframes crumbFall{ 0%{ opacity:1; transform:translate(0,0); } 100%{ opacity:0; transform:translate(var(--dx), 50px); } }
@@ -184,25 +170,25 @@
   .partBtn .lbl{ display:block; font-size:10px; font-weight:700; opacity:.95; margin-top:1px; min-height:13px; }
   .meter{ display:flex; gap:2px; margin:5px 6px 0; height:7px; }
   .meter i{ flex:1; border-radius:2px; background:#ffffff40; }
-  .meter i.r{ } .meter i.on.r{ background:var(--zone-rough); }
+  .meter i.on.r{ background:var(--zone-rough); }
   .meter i.on.n{ background:#b6f08a; }
   .meter i.on.q{ background:#e0c8ff; }
   #actRow{ width:100%; display:flex; gap:6px; margin-top:8px; }
-  #deliverBtn{
+  #shelveBtn{
     flex:1;
     padding:12px; border:none; border-radius:16px;
     background:linear-gradient(160deg,#7fbf5a,#4f9a34);
     color:#fff; font-size:16px; font-weight:900; font-family:inherit;
     box-shadow:0 5px 0 #3a7424; cursor:pointer;
   }
-  #deliverBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #3a7424; }
+  #shelveBtn:active{ transform:translateY(4px); box-shadow:0 1px 0 #3a7424; }
   #redoBtn{
     flex:0 0 86px;
     border:2px solid #d8bd94; background:#fff8ec; color:var(--text-main);
     border-radius:16px; font-size:12px; font-weight:800; font-family:inherit; cursor:pointer;
   }
 
-  /* ===== はじまり・結果 ===== */
+  /* ===== はじまり・結果・図鑑 ===== */
   .overlay{
     position:fixed; inset:0; z-index:50;
     background:rgba(60,40,25,.92);
@@ -210,7 +196,7 @@
     padding:16px; overflow-y:auto; text-align:center; color:#fff3de;
   }
   .overlay.show{ display:flex; }
-  .overlayInner{ margin:auto 0; width:100%; max-width:360px; }
+  .overlayInner{ margin:auto 0; width:100%; max-width:380px; }
   .title{ font-size:22px; font-weight:900; margin:0 0 6px; color:#ffd76a; }
   .howto{
     text-align:left; font-size:13px; line-height:1.85;
@@ -219,23 +205,33 @@
   .howto .z{ display:inline-block; font-size:11px; font-weight:800; color:#fff; padding:0 6px; border-radius:8px; margin-right:2px; }
   .best{ font-size:12px; color:#e8d3b5; margin-bottom:12px; }
   .mainBtn{
-    padding:13px 40px; border:none; border-radius:30px;
+    padding:13px 36px; border:none; border-radius:30px;
     background:linear-gradient(160deg,#ffd76a,#e0a93a);
     color:#4a2f10; font-weight:900; font-size:16px; font-family:inherit;
     box-shadow:0 6px 0 #a97c1e; cursor:pointer;
   }
-  #finalMoney{ font-size:46px; font-weight:900; color:#ffd76a; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .subBtn{
+    padding:11px 20px; border:2px solid #ffffff44; border-radius:30px;
+    background:transparent; color:#f0dcc0; font-weight:700; font-size:13px; font-family:inherit; cursor:pointer;
+  }
+  .btnRow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:4px; }
+  #finalScore{ font-size:46px; font-weight:900; color:#ffd76a; line-height:1.1; font-variant-numeric:tabular-nums; }
   #newBest{ display:inline-block; margin:4px 0; font-size:12px; font-weight:900; letter-spacing:2px; color:#4a2f10; background:#ffd76a; padding:3px 12px; border-radius:12px; }
   #bestLine{ font-size:12px; color:#e8d3b5; margin-bottom:10px; }
   .stats{ display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
   .stat{ background:#00000030; border-radius:12px; padding:8px 10px; min-width:84px; }
   .stat .n{ font-size:20px; font-weight:900; color:#ffd76a; }
   .stat .l{ font-size:10.5px; color:#e8d3b5; }
-  #soldList{
-    font-size:11.5px; color:#e8d3b5; margin-bottom:10px; line-height:1.6;
-    max-height:70px; overflow-y:auto;
+  #resultShelf{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:2px;
+    background:#00000025; border-radius:12px; padding:6px; margin-bottom:6px;
   }
+  #bestPiece{ font-size:12px; color:#e8d3b5; margin-bottom:10px; line-height:1.6; }
+  #bestPiece b{ color:#fff3de; }
   #comment{ font-size:13px; background:#00000030; border-radius:12px; padding:8px 12px; margin-bottom:14px; }
+  #zukanList{ text-align:left; font-size:11.5px; line-height:1.7; columns:2; column-gap:12px; margin:10px 0; }
+  #zukanList div{ break-inside:avoid; }
+  #zukanList .locked{ color:#9a8670; }
   #countdown{
     position:absolute; left:50%; top:45%; transform:translate(-50%,-50%);
     font-size:64px; font-weight:900; color:var(--accent-dark); z-index:20; pointer-events:none;
@@ -246,24 +242,16 @@
 
 <div id="app">
   <div id="hud">
-    <div id="money"><small>売上</small><span id="moneyVal">0</span>円</div>
-    <div id="comboBox"><b id="comboVal">0</b>連続満足</div>
+    <div id="scoreBox"><small>SCORE</small><span id="scoreVal">0</span></div>
+    <div id="zukanBox">図鑑 <b id="zukanVal">0</b> / 81</div>
     <div id="clock">⏱ 60</div>
   </div>
 
-  <div id="customerArea">
-    <div id="customer">🐻</div>
-    <div id="orderBubble">
-      <div id="reaction"></div>
-      <div id="orderText"></div>
-      <div id="orderChips"></div>
-      <div id="patience"><div id="patienceBar"></div></div>
-    </div>
-    <div id="queue"></div>
-  </div>
+  <div id="shelf"><span class="empty">今日の棚（まだからっぽ）</span></div>
 
   <div id="boxArea">
     <div class="boxStage" id="rabbitStage"><div class="creature" id="rabbit"></div></div>
+    <div id="nameTag"></div>
   </div>
 
   <div id="partBtns">
@@ -274,53 +262,69 @@
   </div>
   <div id="actRow">
     <button id="redoBtn">つくり直す</button>
-    <button id="deliverBtn">お渡しする！</button>
+    <button id="shelveBtn">棚に飾る！</button>
   </div>
 </div>
 
 <div id="startScreen" class="overlay show">
   <div class="overlayInner">
-    <div class="title">🐰 粘土うさぎ屋さん</div>
+    <div class="title">🐰 粘土フィギュア工房</div>
     <div class="howto">
-      お客さんの注文どおりのうさぎを作って売ろう。営業は60秒！<br>
+      今日は60秒、好きなキャラのフィギュアを好きに作る日。<br>
       パーツのボタンを押すほど、形が変わっていく。<br>
       <span class="z" style="background:var(--zone-rough)">粘土のまま</span>→
       <span class="z" style="background:var(--zone-neat)">整った形</span>→
       <span class="z" style="background:var(--zone-quirk)">個性的</span><br>
-      注文に合ったら「お渡しする！」<br>
-      <span style="font-size:11.5px;opacity:.8">キーボード：1〜4でこねる／Enterで渡す／Backspaceで作り直す</span>
+      できたら「棚に飾る！」。<b>まだ図鑑にない形</b>なら新作ボーナス！<br>
+      <span style="font-size:11.5px;opacity:.8">キーボード：1〜4でこねる／Enterで飾る／Backspaceで作り直す</span>
     </div>
     <div class="best" id="startBest"></div>
-    <button class="mainBtn" id="startBtn">開店する</button>
+    <div class="btnRow">
+      <button class="mainBtn" id="startBtn">工房をひらく</button>
+      <button class="subBtn" id="zukanBtn1">📖 図鑑</button>
+    </div>
   </div>
 </div>
 
 <div id="resultScreen" class="overlay">
   <div class="overlayInner">
-    <div class="title">閉店！</div>
-    <div id="finalMoney">0円</div>
+    <div class="title">今日の作業おわり！</div>
+    <div id="finalScore">0</div>
     <div id="newBest">NEW BEST!</div>
     <div id="bestLine"></div>
     <div class="stats">
-      <div class="stat"><div class="n" id="stSold">0</div><div class="l">売れた数</div></div>
-      <div class="stat"><div class="n" id="stPerfect">0</div><div class="l">注文どおり</div></div>
-      <div class="stat"><div class="n" id="stCombo">0</div><div class="l">最大連続</div></div>
+      <div class="stat"><div class="n" id="stMade">0</div><div class="l">作った数</div></div>
+      <div class="stat"><div class="n" id="stNew">0</div><div class="l">新作</div></div>
+      <div class="stat"><div class="n" id="stZukan">0</div><div class="l">図鑑 / 81</div></div>
     </div>
-    <div id="soldList"></div>
+    <div id="resultShelf"></div>
+    <div id="bestPiece"></div>
     <div id="comment"></div>
-    <button class="mainBtn" id="retryBtn">もう1日営業する</button>
+    <div class="btnRow">
+      <button class="mainBtn" id="retryBtn">もう1日つくる</button>
+      <button class="subBtn" id="zukanBtn2">📖 図鑑</button>
+    </div>
+  </div>
+</div>
+
+<div id="zukanScreen" class="overlay">
+  <div class="overlayInner">
+    <div class="title">📖 フィギュア図鑑</div>
+    <div class="best" id="zukanSub"></div>
+    <div id="zukanList"></div>
+    <button class="subBtn" id="closeZukan">とじる</button>
   </div>
 </div>
 
 <script>
 (function(){
   const GROUPS = ['ears','head','body','tail'];
-  const GNAME = { ears:'耳', head:'顔', body:'からだ', tail:'しっぽ' };
   const PARTS = ['earL','earR','head','body','tail','footL','footR','face'];
   const PART_GROUP = { earL:'ears', earR:'ears', head:'head', face:'head', body:'body', footL:'body', footR:'body', tail:'tail' };
 
   // こねた回数で3段階：0〜2 粘土のまま / 3〜6 整った形 / 7〜 個性的
   const MAX_KNEAD = 12;
+  const ZONES = ['rough','neat','quirk'];
   function zoneOf(c){ return c <= 2 ? 'rough' : c <= 6 ? 'neat' : 'quirk'; }
   const ZONE_LABEL = {
     ears: { rough:'粘土のまま', neat:'ぴん', quirk:'ながーい' },
@@ -328,45 +332,47 @@
     body: { rough:'かたまり',   neat:'すわりよく', quirk:'ずんぐり' },
     tail: { rough:'どこ？',     neat:'ふわっと', quirk:'でかい' }
   };
-  const ORDER_PHRASE = {
-    ears: { rough:'耳はまだ粘土っぽい', neat:'耳がぴんとした', quirk:'耳がながーい' },
-    head: { rough:'ぼんやり顔の', neat:'ふつうの顔の', quirk:'まんまる顔の' },
+  const NAME_PHRASE = {
+    ears: { rough:'耳がまだ粘土っぽい', neat:'耳がぴんとした', quirk:'耳がながーい' },
+    head: { rough:'ぼんやり顔の', neat:'すました顔の', quirk:'まんまる顔の' },
     body: { rough:'かたまりっぽい', neat:'すわりのいい', quirk:'ずんぐりした' },
-    tail: { rough:'しっぽが見えない', neat:'しっぽふわっとした', quirk:'しっぽでかめの' }
+    tail: { rough:'しっぽが行方不明の', neat:'しっぽふわっとした', quirk:'しっぽでかめの' }
   };
-  // 注文は個性的なものが多め（理想どおりより、ちょっと変なほうが人気）
-  const ZONE_WEIGHT = [['quirk',0.48],['neat',0.32],['rough',0.20]];
-  const CUSTOMERS = ['🐻','🐱','🦊','🐼','🐸','🐧','🦉','🐨','🐯','🐷','👵','👦','👧','👨‍🦳'];
+  // 特別な形には特別な名前（ヘンな形ほど面白く）
+  const SPECIAL = {
+    'rough,rough,rough,rough': '原型（ただの粘土）',
+    'quirk,quirk,quirk,quirk': '超大作（なにかの化身）',
+    'neat,neat,neat,neat':     'きちんとうさぎ',
+    'quirk,rough,rough,rough': '耳だけ本気のかたまり',
+    'rough,rough,rough,quirk': 'しっぽが本体',
+    'quirk,quirk,rough,rough': '上半身だけ全力',
+    'rough,quirk,rough,rough': '顔だけまんまるの謎生物'
+  };
 
   const COMMENTS = {
-    great: ['行列のできるうさぎ屋さん！','もう看板職人だね','お客さん、ほくほく顔だった'],
-    good:  ['いい商売だった！','常連さんがつきそう','手つきが職人っぽくなってきた'],
-    normal:['明日はもっと売れそう','注文を見る目がついてきた','まずは開店おめでとう']
+    great: ['棚がにぎやかになってきた','もはや個展ひらける','いろんな子が生まれた日だった'],
+    good:  ['いい作業日だった','新しい形、見つけたね','棚を眺めるだけで楽しい'],
+    normal:['また粘土こねにおいで','明日はどんな子ができるかな','まずは1体、おつかれさま']
   };
 
-  /* 自己ベスト */
-  const SAVE_KEY = 'clayShop_v1';
+  /* 自己ベストと図鑑（この端末に保存） */
+  const SAVE_KEY = 'clayFigure_v1';
   function loadSave(){
-    try{ return Object.assign({ best:0, days:0 }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
-    catch(e){ return { best:0, days:0 }; }
+    try{ return Object.assign({ best:0, days:0, zukan:{} }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+    catch(e){ return { best:0, days:0, zukan:{} }; }
   }
   function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
   let save = loadSave();
 
   function rand(a,b){ return a + Math.random()*(b-a); }
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function weighted(list){ let r = Math.random(); for(const [v,w] of list){ if((r -= w) < 0) return v; } return list[0][0]; }
   function lerp(a,b,t){ return a + (b-a)*t; }
 
   const app = document.getElementById('app');
   const rabbit = document.getElementById('rabbit');
   const rabbitStage = document.getElementById('rabbitStage');
-  const customerEl = document.getElementById('customer');
-  const orderText = document.getElementById('orderText');
-  const orderChips = document.getElementById('orderChips');
-  const patienceBar = document.getElementById('patienceBar');
-  const reaction = document.getElementById('reaction');
-  const queueEl = document.getElementById('queue');
+  const nameTag = document.getElementById('nameTag');
+  const shelf = document.getElementById('shelf');
   const clockEl = document.getElementById('clock');
   const partBtns = document.querySelectorAll('.partBtn');
 
@@ -401,6 +407,17 @@
   let blob = {};
   let knead = {};
 
+  function shapeKey(){ return GROUPS.map(g => zoneOf(knead[g])).join(','); }
+  function shapeName(key){
+    if(SPECIAL[key]) return SPECIAL[key];
+    const zs = key.split(',');
+    const parts = GROUPS.map((g, i) => ({ g, z:zs[i] })).filter(x => x.z !== 'neat');
+    if(parts.length === 0) return 'きちんとうさぎ';
+    // 個性的 → 粘土のまま の順に、目立つ特徴を2つまで
+    parts.sort((a,b) => (a.z === 'quirk' ? 0 : 1) - (b.z === 'quirk' ? 0 : 1));
+    return parts.slice(0,2).map(x => NAME_PHRASE[x.g][x.z]).join('、') + 'うさぎ';
+  }
+
   function render(){
     PARTS.forEach(p => {
       const g = PART_GROUP[p];
@@ -410,14 +427,13 @@
       const b = blob[p];
       let rx = lerp(b.rx, 0, t), ry = lerp(b.ry, 0, t), rot = lerp(b.rot, 0, t);
       let sx = lerp(b.sx, 1, t), sy = lerp(b.sy, 1, t);
-      if(g === 'ears' && (p === 'earL' || p === 'earR')){ sy *= 1 + q*0.14; ry -= q*0.14*22; rot += (p === 'earL' ? -1 : 1) * q*1.5; }
+      if(p === 'earL' || p === 'earR'){ sy *= 1 + q*0.14; ry -= q*0.14*22; rot += (p === 'earL' ? -1 : 1) * q*1.5; }
       if(g === 'head'){ sx *= 1 + q*0.06; sy *= 1 + q*0.05; }
-      if(g === 'body' && p === 'body'){ sx *= 1 + q*0.08; sy *= 1 - q*0.02; }
+      if(p === 'body'){ sx *= 1 + q*0.08; sy *= 1 - q*0.02; }
       if(g === 'tail'){ sx *= 1 + q*0.18; sy *= 1 + q*0.18; rx += q*2; ry -= q*1.2; }
       const el = rabbit.querySelector(`[data-part="${p}"]`);
       el.style.transform = `translate(${rx.toFixed(1)}px, ${ry.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`;
     });
-    // ボタンのメーター
     partBtns.forEach(btn => {
       const g = btn.dataset.g;
       const c = knead[g];
@@ -432,78 +448,33 @@
       [...meter.children].forEach((s, i) => s.classList.toggle('on', i < c));
       btn.querySelector('.lbl').textContent = ZONE_LABEL[g][zoneOf(c)];
     });
-    updateChips();
+    // いま作っている形の名前（図鑑にないものは「？」つき）
+    const key = shapeKey();
+    nameTag.textContent = (save.zukan[key] ? '' : '🆕 ') + shapeName(key);
   }
 
   function newRabbit(){
     PARTS.forEach(p => blob[p] = blobOf(p));
     GROUPS.forEach(g => knead[g] = 0);
-    rabbitStage.classList.remove('sold','fresh');
+    rabbitStage.classList.remove('shelve','fresh');
     void rabbitStage.offsetWidth;
     rabbitStage.classList.add('fresh');
     render();
   }
 
   /* =========================================================
-     お客さん
-     ========================================================= */
-  let order = null;   // { who, wants:{ g:zone }, patience, maxPatience }
-  let queue = [];
-
-  function makeOrder(){
-    const n = elapsed < 15 ? 1 + (Math.random() < 0.4 ? 1 : 0) : elapsed < 35 ? 2 : 2 + (Math.random() < 0.5 ? 1 : 0);
-    const gs = GROUPS.slice().sort(() => Math.random() - .5).slice(0, n);
-    const wants = {};
-    gs.forEach(g => wants[g] = weighted(ZONE_WEIGHT));
-    const maxPatience = Math.max(9, 18 - elapsed * 0.12);
-    return { who: pick(CUSTOMERS), wants, patience:maxPatience, maxPatience };
-  }
-
-  function nextCustomer(){
-    order = queue.shift() || makeOrder();
-    while(queue.length < 2) queue.push(makeOrder());
-    customerEl.textContent = order.who;
-    customerEl.classList.remove('leave','arrive'); void customerEl.offsetWidth; customerEl.classList.add('arrive');
-    const gs = GROUPS.filter(g => order.wants[g]);
-    orderText.textContent = gs.map(g => ORDER_PHRASE[g][order.wants[g]]).join('、') + 'うさぎ、ください！';
-    orderChips.innerHTML = '';
-    gs.forEach(g => {
-      const z = order.wants[g];
-      const chip = document.createElement('span');
-      chip.className = 'chip ' + (z === 'rough' ? '' : z === 'neat' ? 'neat' : 'quirk');
-      chip.dataset.g = g;
-      chip.textContent = `${GNAME[g]}：${ZONE_LABEL[g][z]}`;
-      orderChips.appendChild(chip);
-    });
-    queueEl.textContent = queue.map(q => q.who).join('');
-    updateChips();
-  }
-
-  function updateChips(){
-    if(!order) return;
-    orderChips.querySelectorAll('.chip').forEach(ch => {
-      const g = ch.dataset.g;
-      ch.classList.toggle('ok', zoneOf(knead[g]) === order.wants[g]);
-    });
-  }
-
-  function showReaction(emoji){
-    reaction.textContent = emoji;
-    reaction.classList.remove('show'); void reaction.offsetWidth; reaction.classList.add('show');
-  }
-
-  /* =========================================================
      状態とループ
      ========================================================= */
   const DAY = 60;
-  let running = false, elapsed = 0, money = 0, combo = 0, maxCombo = 0, soldCount = 0, perfectCount = 0;
-  let soldNames = [];
+  let running = false, elapsed = 0, score = 0;
+  let today = [];          // 今日飾ったもの { key, name, isNew }
+  let todayKeys = {};
+  let newCount = 0;
   let lastTs = null, rafId = null;
 
-  function setMoney(){ document.getElementById('moneyVal').textContent = money.toLocaleString(); }
-  function setCombo(){
-    document.getElementById('comboVal').textContent = combo;
-    document.getElementById('comboBox').classList.toggle('on', combo >= 2);
+  function renderHud(){
+    document.getElementById('scoreVal').textContent = score.toLocaleString();
+    document.getElementById('zukanVal').textContent = Object.keys(save.zukan).length;
   }
 
   function doKnead(g, btn){
@@ -516,45 +487,44 @@
     else if(knead[g] === 7) spawnPop(btn, '個性が出た！');
   }
 
-  function rabbitName(){
-    const parts = GROUPS.filter(g => zoneOf(knead[g]) !== 'neat').map(g => ORDER_PHRASE[g][zoneOf(knead[g])]);
-    return (parts.length ? parts.slice(0,2).join('、') : 'ととのった') + 'うさぎ';
+  // 棚に飾る：図鑑にない形なら新作ボーナス
+  let shelving = false;
+  function shelve(){
+    if(!running || shelving) return;   // 飾っている途中の連打は受け付けない
+    shelving = true;
+    const key = shapeKey();
+    const name = shapeName(key);
+    const isNew = !save.zukan[key];
+    const firstToday = !todayKeys[key];
+    let gained, label;
+    if(isNew){ gained = 500; label = `新作！ +500`; newCount++; }
+    else if(firstToday){ gained = 200; label = `今日はじめての形 +200`; }
+    else { gained = 10; label = `+10`; }   // 同じ形の連打で稼げないように少なめ
+    if(SPECIAL[key] && isNew) gained += 100;
+    score += gained;
+    save.zukan[key] = true;
+    todayKeys[key] = true;
+    writeSave();
+    today.push({ key, name, isNew });
+
+    addToShelf(isNew);
+    spawnPop(document.getElementById('shelveBtn'), isNew ? `🆕「${name}」` : label, isNew);
+    if(isNew) setTimeout(() => spawnPop(document.getElementById('shelveBtn'), `+${gained}`, false), 250);
+    renderHud();
+    rabbitStage.classList.add('shelve');
+    setTimeout(() => { shelving = false; if(running) newRabbit(); }, 420);
   }
 
-  function deliver(){
-    if(!running || !order) return;
-    const gs = GROUPS.filter(g => order.wants[g]);
-    const hit = gs.filter(g => zoneOf(knead[g]) === order.wants[g]).length;
-    const perfect = hit === gs.length;
-    let gained;
-    if(perfect){
-      combo++;
-      maxCombo = Math.max(maxCombo, combo);
-      perfectCount++;
-      gained = (gs.length * 300 + 200) * Math.min(3, 1 + Math.floor(combo / 3) * 0.5); // 連続満足で最大3倍
-      // 待たせなかったぶんのチップ
-      gained += Math.round(order.patience / order.maxPatience * 200);
-      showReaction(pick(['😍','🥰','✨','💖']));
-    } else {
-      combo = 0;
-      gained = hit * 150 + 30;
-      showReaction(hit > 0 ? pick(['🙂','😊']) : pick(['🤔','😅']));
-    }
-    gained = Math.round(gained / 10) * 10;
-    money += gained;
-    soldCount++;
-    soldNames.push(rabbitName());
-    setMoney(); setCombo();
-    spawnPop(document.getElementById('deliverBtn'), `+${gained}円${perfect ? '　注文どおり！' : ''}`);
-    rabbitStage.classList.add('sold');
-    setTimeout(() => { if(running){ newRabbit(); nextCustomer(); } }, 450);
-  }
-
-  function customerLeaves(){
-    combo = 0; setCombo();
-    showReaction('💢');
-    customerEl.classList.add('leave');
-    setTimeout(() => { if(running) nextCustomer(); }, 350);
+  function addToShelf(isNew){
+    const empty = shelf.querySelector('.empty');
+    if(empty) empty.remove();
+    const m = document.createElement('div');
+    m.className = 'mini arrive' + (isNew ? ' new' : '');
+    const cr = rabbit.cloneNode(true);
+    cr.removeAttribute('id');
+    m.appendChild(cr);
+    shelf.appendChild(m);
+    shelf.scrollLeft = shelf.scrollWidth;
   }
 
   function loop(ts){
@@ -566,27 +536,19 @@
     const left = Math.max(0, DAY - elapsed);
     clockEl.textContent = `⏱ ${Math.ceil(left)}`;
     clockEl.classList.toggle('hurry', left <= 10);
-
-    if(order){
-      order.patience -= dt;
-      const r = Math.max(0, order.patience / order.maxPatience);
-      patienceBar.style.width = (r * 100) + '%';
-      patienceBar.style.background = r > .5 ? '#7fbf5a' : r > .25 ? '#e8b23a' : '#d4423f';
-      if(order.patience <= 0){ order = null; customerLeaves(); }
-    }
-    if(left <= 0){ closeShop(); return; }
+    if(left <= 0){ closeDay(); return; }
     rafId = requestAnimationFrame(loop);
   }
 
-  function spawnPop(btn, text){
+  function spawnPop(btn, text, big){
     const r = btn.getBoundingClientRect(), a = app.getBoundingClientRect();
     const p = document.createElement('div');
-    p.className = 'pop';
+    p.className = 'pop' + (big ? ' big' : '');
     p.textContent = text;
     p.style.left = (r.left - a.left + r.width/2) + 'px';
     p.style.top = (r.top - a.top - 10) + 'px';
     app.appendChild(p);
-    setTimeout(() => p.remove(), 800);
+    setTimeout(() => p.remove(), 900);
   }
   function spawnCrumbs(g){
     const t = rabbit.querySelector(g === 'ears' ? '.earL' : '.' + g);
@@ -605,15 +567,13 @@
     }
   }
 
-  function openShop(){
-    document.getElementById('startScreen').classList.remove('show');
-    document.getElementById('resultScreen').classList.remove('show');
-    elapsed = 0; money = 0; combo = 0; maxCombo = 0; soldCount = 0; perfectCount = 0; soldNames = [];
-    queue = [];
-    setMoney(); setCombo();
+  function openDay(){
+    ['startScreen','resultScreen','zukanScreen'].forEach(id => document.getElementById(id).classList.remove('show'));
+    elapsed = 0; score = 0; today = []; todayKeys = {}; newCount = 0;
+    shelf.innerHTML = '<span class="empty">今日の棚（まだからっぽ）</span>';
+    renderHud();
     clockEl.textContent = `⏱ ${DAY}`;
     newRabbit();
-    nextCustomer();
     const cd = document.createElement('div');
     cd.id = 'countdown';
     app.appendChild(cd);
@@ -630,55 +590,84 @@
     }, 550);
   }
 
-  function closeShop(){
+  function closeDay(){
     running = false;
     cancelAnimationFrame(rafId);
-    const isBest = money > save.best;
+    const isBest = score > save.best;
     save.days++;
-    if(isBest) save.best = money;
+    if(isBest) save.best = score;
     writeSave();
-    document.getElementById('finalMoney').textContent = money.toLocaleString() + '円';
-    document.getElementById('newBest').style.display = isBest && money > 0 ? 'inline-block' : 'none';
-    document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()}円`;
-    document.getElementById('stSold').textContent = soldCount;
-    document.getElementById('stPerfect').textContent = perfectCount;
-    document.getElementById('stCombo').textContent = maxCombo;
-    document.getElementById('soldList').textContent = soldNames.length ? '売れたうさぎ：' + soldNames.slice(-6).join(' / ') : '';
-    const pool = perfectCount >= 8 ? COMMENTS.great : perfectCount >= 4 ? COMMENTS.good : COMMENTS.normal;
+    const zukanCount = Object.keys(save.zukan).length;
+    document.getElementById('finalScore').textContent = score.toLocaleString();
+    document.getElementById('newBest').style.display = isBest && score > 0 ? 'inline-block' : 'none';
+    document.getElementById('bestLine').textContent = `自己ベスト ${save.best.toLocaleString()}`;
+    document.getElementById('stMade').textContent = today.length;
+    document.getElementById('stNew').textContent = newCount;
+    document.getElementById('stZukan').textContent = zukanCount;
+    // 今日の棚をそのまま結果に並べる
+    const rs = document.getElementById('resultShelf');
+    rs.innerHTML = '';
+    shelf.querySelectorAll('.mini').forEach(m => { const c = m.cloneNode(true); c.classList.remove('arrive'); rs.appendChild(c); });
+    rs.style.display = today.length ? 'flex' : 'none';
+    const fav = today.filter(t => t.isNew).slice(-1)[0] || today.slice(-1)[0];
+    document.getElementById('bestPiece').innerHTML = fav ? `今日の新顔：<b></b>` : '';
+    if(fav) document.querySelector('#bestPiece b').textContent = `「${fav.name}」`;
+    const pool = newCount >= 6 ? COMMENTS.great : today.length >= 4 ? COMMENTS.good : COMMENTS.normal;
     document.getElementById('comment').textContent = pick(pool);
     setTimeout(() => document.getElementById('resultScreen').classList.add('show'), 300);
-    sendResultToPortal();
+    sendResultToPortal(zukanCount);
   }
 
-  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score はランキング用）
-  function sendResultToPortal(){
+  // 81種すべての名前を図鑑に並べる（見つけていないものは ？？？）
+  function openZukan(){
+    const list = document.getElementById('zukanList');
+    list.innerHTML = '';
+    const keys = [];
+    ZONES.forEach(a => ZONES.forEach(b => ZONES.forEach(c => ZONES.forEach(d => keys.push([a,b,c,d].join(','))))));
+    keys.forEach(k => {
+      const d = document.createElement('div');
+      const got = !!save.zukan[k];
+      d.className = got ? '' : 'locked';
+      d.textContent = got ? shapeName(k) : '？？？';
+      list.appendChild(d);
+    });
+    document.getElementById('zukanSub').textContent = `見つけた形 ${Object.keys(save.zukan).length} / 81`;
+    document.getElementById('zukanScreen').classList.add('show');
+  }
+
+  // ポータルサイトに埋め込まれている場合、結果を親ウィンドウへ送信する（score は記録用）
+  function sendResultToPortal(zukanCount){
     try{
       window.parent.postMessage({
         type: 'moyamoyaGameResult',
         gameId: 'clay-rabbit',
-        summary: `売上 ${money.toLocaleString()}円（${soldCount}羽・注文どおり${perfectCount}）`,
-        detail: { score: money, sold: soldCount, perfect: perfectCount, maxCombo }
+        summary: `スコア ${score.toLocaleString()}（${today.length}体・新作${newCount}）`,
+        detail: { score, made: today.length, newShapes: newCount, zukan: zukanCount }
       }, '*');
     }catch(e){ /* ポータル外で単体表示している場合は何もしない */ }
   }
 
   /* ===== 操作 ===== */
   partBtns.forEach(btn => btn.addEventListener('click', () => doKnead(btn.dataset.g, btn)));
-  document.getElementById('deliverBtn').addEventListener('click', deliver);
+  document.getElementById('shelveBtn').addEventListener('click', shelve);
   document.getElementById('redoBtn').addEventListener('click', () => { if(running) newRabbit(); });
   window.addEventListener('keydown', e => {
     if(!running) return;
     const i = ['1','2','3','4'].indexOf(e.key);
     if(i >= 0){ doKnead(GROUPS[i], partBtns[i]); return; }
-    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); deliver(); }
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); shelve(); }
     if(e.key === 'Backspace'){ e.preventDefault(); newRabbit(); }
   });
-  document.getElementById('startBtn').addEventListener('click', openShop);
-  document.getElementById('retryBtn').addEventListener('click', openShop);
+  document.getElementById('startBtn').addEventListener('click', openDay);
+  document.getElementById('retryBtn').addEventListener('click', openDay);
+  document.getElementById('zukanBtn1').addEventListener('click', openZukan);
+  document.getElementById('zukanBtn2').addEventListener('click', openZukan);
+  document.getElementById('closeZukan').addEventListener('click', () => document.getElementById('zukanScreen').classList.remove('show'));
 
   buildCreature(rabbit);
   newRabbit();
-  document.getElementById('startBest').textContent = save.best > 0 ? `自己ベスト ${save.best.toLocaleString()}円` : '';
+  renderHud();
+  document.getElementById('startBest').textContent = save.best > 0 ? `自己ベスト ${save.best.toLocaleString()} ／ 図鑑 ${Object.keys(save.zukan).length} / 81` : '';
 })();
 </script>
 </body>
